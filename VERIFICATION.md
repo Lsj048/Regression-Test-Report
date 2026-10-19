@@ -7,7 +7,9 @@
 - 浏览器交互：搜索指定日期显示 1/4 份演示报告；失败状态筛选显示 1/4；月份筛选显示 1/4；完整报告可以打开；`latest/` 正确跳转到最新报告。
 - JavaScript：`node --check web/assets/site.js` 通过。
 - Actions：工作流 YAML 语法解析通过；[首次线上运行](https://github.com/Lsj048/Regression-Test-Report/actions/runs/39228167594) 的测试、构建和部署全部通过。
-- 真实文件兼容性：通过 SSH 只读取得 LCH 的 `2026-10-19.html`，在临时目录完成导入和构建，构建前后 SHA-256 一致；检查到的 HTML 资源引用数为 0。
-- 正式源目录 `uploads/` 和 `reports/` 均没有真实报告。演示内容只存在于 `examples/` 及独立的本地 `preview/`，正式构建输出仍为空站点。
+- 真实文件兼容性：通过 SSH 取得已审核的 LCH `2026-10-19.html`，下载文件与 LCH 原件的 SHA-256 一致。上传后补充了仅在小屏幕生效的 CSS；逐项核对全部正文文本及 96 个链接均未改变。
+- 正式源目录 `uploads/` 已包含审核后的 `2026-10-19.html` 及首页摘要元数据，报告状态为失败；演示内容仍与正式站点隔离。
+- 真实报告展示：桌面宽度 1440 像素无页面溢出；原始手机布局存在宽表挤压，补充样式后 390 像素页面无横向溢出，29 张表格可在各自容器内横向滚动。13 个页内链接目标均存在。
+- 附件限制：原报告有 83 处 `file://` 链接，涉及 63 个不同的本地文件。它们指向 LCH 本机，公开网页不能直接打开。当前只发布已审核的 HTML，没有上传这些附件。
 
-已创建公开仓库 [Lsj048/Regression-Test-Report](https://github.com/Lsj048/Regression-Test-Report)，启用 Pages，并通过浏览器验证[公开首页](https://lsj048.github.io/Regression-Test-Report/)可访问。正式站点当前为空，真实报告由人工审核后上传。
+已创建公开仓库 [Lsj048/Regression-Test-Report](https://github.com/Lsj048/Regression-Test-Report)，启用 Pages，并通过浏览器验证[公开首页](https://lsj048.github.io/Regression-Test-Report/)可访问。已发布第一份审核后的真实报告，`latest/` 指向 2026-10-19 报告。
