@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{DESCRIPTION}}">
+  <title>{{TITLE}}</title>
+  <link rel="stylesheet" href="assets/site.css">
+  <script defer src="assets/site.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">跳转到报告</a>
+<aside class="sidebar">
+  <a class="brand" href="./"><span class="brand-mark">R<span>↗</span></span><span>Regression Lab<small>测试与实验记录</small></span></a>
+  <div class="workspace-label">WORKSPACE</div>
+  <a class="nav-item active" href="./"><span>▤</span> 报告总览 <span class="nav-count">{{COUNT}}</span></a>
+  <a class="nav-item" href="latest/"><span>↗</span> 最新报告</a>
+  <div class="archive-label">按月份归档</div>
+  <nav aria-label="月份筛选"><button class="month-filter selected" data-value=""><span>全部报告</span><span>{{COUNT}}</span></button>{{MONTHS}}</nav>
+  <div class="sidebar-note"><span class="status-dot"></span> 每周记录，持续验证<p>HTML 原始报告 · 历史版本可追溯</p></div>
+</aside>
+<main id="main">
+  <header class="topbar"><span>实验室 / <strong>回归测试</strong></span><span class="topbar-tag">REPORT ARCHIVE</span></header>
+  <div class="content">
+    <section class="page-heading"><div><span class="eyebrow">REGRESSION TEST REPORTS</span><h1>{{TITLE}}</h1><p>{{DESCRIPTION}}</p></div><div class="schedule"><span class="status-dot"></span>{{SCHEDULE}}</div></section>
+    <section class="stats" aria-label="报告概况">
+      <div><span>已归档报告</span><strong>{{COUNT}}<small>份</small></strong></div>
+      <div><span>最近报告日期</span><strong class="stat-date">{{DATE}}</strong></div>
+      <div><span>最近一次结果</span><strong class="stat-status">{{STATUS}}</strong></div>
+      <div><span>含失败的报告</span><strong>{{FAILED}}<small>份</small></strong></div>
+    </section>
+    <section class="latest-card">{{LATEST}}</section>
+    <section class="history" id="history"><div class="section-heading"><h2>历史报告 <span>{{COUNT}}</span></h2><span>保留每次运行的完整记录</span></div>
+      <div class="filters"><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="搜索报告标题、日期或运行编号" aria-label="搜索报告"></label><label class="status-label">结果<select id="status"><option value="">全部结果</option><option value="passed">全部通过</option><option value="failed">存在失败</option><option value="unknown">未标注</option></select></label></div>
+      <div id="report-list">{{CARDS}}</div><p id="no-results" class="empty" hidden>没有匹配的报告。试试其他关键词或筛选条件。</p><p id="result-count" class="result-count" aria-live="polite"></p>
+    </section>
+    <footer><span>Regression Lab <span class="dot">/</span> 每个结论，都有记录。</span><span>原始 HTML · GitHub Pages</span></footer>
+  </div>
+</main>
+</body>
+</html>
