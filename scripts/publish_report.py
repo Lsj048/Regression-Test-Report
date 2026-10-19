@@ -51,6 +51,26 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def read_source(args, config, working):
+    if args.local or args.local_dir is not None:
+        directory = Path(args.local_dir if args.local_dir is not None else config["remote_directory"]).expanduser()
+        source = directory / (args.date + ".html")
+        if not source.is_file():
+            raise PublishError(f"本机报告不存在：{source}")
+        print(f"读取本机报告：{source}", flush=True)
+    else:
+        source = working / "source.html"
+        remote_path = config["remote_directory"].rstrip("/") + "/" + args.date + ".html"
+        run(["scp", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15",
+             f"{config['ssh_host']}:{remote_path}", str(source)], timeout=180)
+    # Read only this date, leave the original unchanged, and bound memory use.
+    with source.open("rb") as stream:
+        raw = stream.read(MAX_BYTES + 1)
+    if not raw or len(raw) > MAX_BYTES:
+        raise PublishError("报告为空或超过 100 MiB")
+    return raw
+
+
 class ReportHTML(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -249,11 +269,7 @@ def publish(args):
             if not (checkout / "uploads" / filename).is_file():
                 raise PublishError("该日期/版本尚未上传，不能使用 --check-only")
         else:
-            source = working / "source.html"
-            remote_path = config["remote_directory"].rstrip("/") + "/" + args.date + ".html"
-            run(["scp", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15",
-                 f"{config['ssh_host']}:{remote_path}", str(source)], timeout=180)
-            raw = source.read_bytes()
+            raw = read_source(args, config, working)
             original_hash = digest(raw)
             data, meta, local_links = prepare_report(raw, args.date)
             created = write_report(checkout, filename, data, meta)
@@ -294,7 +310,10 @@ def main():
     parser = argparse.ArgumentParser(description="上传已人工审核的 LCH HTML；执行即表示允许公开发布。")
     parser.add_argument("date", help="报告日期 YYYY-MM-DD")
     parser.add_argument("--run-id", help="同一天的另一版，例如 r2；保留旧报告")
-    parser.add_argument("--check-only", action="store_true", help="仅检查已上传版本，不从 LCH 下载")
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument("--local", action="store_true", help="直接读取本机 publish.json 中 remote_directory 下的报告，不使用 SSH")
+    source.add_argument("--local-dir", help="直接读取指定本机目录下的 YYYY-MM-DD.html，不使用 SSH")
+    parser.add_argument("--check-only", action="store_true", help="仅检查已上传版本，不读取或下载源报告")
     parser.add_argument("--gh", help="GitHub CLI 可执行文件路径")
     parser.add_argument("--timeout", type=int, default=1200, help="部署等待秒数，默认 1200")
     args = parser.parse_args()

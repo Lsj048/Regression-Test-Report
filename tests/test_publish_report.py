@@ -27,6 +27,35 @@ class Clock:
 
 
 class PublishTests(unittest.TestCase):
+    def test_local_source_selects_only_date_and_never_uses_ssh(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            directory = root / "报告 目录"
+            directory.mkdir()
+            original = directory / "2026-10-19.html"
+            original.write_bytes(REPORT)
+            (directory / "2026-10-26.html").write_bytes(b"not reviewed")
+            args = Namespace(date="2026-10-19", local=True, local_dir=None)
+            with patch.object(publisher, "run", side_effect=AssertionError("must not use scp")):
+                self.assertEqual(publisher.read_source(args, {"remote_directory": str(directory)}, root), REPORT)
+                args.local, args.local_dir = False, str(directory)
+                self.assertEqual(publisher.read_source(args, {}, root), REPORT)
+                args.date = "2026-11-02"
+                with self.assertRaisesRegex(publisher.PublishError, "本机报告不存在"):
+                    publisher.read_source(args, {}, root)
+            self.assertEqual(original.read_bytes(), REPORT)
+
+    def test_local_source_size_limit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            args = Namespace(date="2026-10-19", local=False, local_dir=tmp)
+            source = root / "2026-10-19.html"
+            with patch.object(publisher, "MAX_BYTES", 10):
+                for data in (b"", b"a" * 11):
+                    source.write_bytes(data)
+                    with self.assertRaisesRegex(publisher.PublishError, "为空或超过"):
+                        publisher.read_source(args, {}, root)
+
     def test_adaptation_idempotent_and_does_not_modify_links(self):
         raw = lch_report() + b'<a href="file:///example">attachment</a>'
         data, meta, count = publisher.prepare_report(raw, "2026-10-19")
@@ -144,13 +173,18 @@ class PublishTests(unittest.TestCase):
                     fail_push[0] = False
                     raise publisher.PublishError("simulated network failure")
                 return real_run(args, cwd or local, timeout)
-            args = Namespace(date="2026-10-19", run_id=None, check_only=False, gh=None, timeout=30)
+            args = Namespace(date="2026-10-19", run_id=None, check_only=False, gh=None, timeout=30, local=False, local_dir=None)
             with patch.object(publisher, "ROOT", local), patch.object(publisher, "run", side_effect=fake_run), patch.object(publisher, "find_gh", return_value="fake-gh"), patch.object(publisher, "wait_workflow", return_value="https://example.test/run/1"), patch.object(publisher, "verify_site") as verify:
                 with self.assertRaisesRegex(publisher.PublishError, "推送失败"):
                     publisher.publish(args)
                 self.assertEqual(execute("git", "--git-dir", str(remote), "rev-parse", "main"), old_head)
                 publisher.publish(args)
                 first_head = execute("git", "--git-dir", str(remote), "rev-parse", "main")
+                # Repeat the same publication from the local-machine entry point.
+                reports = temporary / "报告 目录"
+                reports.mkdir()
+                (reports / "2026-10-19.html").write_bytes(lch_report())
+                args.local_dir = str(reports)
                 publisher.publish(args)
                 second_head = execute("git", "--git-dir", str(remote), "rev-parse", "main")
                 self.assertEqual(verify.call_count, 2)

@@ -83,6 +83,37 @@ gh workflow run pages.yml
 
 仓库、SSH 别名和远端报告目录在 `publish.json` 中配置。
 
+### 直接在 LCH 机器上上传
+
+LCH 本机已有报告时，使用 `--local`，直接读取 `/Users/iie/Desktop/LCH-回归测试报告/YYYY-MM-DD.html`。该目录来自 `publish.json` 的 `remote_directory`，无需配置 SSH 连接自己。
+
+首次在 LCH 上使用，需要 Git、Python 3.9+ 和 GitHub CLI。若已安装 Homebrew，可用 `brew install git python gh` 安装缺少的工具。然后登录具有本仓库写权限的 GitHub 账号并获取项目：
+
+```bash
+gh auth login --hostname github.com --git-protocol https --web --scopes workflow
+# 按提示完成网页授权；通过 SSH 操作 LCH 时，可在自己的电脑浏览器输入终端显示的验证码。
+git clone https://github.com/Lsj048/Regression-Test-Report.git
+cd Regression-Test-Report
+```
+
+如果 LCH 上已经有这个仓库，进入已有目录执行 `git pull --ff-only` 更新脚本即可。另一台电脑上的 GitHub CLI 登录不会自动同步到 LCH，需要在 LCH 上单独授权。
+
+每周审核后，在仓库目录执行（替换日期）：
+
+```bash
+./publish.sh 2026-10-26 --local
+```
+
+只读取这一份 HTML，不扫描或批量上传其他报告，也不修改原报告。发布、重复内容检测、版本保留和线上验收与默认模式相同。看到 `[6/6] 发布验收通过` 表示完成。
+
+报告目录变更时，可直接指定：
+
+```bash
+./publish.sh 2026-10-26 --local-dir "/其他目录/回归报告"
+```
+
+同日修订版使用 `./publish.sh 2026-10-26 --local --run-id r2`；只复查已上传报告使用 `./publish.sh 2026-10-26 --check-only`。`--local` 和 `--local-dir` 二选一；不传这两个参数时仍默认从 `ssh LCH` 下载。
+
 ## 每周上传：也可使用 GitHub 网页
 
 1. 在 LCH 的 `/Users/iie/Desktop/LCH-回归测试报告` 中取出当期 HTML，完成内容审核。
