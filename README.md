@@ -2,6 +2,15 @@
 
 审核后的回归测试 HTML 报告归档站。使用 GitHub 保存源文件、GitHub Actions 生成目录、GitHub Pages 提供公开访问。无需服务器、数据库、npm 或第三方 Python 包。
 
+## 当前站点与上传入口
+
+- [公开报告站点](https://lsj048.github.io/Regression-Test-Report/)
+- [固定最新报告链接](https://lsj048.github.io/Regression-Test-Report/latest/)
+- [上传审核后的 HTML](https://github.com/Lsj048/Regression-Test-Report/upload/main/uploads)
+- [查看发布状态](https://github.com/Lsj048/Regression-Test-Report/actions/workflows/pages.yml)
+
+日常更新只需上传当期 `YYYY-MM-DD.html` 并提交到 `main`，等待本次发布成功即可。没有报告时，站点显示等待导入。
+
 ## 实际更新流程
 
 ```text
@@ -14,7 +23,7 @@ LCH 每周一 10:00 生成 HTML（北京时间）
 
 现有测试任务继续在 LCH 运行，站点不重复执行测试。工作流没有定时触发器，只有审核后提交文件才更新公开内容。报告生成时间和公开发布时间是两个不同的时间。
 
-## 首次部署
+## 首次部署到其他仓库
 
 1. 在自己的 GitHub 账号中创建公开仓库 `Regression-Test-Report`，默认分支使用 `main`。
 2. 将本项目的源文件推送到仓库，包括隐藏目录 `.github`；不要上传 `incoming`、`preview` 或 `dist`。

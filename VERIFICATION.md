@@ -6,8 +6,8 @@
 - 浏览器：1440 像素桌面布局及 390 像素手机布局检查通过；手机页面内容宽度等于视口宽度，无横向溢出。
 - 浏览器交互：搜索指定日期显示 1/4 份演示报告；失败状态筛选显示 1/4；月份筛选显示 1/4；完整报告可以打开；`latest/` 正确跳转到最新报告。
 - JavaScript：`node --check web/assets/site.js` 通过。
-- Actions：工作流 YAML 语法解析通过；尚未在 GitHub 上执行。
+- Actions：工作流 YAML 语法解析通过；[首次线上运行](https://github.com/Lsj048/Regression-Test-Report/actions/runs/39228167594) 的测试、构建和部署全部通过。
 - 真实文件兼容性：通过 SSH 只读取得 LCH 的 `2026-10-19.html`，在临时目录完成导入和构建，构建前后 SHA-256 一致；检查到的 HTML 资源引用数为 0。
 - 正式源目录 `uploads/` 和 `reports/` 均没有真实报告。演示内容只存在于 `examples/` 及独立的本地 `preview/`，正式构建输出仍为空站点。
 
-尚未完成：GitHub 登录连接、创建公开仓库、启用 Pages、线上 Actions 部署及实际网址验收。真实报告需要人工审核后上传。
+已创建公开仓库 [Lsj048/Regression-Test-Report](https://github.com/Lsj048/Regression-Test-Report)，启用 Pages，并通过浏览器验证[公开首页](https://lsj048.github.io/Regression-Test-Report/)可访问。正式站点当前为空，真实报告由人工审核后上传。
