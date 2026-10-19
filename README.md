@@ -47,7 +47,43 @@ gh workflow run pages.yml
 
 提交作者使用你自己的 Git 配置。现有 Git 仓库无需重新初始化。如果 GitHub 提示仓库重名，先检查该仓库，不要覆盖现有内容。
 
-## 每周上传：推荐使用 GitHub 网页
+## 每周上传：推荐一键脚本
+
+审核完成后，在本项目目录运行，参数是报告日期：
+
+```bash
+./publish.sh 2026-10-26
+```
+
+执行命令表示当期报告已经审核，可以公开发布。脚本不创建定时任务，不跳过人工审核。
+
+脚本自动连接 `ssh LCH`，下载对应日期的 HTML，在独立临时 Git 副本中构建，只提交本次报告和摘要，然后等待该提交的 GitHub Actions 部署。最后从公网检查报告 HTML 内容、首页索引、`latest/` 重定向和 CSS/JS 文件；验收通过后输出报告地址，并在本地 `incoming/publish-日期.json` 保存提交号、工作流地址和文件校验值。
+
+首次使用需要 Python 3.9+、Git、SSH，以及已登录的 GitHub CLI（`gh`）。本机的 GitHub CLI 路径已配置，直接运行即可。在另一台 Mac 上可先执行 `brew install gh`，然后 `gh auth login --hostname github.com --git-protocol https --web --scopes workflow`，并配置好 `ssh LCH`。也可通过 `--gh /绝对路径/gh` 或环境变量 `GH_BIN` 指定 CLI。
+
+```bash
+# 内容相同：不会重复提交，会重新检查发布结果
+./publish.sh 2026-10-19
+
+# 同一天的另一版：保留第一版，新增 r2
+./publish.sh 2026-10-19 --run-id r2
+
+# 不重新下载，只检查已上传版本；必要时重试失败的部署
+./publish.sh 2026-10-19 --check-only
+
+# 延长等待部署的时间，单位为秒
+./publish.sh 2026-10-19 --timeout 1800
+```
+
+同日期、同版本若内容不同，脚本会停止，要求使用新版本编号；不会覆盖旧报告。它不会提交本地其他未提交改动，也不强制推送。网络或部署失败后，修复原因，再运行同一条命令即可；已上传的相同报告会被复用，失败的工作流可重新运行。默认最多等待部署 20 分钟、线上缓存更新 3 分钟，失败时退出码为非零，并输出原因。
+
+补传旧日期时，`latest/` 仍指向日期最新的报告；脚本按这一规则验收。发布使用临时副本，因此本地仓库不会被自动拉取或改动；需要查看新发布的本地归档时，可自行执行 `git pull --ff-only`。
+
+对已识别的 LCH 标准报告，脚本提取明确写出的成功/失败摘要，并补充手机端表格横向滚动样式；未知报告格式标为“未标注”。不会推断缺失的统计，也不会随 HTML 上传 `file://` 附件。自动验收核对文件与链接，不代替对报告内容和图表的人工审核。
+
+仓库、SSH 别名和远端报告目录在 `publish.json` 中配置。
+
+## 每周上传：也可使用 GitHub 网页
 
 1. 在 LCH 的 `/Users/iie/Desktop/LCH-回归测试报告` 中取出当期 HTML，完成内容审核。
 2. 打开仓库里的 `uploads` 目录，选择 **Add file → Upload files**。
@@ -141,6 +177,8 @@ python3 -m http.server 8001 --directory preview --bind 127.0.0.1
 | `web/` | 首页模板、样式和搜索筛选 |
 | `scripts/report_site.py` | 报告归档、校验、静态站点生成 |
 | `scripts/fetch_lch.py` | 按日期下载一份报告到待审核目录 |
+| `publish.sh`、`scripts/publish_report.py` | 一键下载、发布、等待部署并核对线上内容 |
+| `publish.json` | 发布目标、SSH 别名和远端报告目录 |
 | `.github/workflows/pages.yml` | 校验、构建和部署 |
 | `reports/` | 使用高级 `add` 命令导入的归档，可留空 |
 | `dist/` | 生成的正式站点，不提交到 Git |

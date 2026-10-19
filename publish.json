@@ -1,0 +1,7 @@
+{
+  "repository": "Lsj048/Regression-Test-Report",
+  "branch": "main",
+  "workflow": "pages.yml",
+  "ssh_host": "LCH",
+  "remote_directory": "/Users/iie/Desktop/LCH-回归测试报告"
+}
