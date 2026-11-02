@@ -1,0 +1,208 @@
+import type { JsonValue } from "../../kernel/api/foundation/json.js";
+import type { DurableMessage } from "../../kernel/api/messages/types.js";
+import type {
+  ContextEffectForPoint, ContextPoint, ContextPolicy, ContextSnapshot, PolicyInputEnvelope,
+  PolicyResult, StatePolicy, StatePolicyInput, StatePolicyResult,
+} from "../../kernel/api/policy/types.js";
+import { createDescriptor } from "../../kernel/api/policy/descriptor.js";
+import { actionBatchResults } from "../../kernel/api/policy/action-results.js";
+
+interface TaskSummary {
+  readonly id: string;
+  readonly subject: string;
+  readonly status: "pending" | "in_progress" | "completed";
+}
+
+interface ReminderState {
+  readonly sessionId?: string;
+  readonly tasks?: readonly TaskSummary[];
+  /** Legacy transient reminder boundary, superseded by durable reminder facts. */
+  readonly lastReminderMessageId?: string;
+  /** Legacy complete-response count; read only to recover the reminder boundary. */
+  readonly lastReminderCount?: number;
+}
+
+function object(value: unknown): Record<string, unknown> | undefined {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown> : undefined;
+}
+
+function taskSummary(value: unknown): TaskSummary | undefined {
+  const task = object(value);
+  if (!task || typeof task["id"] !== "string" || typeof task["subject"] !== "string"
+    || !["pending", "in_progress", "completed"].includes(String(task["status"]))) return undefined;
+  return { id: task["id"], subject: task["subject"], status: task["status"] as TaskSummary["status"] };
+}
+
+function readState(value: JsonValue | null, sessionId: string): ReminderState {
+  const state = object(value);
+  if (state?.["sessionId"] !== sessionId) return { sessionId };
+  const count = state["lastReminderCount"];
+  return {
+    sessionId,
+    ...(Array.isArray(state["tasks"]) ? { tasks: state["tasks"].flatMap((value) => taskSummary(value) ?? []) } : {}),
+    ...(typeof state["lastReminderMessageId"] === "string" ? { lastReminderMessageId: state["lastReminderMessageId"] } : {}),
+    ...(typeof count === "number" && Number.isSafeInteger(count) && count >= 0 ? { lastReminderCount: count } : {}),
+  };
+}
+
+/** Project only successful public Task* results, never optimistic call arguments. */
+function projectTasks(tasks: readonly TaskSummary[], name: string, value: unknown): readonly TaskSummary[] {
+  const result = object(value);
+  if (!result) return tasks;
+  if (name === "TaskList" && Array.isArray(result["tasks"])) {
+    return result["tasks"].flatMap((value) => taskSummary(value) ?? []);
+  }
+  if (name === "TaskUpdate" && result["deleted"] === true && typeof result["taskId"] === "string") {
+    return tasks.filter((task) => task.id !== result["taskId"]);
+  }
+  const task = taskSummary(name === "TaskGet" ? value : name === "TaskCreate" || name === "TaskUpdate" ? result["task"] : undefined);
+  if (!task) return tasks;
+  return tasks.some((item) => item.id === task.id)
+    ? tasks.map((item) => item.id === task.id ? task : item)
+    : [...tasks, task];
+}
+
+/** Bootstrap existing sessions from immutable messages when this Policy is first installed. */
+function tasksFromHistory(messages: readonly DurableMessage[], sessionId: string): readonly TaskSummary[] {
+  const calls = new Map<string, string>();
+  let tasks: readonly TaskSummary[] = [];
+  for (const record of messages) {
+    // Forked/imported history is context, not this session's task store.
+    if (record.sessionId !== sessionId || record.placement.kind !== "append"
+      || (record.sourceKind !== "model" && record.sourceKind !== "tool")) continue;
+    const message = record.message;
+    if (message.role === "assistant") {
+      for (const call of message.toolCalls ?? []) calls.set(call.id, call.name);
+    } else if (message.role === "tool") {
+      const name = calls.get(message.toolCallId);
+      if (!name || !["TaskCreate", "TaskUpdate", "TaskGet", "TaskList"].includes(name)) continue;
+      const content = typeof message.content === "string" ? message.content
+        : message.content.filter((block) => block.type === "text").map((block) => block.text).join("\n");
+      try { tasks = projectTasks(tasks, name, JSON.parse(content)); } catch { /* Non-JSON errors/spill previews are not task state. */ }
+    }
+  }
+  return tasks;
+}
+
+export class TaskListReminderPolicy implements ContextPolicy<"fit">, StatePolicy {
+  readonly descriptor = createDescriptor({
+    apiVersion: "policy.longcat/v1",
+    id: "builtin.task_list_reminder",
+    version: "1.0.0",
+    configSchema: {
+      type: "object",
+      properties: {
+        enabled: { type: "boolean" },
+        messagesSinceTaskWrite: { type: "integer", minimum: 1 },
+        messagesBetweenReminders: { type: "integer", minimum: 1 },
+      },
+      additionalProperties: false,
+    },
+    implementedInterfaces: ["context/v1", "state/v1"],
+    points: ["fit", "after_actions"],
+    claims: [
+      { kind: "chain_member", chain: "state.policies" },
+    ],
+    deterministic: true,
+  });
+
+  async decideContext(input: PolicyInputEnvelope<ContextPoint, ContextSnapshot>): Promise<PolicyResult<ContextEffectForPoint<"fit">>> {
+    if (input.point !== "fit") return { decision: "abstain", proposals: [] };
+    const config = input.config as { enabled?: boolean; messagesSinceTaskWrite?: number; messagesBetweenReminders?: number };
+    if (config.enabled === false) return { decision: "abstain", proposals: [] };
+    const previous = readState(input.privateState, input.agent.sessionId);
+    const { lastReminderCount: legacyCount, ...current } = previous;
+    let state = { ...current, tasks: previous.tasks ?? tasksFromHistory(input.snapshot.messages, input.agent.sessionId) };
+    let count = 0;
+    let sinceWrite = 0;
+    let responseCount = 0;
+    let lastReminderCount = 0;
+    let hasPersistedReminder = false;
+    // Reconstruct CC's non-thinking content-block messages without splitting our
+    // immutable response facts: text first, then each tool call in response order.
+    for (const record of input.snapshot.messages) {
+      if (record.sessionId !== input.agent.sessionId) continue;
+      if (record.sourceKind === "policy" && (record.placement.kind === "replace" || record.placement.kind === "append_content")
+        && record.placement.policyId === this.descriptor.id && record.placement.reasonCode === "task_list_reminder") {
+        lastReminderCount = count;
+        hasPersistedReminder = true;
+        state = { sessionId: input.agent.sessionId, tasks: state.tasks };
+        continue;
+      }
+      if (record.placement.kind !== "append") continue;
+      const message = record.message;
+      if (message.role !== "assistant" || (record.sourceKind !== "model" && record.sourceKind !== "history_seed")) continue;
+      if (!message.content && !message.toolCalls?.length && message.reasoningContent) continue;
+      responseCount += 1;
+      if (message.content) {
+        count += 1;
+        sinceWrite += 1;
+      }
+      for (const call of message.toolCalls ?? []) {
+        count += 1;
+        sinceWrite = call.name === "TaskCreate" || call.name === "TaskUpdate" ? 0 : sinceWrite + 1;
+      }
+      // A stored old count cannot be interpreted in the new unit. Recover its
+      // original message boundary once, then derive all counts from message facts.
+      if (!hasPersistedReminder && state.lastReminderMessageId === undefined && responseCount === legacyCount) {
+        state = { ...state, lastReminderMessageId: record.messageId };
+      }
+      if (record.messageId === state.lastReminderMessageId) lastReminderCount = count;
+    }
+    const tools = new Set(input.snapshot.availableTools.map((tool) => tool.name));
+    const repeatLegacyBoundary = !hasPersistedReminder && state.lastReminderMessageId !== undefined && lastReminderCount === count;
+    if (!tools.has("TaskUpdate") || tools.has("SendUserMessage")
+      || sinceWrite < (config.messagesSinceTaskWrite ?? 10)
+      || (!repeatLegacyBoundary && count - lastReminderCount < (config.messagesBetweenReminders ?? 10))) {
+      return { decision: "abstain", proposals: [], privateState: state as unknown as JsonValue };
+    }
+    // Extend the latest completed Tool batch or this turn's real user input.
+    // A user role alone does not establish provenance (e.g. summaries/notifications).
+    const target = input.snapshot.surfaceMessages.at(-1);
+    const assistantIndex = input.snapshot.surfaceMessages.findLastIndex((record) => record.message.role === "assistant");
+    const assistant = input.snapshot.surfaceMessages[assistantIndex]?.message;
+    const toolCallId = target?.message.role === "tool" ? target.message.toolCallId : undefined;
+    const isToolResult = target?.message.role === "tool" && assistant?.role === "assistant"
+      && assistant.toolCalls?.some((call) => call.id === toolCallId)
+      && input.snapshot.surfaceMessages.slice(assistantIndex + 1).every((record) => record.message.role === "tool");
+    const isUserInput = target?.message.role === "user" && target.sourceKind === "input"
+      && target.producingTurnId === input.agent.turnId && target.sourceId === input.agent.triggerInputId
+      && (target.origin === undefined || target.origin.kind === "user");
+    if (target?.sessionId !== input.agent.sessionId || (!isToolResult && !isUserInput)) {
+      return { decision: "abstain", proposals: [], privateState: state as unknown as JsonValue };
+    }
+    const text = [
+      "<system-reminder>",
+      "The task tools haven't been used recently. If you're working on tasks that would benefit from tracking progress, consider using "
+        + (tools.has("TaskCreate") ? "TaskCreate to add new tasks and " : "")
+        + "TaskUpdate to update task status (set to in_progress when starting, completed when done). Also consider cleaning up the task list if it has become stale. Only use these if relevant to the current work. This is just a gentle reminder - ignore if not applicable. Make sure that you NEVER mention this reminder to the user",
+      ...(state.tasks.length === 0 ? [] : ["", "Here are the existing tasks:", "", ...state.tasks.map((task) => `#${task.id}. [${task.status}] ${task.subject}`)]),
+      "</system-reminder>",
+    ].join("\n");
+    return {
+      decision: "propose",
+      proposals: [{
+        kind: "append_content",
+        messageId: target.messageId,
+        content: [{ type: "text", text: `\n\n${text}` }],
+        reasonCode: "task_list_reminder",
+      }],
+      // Only committed additions consume the cooldown. Re-evaluation before
+      // commit is repeatable; afterward the persisted message supplies the reminder.
+      privateState: state as unknown as JsonValue,
+    };
+  }
+
+  async decideState(input: StatePolicyInput): Promise<StatePolicyResult> {
+    if (input.point !== "after_actions" || object(input.config)?.["enabled"] === false) return {};
+    const state = readState(input.privateState, input.agent.sessionId);
+    let tasks = state.tasks ?? [];
+    for (const result of actionBatchResults(input.snapshot.actionBatch)) {
+      if (!result.isError && (result.status === undefined || result.status === "succeeded")) {
+        tasks = projectTasks(tasks, result.name, result.canonicalValue);
+      }
+    }
+    return { privateStateAfterEvaluation: { ...state, tasks } as unknown as JsonValue };
+  }
+}

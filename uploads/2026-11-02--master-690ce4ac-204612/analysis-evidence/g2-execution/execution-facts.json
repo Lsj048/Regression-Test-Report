@@ -1,0 +1,57 @@
+{
+  "status": "INVALID_EVIDENCE",
+  "integrityIssues": [
+    "无法核对实际 evaluated tree 与产品版本"
+  ],
+  "totals": {
+    "cases": 157,
+    "samples": 787,
+    "requests": 4173,
+    "auxiliaryCalls": 240,
+    "violatingRequests": 0,
+    "ignoredTraceEnvelopes": 4173
+  },
+  "judgment": {
+    "status": "FAILED",
+    "reason": "裁判执行或输出校验未完成，原始结构检查及待审项完整保留",
+    "error": "Codex judge did not complete successfully; retained log and original checks"
+  },
+  "judge": {
+    "startedAt": "2026-11-02T16:57:42.143Z",
+    "inputManifestSha256": "87858482ebe75650e81e471c086ab17d353de5095a623138bc50059c483cd1e9",
+    "status": "FAILED",
+    "requestedModel": "Codex configured default",
+    "command": [
+      "codex",
+      "-c",
+      "approval_policy=\"never\"",
+      "exec",
+      "--sandbox",
+      "read-only",
+      "--ephemeral",
+      "--skip-git-repo-check",
+      "-C",
+      "./g2",
+      "--output-schema",
+      "./runner/g2/judge-schema.json",
+      "--output-last-message",
+      "./g2/judge.raw.json",
+      "-"
+    ],
+    "cliVersion": "codex-cli 0.147.0",
+    "pid": 37320,
+    "exit": 1,
+    "error": "Codex judge did not complete successfully; retained log and original checks",
+    "completedAt": "2026-11-02T16:57:51.312Z"
+  },
+  "directFailure": "The 'gpt-6.1-sol' model is not supported when using Codex with a ChatGPT account.",
+  "reviewItemCount": 51,
+  "g2ReportSha256": "0f5c29864c51973778ffc2c2bae485921509ce1608f7b8337a880d4c28fbeda9",
+  "judgeLogSha256": "baea82113c3a0ed194bda99a4c2890f98d503b45db897e4c8a9fab319c98ea90",
+  "analysisOrigin": {
+    "sha": "51807962db1e71c8b3edda88da7d0b203232c51f",
+    "author": "luoshijie02",
+    "time": "2026-10-12T12:49:49+08:00",
+    "limitation": "Current introduction of main-repository tree check from git -L; no product defect bisection or organization ownership claim."
+  }
+}

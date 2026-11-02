@@ -1,0 +1,31 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/cases/live-goal-cancel.ts
+    const detail = async () => { const r = await fetch(`${env.baseUrl}/api/sessions/${session.id}`); expect(r.ok).toBe(true); return await r.json() as { status: string; publicStates?: Record<string, Record<string, unknown>> }; };
+    const question = page.getByRole("region", { name: "等待回答", exact: true });
+    await expect(question).toBeVisible({ timeout: 120_000 }); await expect(question).toContainText("发布已安排"); await expect(question).toContainText("发布延期");
+    expect(existsSync(join(env.workspace, GOAL_TASK.file))).toBe(false);
+    const original = await detail(); expect(original.status).toBe("waiting");
+    const goalId = original.publicStates?.["goal.execution"]?.["id"]; expect(typeof goalId).toBe("string");
+    const cancelled = page.waitForResponse(r => r.url() === `${env.baseUrl}/api/sessions/${session.id}/presentation-actions` && r.request().method() === "POST");
+    await page.getByRole("button", { name: "取消目标", exact: true }).click();
+    const receipt = await cancelled; expect(receipt.ok()).toBe(true); const operation = receipt.request().postDataJSON() as Record<string, unknown>;
+    expect(operation["actionId"]).toBe("cancel");
+    await expect.poll(async () => { const d = await detail(); return [d.status, d.publicStates?.["goal.execution"]?.["phase"]]; }, { timeout: 120_000 }).toEqual(["completed", "cancelled"]);
+    const check = async () => {
+      const d = await detail(); expect(d.publicStates?.["goal.execution"]).toMatchObject({ id: goalId, phase: "cancelled", objective: contract.prompt });
+      await expect(page.getByRole("region", { name: "目标 · 已取消", exact: true })).toBeVisible();
+      await expect(question).toBeHidden();
+      await expect(page.getByRole("button", { name: /暂停目标|继续目标|取消目标/u })).toHaveCount(0);
+      await expect(page.getByTestId("stop-task")).toHaveCount(0);
+      expect(existsSync(join(env.workspace, GOAL_TASK.file))).toBe(false);
+    };
+    await check(); const audit = auditLiveGoalCancel(env.stateDirectory, env.workspace, session.id, operation);
+    await page.waitForTimeout(3000);
+    const settledAudit = auditLiveGoalCancel(env.stateDirectory, env.workspace, session.id, operation);
+    assertGoalCancelRefreshPreserved(audit, settledAudit);
+    const durationMs = Date.now() - started, refreshStarted = Date.now();
+    await page.reload({ timeout: refreshBudget }); await page.locator(".session-item:not(.provisional) > .session-row").first().click(); await check();
+    const refreshedAudit = auditLiveGoalCancel(env.stateDirectory, env.workspace, session.id, operation);
+    assertGoalCancelRefreshPreserved(settledAudit, refreshedAudit);
+    const refreshRecoveryMs = Date.now() - refreshStarted; expect(durationMs).toBeLessThan(budget); expect(refreshRecoveryMs).toBeLessThan(refreshBudget);
+    assertNoBrowserErrors(diagnostics); await attachJson(testInfo, contract, "timings", { durationMs, refreshRecoveryMs }); await attachJson(testInfo, contract, "sqlite-audit", { ...refreshedAudit, model: env.model });

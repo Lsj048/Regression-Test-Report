@@ -1,0 +1,91 @@
+{
+  "kind": "derived-causal-event-excerpt",
+  "scope": "Selected original durable events cited by manual attribution. Reasoning text is omitted where marked. This is a readable excerpt, not a full trace or a new G1 sample.",
+  "sampleDirectory": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat4",
+  "sourceTrajectory": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat4/trajectory.jsonl.gz",
+  "sourceTrajectorySha256": "513493470cb9dd08606e12c124d417d6697611b4ff47fb2ba69fe32b83b0a3ec",
+  "manifest": {
+    "kind": "manifest",
+    "schemaVersion": 1,
+    "sample": {
+      "caseId": "standard.deterministic-guard-drain-limit",
+      "mode": "standard",
+      "model": {
+        "execution": "deterministic",
+        "name": "LongCat-2.0",
+        "revision": "deterministic-model-suite.v19",
+        "providerBaseUrl": "http://127.0.0.1:61430/v1"
+      },
+      "repeatEachIndex": 4,
+      "retry": 0,
+      "testStatus": "failed"
+    },
+    "capturedAt": "2026-11-02T13:57:39.213Z",
+    "cleanupStartedAt": "2026-11-02T13:57:39.163Z",
+    "processesStopped": true,
+    "source": "durable SQLite facts; ordered within each table; includes cleanup events; not raw HTTP",
+    "redaction": "known credential values replaced; original payload hashes verified before redaction"
+  },
+  "complete": {
+    "kind": "complete",
+    "events": 6587,
+    "turns": 1,
+    "messages": 548
+  },
+  "selectedSequences": [
+    6578,
+    6583
+  ],
+  "events": [
+    {
+      "kind": "event",
+      "seq": 6578,
+      "event_id": "event_c9b12677-46f0-4fe3-a879-c01f558084fa",
+      "session_id": "session_026afc73-5cd6-4c40-beea-5396dc41943e",
+      "turn_id": "turn_d6c5b423-19b7-402d-ad1b-d745c905888c",
+      "type": "model.failed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 369,
+      "payload_sha256": "5e5c25c12a8a7487e4e2259b922be01c896dba94d4fc734bc6768b486f225256",
+      "trace_id": null,
+      "created_at": "2026-11-02T13:55:35.915Z",
+      "payload": {
+        "attempt": 0,
+        "category": "provider",
+        "code": "PROVIDER_HTTP_422",
+        "message": "Provider HTTP 422: {\"error\":\"AssertionError [ERR_ASSERTION]: Unexpected extra request; no endless fixture loop\"}",
+        "outputCommitted": false,
+        "planId": "plan_1ed33aa4-ede0-4fa7-9514-18b821977266",
+        "recoverable": false,
+        "requestHash": "d98e1b7a76b23c07fc790b8dbb801e60296fe69d35f77905cf611234c8e4c5da"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 6583,
+      "event_id": "event_727c8944-2d24-4ab4-ba75-92e26d683e0e",
+      "session_id": "session_026afc73-5cd6-4c40-beea-5396dc41943e",
+      "turn_id": "turn_d6c5b423-19b7-402d-ad1b-d745c905888c",
+      "type": "turn.failed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 257,
+      "payload_sha256": "423843384395ee6775411654b947a864ea6e433174ba5b25a214a60d99e03ea5",
+      "trace_id": null,
+      "created_at": "2026-11-02T13:55:36.276Z",
+      "payload": {
+        "cause": {
+          "category": "provider",
+          "kind": "llm_error",
+          "recoverable": false
+        },
+        "error": {
+          "code": "PROVIDER_HTTP_422",
+          "message": "Provider HTTP 422: {\"error\":\"AssertionError [ERR_ASSERTION]: Unexpected extra request; no endless fixture loop\"}"
+        },
+        "kind": "fail_turn"
+      }
+    }
+  ]
+}

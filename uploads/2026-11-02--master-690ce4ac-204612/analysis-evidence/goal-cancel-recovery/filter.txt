@@ -1,0 +1,27 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/live-goal-cancel.ts
+    const interruptions = data.events.filter(e => e.type === "turn.interrupted");
+    for (const e of interruptions) { assert.ok(cancelledTurns.includes(e.turn_id)); assert.equal(payload(path, e)["cause"], "user"); }
+    const rejectedPlans = data.results.filter(r => r.name === "update_goal_plan" && r.payload["errorCode"] === "GOAL_ACTION_DENIED");
+    const { forbiddenEvents: forbidden, policyDiagnostics } = auditGoalCancelFailureEvidence(path, {
+      database: data.database, sessionIds: data.sessionIds,
+      events: data.events.filter(e => !interruptions.includes(e) && e.type !== "turn.waiting"),
+      results: data.results.filter(r => !rejectedPlans.includes(r)),
+    });
+    assert.ok(data.calls.every(c => [...contract.requiredTools, ...(contract.allowedOptionalTools ?? [])].includes(c.name)));
+    const questions = data.events.filter(e => e.type === "host.question"); assert.equal(questions.length, 1);
+    assert.ok(questions[0]!.seq < requested[0]!.seq);
+    assertCancelledQuestionIdentity(request["interruptQuestions"], {
+      requestId: payload(path, questions[0]!)["requestId"], sessionId: questions[0]!.session_id, turnId: questions[0]!.turn_id,
+    });
+    if (rejectedPlans.length) {
+      const events = data.events.map(e => ({ seq: e.seq, turnId: e.turn_id, type: e.type, body: payload(path, e) }));
+      const messages = data.messages.prepare("SELECT message_json,source_event_seq FROM messages WHERE session_id=? ORDER BY seq").all(sessionId)
+        .map(m => ({ seq: Number(m["source_event_seq"]), message: jsonObject(JSON.parse(String(m["message_json"])), "message") }));
+      for (const result of rejectedPlans) assertGoalPlanRejectionRecovery(result, events, messages, questions[0]!.seq);
+    }
+    assert.equal(data.events.filter(e => e.type === "host.question.answered").length, 0);
+    const callId = payload(path, questions[0]!)["callId"];
+    const result = data.results.find(r => r.callId === callId && r.name === "AskUserQuestion"); assert.ok(result);
+    assert.equal(jsonObject(result.payload["canonicalValue"], "question result")["requestId"], payload(path, questions[0]!)["requestId"]);
+    assert.ok(data.calls.filter(c => c.turnId === cancelTurn).every(c => c.name === "get_goal"), "cancel command continued goal work");

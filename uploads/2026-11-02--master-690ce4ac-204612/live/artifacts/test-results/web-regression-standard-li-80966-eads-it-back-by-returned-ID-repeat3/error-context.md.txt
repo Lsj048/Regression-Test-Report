@@ -1,0 +1,310 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> standard.live-task-detail-readback >> standard mode creates one session task and reads it back by returned ID
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+AssertionError: TaskCreate added an active form or unknown field
++ actual - expected
+
++ [
++   'activeForm'
++ ]
+- []
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-Vo2XI6/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "请在当前会话登记一条待办，标题只能是“核对回归结果”，说… 刚刚" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]: 请在当前会话登记一条待办，标题只能是“核对回归结果”，说…
+          - time [ref=e59]: 刚刚
+        - button "请在当前会话登记一条待办，标题只能是“核对回归结果”，说… 的会话操作" [ref=e60] [cursor=pointer]
+    - button "归档会话" [ref=e65] [cursor=pointer]
+    - button "设置" [ref=e69] [cursor=pointer]
+  - main [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 请在当前会话登记一条待办，标题只能是“核对回归结果”，说…
+        - button "复制会话 ID session_c6285c53-a729-4b1f-b2f4-a2851f24154a" [ref=e78] [cursor=pointer]:
+          - generic [ref=e79]: session_c6285c53-a729-4b1f-b2f4-a2851f24154a
+      - generic [ref=e83]:
+        - button "对话" [ref=e84] [cursor=pointer]
+        - button "轨迹" [ref=e87] [cursor=pointer]
+    - generic [ref=e90]:
+      - generic [ref=e93]:
+        - generic [ref=e96]:
+          - generic [ref=e97]: 请在当前会话登记一条待办，标题只能是“核对回归结果”，说明只能是“确认回归结果已经归档。”，保持初始待处理状态，不添加其他字段。 登记成功后，请务必使用系统返回的新编号重新打开这条待办的完整详情进行核对；不要查看整个任务清单，也不要仅凭登记时的返回内容作答。 不要访问文件、执行命令、联网、修改待办、向我提问或启动子任务。 最后只输出一行，依次给出 task-id=<实际编号> task-subject=<实际标题> task-description=<实际说明> task-status=<实际状态>，字段之间只保留一个空格，不要输出其他内容。
+          - generic:
+            - time: 23:50
+            - button "复制消息"
+        - group [ref=e99]:
+          - generic "用时 5 秒" [ref=e100] [cursor=pointer]
+        - generic [ref=e104]:
+          - paragraph [ref=e106]: task-id=1 task-subject=核对回归结果 task-description=确认回归结果已经归档。 task-status=pending
+          - generic:
+            - button "复制回答"
+            - button "赞"
+            - button "踩"
+            - button "从此回答分叉会话"
+      - generic [ref=e109]:
+        - textbox "继续输入消息" [ref=e110]
+        - generic [ref=e111]:
+          - generic [ref=e112]:
+            - button "添加" [ref=e114] [cursor=pointer]
+            - generic [ref=e117] [cursor=pointer]: 标准模式
+            - button "权限：只读" [ref=e123] [cursor=pointer]:
+              - generic [ref=e126]: 只读
+          - generic [ref=e129]:
+            - button "模型：LongCat-2.0" [ref=e131] [cursor=pointer]:
+              - generic [ref=e132]: LongCat-2.0
+              - generic [ref=e133]: 思考
+            - generic "模型缓存与上下文用量" [ref=e136]:
+              - meter "最近一次模型请求缓存命中 8,448 / 8,649 输入令牌（97.7%）" [ref=e137]:
+                - generic [ref=e138]: 缓存
+                - strong [ref=e139]: 98%
+              - meter "上下文已使用 8,649 / 1,048,576 令牌（0.8%）；最近一次模型请求" [ref=e140]:
+                - generic [ref=e141]: 令牌
+                - strong [ref=e142]: 1%
+            - button "发送消息" [disabled] [ref=e143]
+    - generic [ref=e146]:
+      - generic [ref=e149]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e150] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  145 | ): readonly unknown[] {
+  146 |   return arrayValue(plan["messages"], `${label} messages`).flatMap((raw, index) => {
+  147 |     const message = jsonObject(raw, `${label} message ${index + 1}`);
+  148 |     return message["role"] === "tool" && message["toolCallId"] === callId
+  149 |       ? [JSON.parse(messageContent(message["content"])) as unknown]
+  150 |       : [];
+  151 |   });
+  152 | }
+  153 | 
+  154 | export function auditStandardLiveTaskDetailReadbackSession(
+  155 |   eventLogPath: string,
+  156 |   messagePath: string,
+  157 |   rootSessionId: string,
+  158 |   workspaceInput: string,
+  159 | ): StandardLiveTaskDetailReadbackAudit {
+  160 |   const contract = STANDARD_LIVE_TASK_DETAIL_READBACK_CASE;
+  161 |   const scenario = STANDARD_LIVE_TASK_DETAIL_READBACK_SCENARIO;
+  162 |   const workspace = resolve(workspaceInput);
+  163 |   const taskStatePath = join(workspace, ".longcat-harness", "tools", "sessions", rootSessionId, "interaction.json");
+  164 |   const data = commonAudit(eventLogPath, messagePath, rootSessionId);
+  165 |   try {
+  166 |     assert.deepEqual(data.childSessionIds, [], "the task-detail Case must not create child Agents");
+  167 |     const rootEvents = data.events.filter((event) => event.session_id === rootSessionId);
+  168 |     assert.deepEqual(rootEvents.filter((event) => event.type === "subagent.created"), [],
+  169 |       "the task-detail Case persisted a child-Agent event");
+  170 |     assert.deepEqual(rootEvents.filter((event) => event.type.startsWith("permission.approval.")), [],
+  171 |       "the task-detail Case unexpectedly entered approval");
+  172 |     assert.deepEqual(rootEvents.filter((event) => event.type === "host.question" || event.type === "host.question.answered"), [],
+  173 |       "the task-detail Case unexpectedly asked the user a question");
+  174 | 
+  175 |     const createdEvents = rootEvents.filter((event) => event.type === "session.created");
+  176 |     assert.equal(createdEvents.length, 1, "the task-detail Case has no unique session creation fact");
+  177 |     const createdSession = payload(eventLogPath, createdEvents[0]!);
+  178 |     assert.equal(createdSession["mode"], "standard", "the task-detail Case persisted the wrong Mode");
+  179 |     assert.equal(createdSession["workspace"], workspace, "the task-detail Case persisted the wrong workspace");
+  180 |     assert.equal(createdSession["permissionMode"], "read-only", "the task-detail Case persisted the wrong permission mode");
+  181 | 
+  182 |     const inputs = data.database.prepare(`
+  183 |       SELECT input_id, content, claimed_by_turn_id FROM inputs
+  184 |       WHERE session_id = ? ORDER BY admission_seq
+  185 |     `).all(rootSessionId) as unknown as readonly {
+  186 |       readonly input_id: string;
+  187 |       readonly content: string;
+  188 |       readonly claimed_by_turn_id: string | null;
+  189 |     }[];
+  190 |     assert.equal(inputs.length, 1, "the task-detail Case must persist exactly one input");
+  191 |     assert.equal(inputs[0]!.content, scenario.prompt, "the task-detail durable input changed");
+  192 |     assert.equal(typeof inputs[0]!.claimed_by_turn_id, "string", "the task-detail input was not claimed by a Turn");
+  193 |     const turnId = inputs[0]!.claimed_by_turn_id!;
+  194 | 
+  195 |     const turns = data.database.prepare(`
+  196 |       SELECT turn_id, trigger_input_id, kind, state_json FROM turns
+  197 |       WHERE session_id = ? ORDER BY created_at, turn_id
+  198 |     `).all(rootSessionId) as unknown as readonly {
+  199 |       readonly turn_id: string;
+  200 |       readonly trigger_input_id: string;
+  201 |       readonly kind: string;
+  202 |       readonly state_json: string;
+  203 |     }[];
+  204 |     assert.equal(turns.length, 1, "the task-detail Case must persist exactly one Turn");
+  205 |     assert.equal(turns[0]!.turn_id, turnId, "the input points at the wrong Turn");
+  206 |     assert.equal(turns[0]!.trigger_input_id, inputs[0]!.input_id, "the Turn claimed the wrong input");
+  207 |     assert.equal(turns[0]!.kind, "completed", "the task-detail Turn did not complete");
+  208 |     const turnState = jsonObject(JSON.parse(turns[0]!.state_json), "task-detail Turn state");
+  209 |     assert.equal(jsonObject(turnState["turnOutcome"], "task-detail Turn outcome")["kind"], "completed");
+  210 |     const terminalEvents = rootEvents.filter((event) => event.turn_id === turnId
+  211 |       && (event.type === "turn.completed" || event.type === "turn.waiting" || event.type === "turn.blocked"));
+  212 |     assert.deepEqual(terminalEvents.map(({ type }) => type), ["turn.completed"], "the task-detail Case has the wrong terminal event");
+  213 | 
+  214 |     const bindings = rootEvents.filter((event) => event.turn_id === turnId && event.type === "turn.binding.committed");
+  215 |     assert.equal(bindings.length, 1, "the task-detail Case has no unique Turn binding");
+  216 |     const material = jsonObject(payload(eventLogPath, bindings[0]!)["material"], "task-detail binding material");
+  217 |     const host = jsonObject(material["host"], "task-detail Host binding");
+  218 |     assert.equal(host["workspaceRoot"], workspace, "the task-detail Turn bound the wrong workspace");
+  219 |     assert.equal(host["permissionMode"], "read-only", "the task-detail Turn bound the wrong permission mode");
+  220 |     assert.deepEqual(host["permissionRules"], [], "the task-detail Turn bound unexpected permission rules");
+  221 | 
+  222 |     const forbiddenEvents = assertNoFailures(eventLogPath, data.events, data.results);
+  223 |     assert.ok(data.calls.every(({ name }) => name === "TaskCreate" || name === "TaskGet"),
+  224 |       "the task-detail Case used a Tool outside its business scope");
+  225 |     const createCalls = data.calls.filter(({ name }) => name === "TaskCreate");
+  226 |     const getCalls = data.calls.filter(({ name }) => name === "TaskGet");
+  227 |     assert.equal(createCalls.length, 1, "the task-detail Case must create exactly one task");
+  228 |     assert.ok(getCalls.length >= 1, "the task-detail Case must reopen the created task at least once");
+  229 |     assert.equal(new Set(data.calls.map(({ callId }) => callId)).size, data.calls.length,
+  230 |       "the task-detail Case contains duplicate Tool call IDs");
+  231 |     assert.deepEqual(data.results.map(({ callId }) => callId).sort(), data.calls.map(({ callId }) => callId).sort(),
+  232 |       "the task-detail Case has an incomplete or duplicated Tool result set");
+  233 |     assert.ok(data.calls.every((call) => call.sessionId === rootSessionId && call.turnId === turnId),
+  234 |       "a task-detail Tool call escaped the evaluated Turn");
+  235 |     assert.ok(data.results.every((result) => result.sessionId === rootSessionId && result.turnId === turnId),
+  236 |       "a task-detail Tool result escaped the evaluated Turn");
+  237 |     const resultsById = new Map(data.results.map((result) => [result.callId, result]));
+  238 |     assert.equal(resultsById.size, data.results.length, "the task-detail Case contains duplicate Tool result IDs");
+  239 |     const createCall = createCalls[0]!;
+  240 |     const createResult = resultFor(resultsById, createCall);
+  241 | 
+  242 |     const createArgs = jsonObject(createCall.payload["arguments"], "TaskCreate arguments");
+  243 |     assert.equal(createArgs["subject"], scenario.subject, "TaskCreate changed the fixed subject");
+  244 |     assert.equal(createArgs["description"], scenario.description, "TaskCreate changed the fixed description");
+> 245 |     assert.deepEqual(Object.keys(createArgs).filter((key) => !["subject", "description", "metadata"].includes(key)), [],
+      |            ^ AssertionError: TaskCreate added an active form or unknown field
+  246 |       "TaskCreate added an active form or unknown field");
+  247 |     if (createArgs["metadata"] !== undefined) assert.deepEqual(createArgs["metadata"], {}, "TaskCreate added metadata");
+  248 |     const createValue = jsonObject(createResult.payload["canonicalValue"], "TaskCreate canonical value");
+  249 |     const createdTask = storedTask(createValue["task"], "created task");
+  250 |     assert.equal(createdTask.updatedAt, createdTask.createdAt, "the newly created task has already been updated");
+  251 |     assert.deepEqual({
+  252 |       id: createdTask.id,
+  253 |       subject: createdTask.subject,
+  254 |       description: createdTask.description,
+  255 |       status: createdTask.status,
+  256 |       metadata: createdTask.metadata,
+  257 |       blocks: createdTask.blocks,
+  258 |       blockedBy: createdTask.blockedBy,
+  259 |     }, {
+  260 |       id: "1",
+  261 |       subject: scenario.subject,
+  262 |       description: scenario.description,
+  263 |       status: "pending",
+  264 |       metadata: {},
+  265 |       blocks: [],
+  266 |       blockedBy: [],
+  267 |     }, "TaskCreate returned the wrong initial task");
+  268 |     for (const getCall of getCalls) {
+  269 |       const getArgs = jsonObject(getCall.payload["arguments"], `TaskGet ${getCall.callId} arguments`);
+  270 |       assert.deepEqual(getArgs, { taskId: createdTask.id }, "TaskGet did not use the ID returned by TaskCreate");
+  271 |       const getResult = resultFor(resultsById, getCall);
+  272 |       const readBackTask = storedTask(getResult.payload["canonicalValue"], `TaskGet ${getCall.callId} canonical value`);
+  273 |       assert.deepEqual(readBackTask, createdTask, "TaskGet returned details that differ from TaskCreate");
+  274 |     }
+  275 |     const interaction = jsonObject(JSON.parse(readFileSync(taskStatePath, "utf8")), "interaction task state");
+  276 |     assert.deepEqual(Object.keys(interaction).sort(), ["findings", "tasks", "todos"],
+  277 |       "the interaction state has unexpected fields");
+  278 |     assert.deepEqual(interaction["findings"], [], "the task-detail Case persisted findings");
+  279 |     assert.deepEqual(interaction["todos"], [], "the task-detail Case persisted legacy todos");
+  280 |     const stateTasks = arrayValue(interaction["tasks"], "interaction tasks");
+  281 |     assert.equal(stateTasks.length, 1, "the task-detail Case persisted more or fewer than one task");
+  282 |     assert.deepEqual(storedTask(stateTasks[0], "persisted interaction task"), createdTask,
+  283 |       "the task state file disagrees with TaskCreate and TaskGet");
+  284 | 
+  285 |     const plans = canonicalModelRequestPlans(eventLogPath, rootEvents, rootSessionId);
+  286 |     const modelEvents = rootEvents.filter((event) => event.turn_id === turnId && event.type === "model.completed");
+  287 |     const planForModel = (event: EventRow): { readonly event: EventRow; readonly plan: Readonly<Record<string, unknown>> } => {
+  288 |       const request = jsonObject(payload(eventLogPath, event)["request"], `model.completed #${event.seq} request`);
+  289 |       const matches = plans.filter(({ plan }) => plan["planId"] === request["planId"]
+  290 |         && plan["requestHash"] === request["requestHash"]);
+  291 |       assert.equal(matches.length, 1, `model.completed #${event.seq} has no unique canonical request plan`);
+  292 |       assert.equal(matches[0]!.event.turn_id, turnId, `model.completed #${event.seq} used another Turn's request plan`);
+  293 |       assert.ok(matches[0]!.event.seq < event.seq, `model.completed #${event.seq} preceded its request plan`);
+  294 |       return matches[0]!;
+  295 |     };
+  296 |     for (const event of modelEvents) planForModel(event);
+  297 |     const modelToolCalls = modelEvents.flatMap((event) => arrayValue(
+  298 |       payload(eventLogPath, event)["toolCalls"], `model.completed #${event.seq} Tool calls`,
+  299 |     ).map((raw, index) => ({ event, value: jsonObject(raw, `model Tool ${index + 1}`) })));
+  300 |     assert.deepEqual(modelToolCalls.map(({ value }) => value["id"]).sort(), data.calls.map(({ callId }) => callId).sort(),
+  301 |       "the model Tool decisions and durable calls are not one-to-one");
+  302 |     const decisionFor = (call: ToolFact): EventRow => {
+  303 |       const matches = modelToolCalls.filter(({ value }) => value["id"] === call.callId && value["name"] === call.name);
+  304 |       assert.equal(matches.length, 1, `${call.name} has no unique model decision`);
+  305 |       assert.deepEqual(parsedArguments(matches[0]!.value["arguments"], `${call.name} model arguments`),
+  306 |         call.payload["arguments"], `${call.name} arguments changed after the model response`);
+  307 |       return matches[0]!.event;
+  308 |     };
+  309 |     const createDecision = decisionFor(createCall);
+  310 |     assert.ok(createDecision.seq < createCall.seq, "TaskCreate ran before its model decision");
+  311 |     const initialPlan = planForModel(createDecision);
+  312 |     assertTurnInputOverlay(eventLogPath, rootEvents, initialPlan.event, initialPlan.plan, scenario.prompt,
+  313 |       "TaskCreate model request");
+  314 |     for (const getCall of getCalls) {
+  315 |       const getDecision = decisionFor(getCall);
+  316 |       const getPlan = planForModel(getDecision);
+  317 |       assert.deepEqual(toolMessageValues(getPlan.plan, createCall.callId, `TaskGet ${getCall.callId} request plan`),
+  318 |         [createResult.payload["canonicalValue"]], "TaskGet was decided without the complete TaskCreate result");
+  319 |       assert.ok(createResult.seq < getPlan.event.seq && getPlan.event.seq < getDecision.seq,
+  320 |         "TaskCreate result did not causally precede the TaskGet decision");
+  321 |     }
+  322 |     const allActions = rootEvents.filter((event) => event.turn_id === turnId && event.type === "action.plan.committed")
+  323 |       .filter((event) => typeof payload(eventLogPath, event)["traceEventId"] !== "string")
+  324 |       .flatMap((event) => arrayValue(payload(eventLogPath, event)["actions"], `action plan #${event.seq}`));
+  325 |     assert.deepEqual(allActions.map((raw) => jsonObject(jsonObject(raw, "task action")["intent"], "task intent")["callId"]).sort(),
+  326 |       data.calls.map(({ callId }) => callId).sort(), "task action intents and durable calls are not one-to-one");
+  327 |     const permissionEvents = rootEvents.filter((event) => event.turn_id === turnId && event.type === "permission.decision");
+  328 |     assert.deepEqual(permissionEvents.map((event) => jsonObject(payload(eventLogPath, event)["execution"], "permission execution")["callId"]).sort(),
+  329 |       data.calls.map(({ callId }) => callId).sort(), "task permission decisions and durable calls are not one-to-one");
+  330 |     for (const type of ["tool.dispatch.started", "tool.raw_result"] as const) {
+  331 |       assert.deepEqual(rootEvents.filter((event) => event.turn_id === turnId && event.type === type)
+  332 |         .map((event) => payload(eventLogPath, event)["callId"]).sort(), data.calls.map(({ callId }) => callId).sort(),
+  333 |       `${type} facts and task-detail calls are not one-to-one`);
+  334 |     }
+  335 | 
+  336 |     for (const call of data.calls) {
+  337 |       const result = resultFor(resultsById, call);
+  338 |       assert.equal(call.payload["nestingDepth"], 0, `${call.name} was not a direct model Tool call`);
+  339 |       assert.equal(call.payload["parentCallId"], undefined, `${call.name} unexpectedly has a parent call`);
+  340 |       assert.equal(result.name, call.name, `${call.name} changed name before its result`);
+  341 |       assert.equal(result.payload["status"], "succeeded", `${call.name} did not succeed`);
+  342 |       assert.equal(result.payload["isError"], false, `${call.name} was marked as an error`);
+  343 | 
+  344 |       const actionPlans = rootEvents
+  345 |         .filter((event) => event.turn_id === turnId && event.type === "action.plan.committed")
+```

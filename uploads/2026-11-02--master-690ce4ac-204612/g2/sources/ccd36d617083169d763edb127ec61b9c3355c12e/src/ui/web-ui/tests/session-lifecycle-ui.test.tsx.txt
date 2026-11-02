@@ -1,0 +1,136 @@
+import { describe, expect, it } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
+import { SessionIdentity, sessionCanStop, sessionSummaryAfterEvent } from "../client/App.js";
+import type { WebEvent, WebSessionSummary } from "../shared/protocol.js";
+
+const createdAt = "2026-09-01T10:00:00.000Z";
+
+describe("session lifecycle UI", () => {
+  it("keeps cancellation available for a restored question without marking it as running", () => {
+    expect(sessionCanStop("waiting", false, true)).toBe(true);
+    expect(sessionCanStop("running", true, false)).toBe(true);
+    expect(sessionCanStop("waiting", true, false)).toBe(true);
+    expect(sessionCanStop("waiting", false, false)).toBe(false);
+    for (const status of ["idle", "completed", "blocked", "failed", "interrupted"] as const) {
+      expect(sessionCanStop(status, false, true)).toBe(false);
+    }
+  });
+  it("shows the full session ID in a copy control", () => {
+    const sessionId = "session_a5e33c90-7fa4-42df-b48c-9b02071dbf86";
+    const html = renderToStaticMarkup(<SessionIdentity sessionId={sessionId} />);
+    expect(html).toContain(sessionId);
+    expect(html).toContain(`复制会话 ID ${sessionId}`);
+    expect(html).toContain("session-identity");
+  });
+  it.each(["completed", "waiting"] as const)("updates a running session when the host reports %s", (status) => {
+    const session: WebSessionSummary = {
+      id: "session-1",
+      title: "后台会话",
+      workspace: "/tmp/workspace",
+      model: "glm-5.2",
+      mode: "standard",
+      createdAt,
+      updatedAt: createdAt,
+      status: "running",
+      sessionStatus: { kind: "active" },
+      turnCount: 1,
+      lastCursor: 10,
+      permissionMode: "danger-full-access",
+      pinned: false,
+      archived: false,
+      blank: false,
+    };
+    const completedAt = "2026-09-01T10:01:00.000Z";
+    const event: WebEvent = {
+      cursor: 11,
+      eventId: "event-11",
+      sessionId: session.id,
+      sourceSessionId: session.id,
+      turnId: "run-1",
+      type: "ui.session.status.changed",
+      payload: { status },
+      payloadHash: "hash",
+      traceId: null,
+      createdAt: completedAt,
+      sessionUpdatedAt: completedAt,
+    };
+
+    expect(sessionSummaryAfterEvent(session, event)).toMatchObject({
+      status,
+      updatedAt: completedAt,
+      lastCursor: 11,
+    });
+  });
+
+  it("keeps the session running at a per-Turn completion boundary", () => {
+    const session = {
+      id: "session-with-queued-input",
+      status: "running",
+      updatedAt: createdAt,
+      lastCursor: 10,
+    } as WebSessionSummary;
+    const event = {
+      cursor: 11,
+      sessionId: session.id,
+      sourceSessionId: session.id,
+      type: "turn.completed",
+      payload: {},
+      sessionUpdatedAt: createdAt,
+    } as WebEvent;
+
+    expect(sessionSummaryAfterEvent(session, event).status).toBe("running");
+  });
+
+  it.each([
+    ["root-session", "user_input", "waiting"],
+    ["child-session", "user_input", "running"],
+    ["root-session", "subagent", "running"],
+  ])("projects only root user-input waits (%s, %s)", (sourceSessionId, kind, status) => {
+    const session = { id: "root-session", status: "running", updatedAt: createdAt, lastCursor: 10 } as WebSessionSummary;
+    const event: WebEvent = { cursor: 11, eventId: "wait-11", sessionId: session.id, sourceSessionId, type: "turn.waiting", payload: { expectations: [{ kind }] }, payloadHash: "hash", traceId: null, createdAt };
+    expect(sessionSummaryAfterEvent(session, event).status).toBe(status);
+  });
+
+  it("stops a stale running session when crash recovery interrupts its run", () => {
+    const session = {
+      id: "crashed-session",
+      status: "running",
+      updatedAt: createdAt,
+      lastCursor: 10,
+    } as WebSessionSummary;
+    const event: WebEvent = {
+      cursor: 11,
+      eventId: "event-crash",
+      sessionId: session.id,
+      sourceSessionId: session.id,
+      turnId: "run-crash",
+      type: "turn.interrupted",
+      payload: { cause: "process_crash" },
+      payloadHash: "hash",
+      traceId: null,
+      createdAt,
+      sessionUpdatedAt: createdAt,
+    };
+
+    expect(sessionSummaryAfterEvent(session, event)).toMatchObject({ status: "interrupted", sessionStatus: { kind: "idle" } });
+  });
+
+  it("does not let a descendant completion event finish the root session", () => {
+    const session = {
+      id: "root-session",
+      status: "running",
+      updatedAt: createdAt,
+      lastCursor: 10,
+    } as WebSessionSummary;
+    const event = {
+      cursor: 11,
+      sessionId: session.id,
+      sourceSessionId: "child-session",
+      type: "turn.completed",
+      payload: {},
+      sessionUpdatedAt: createdAt,
+    } as WebEvent;
+
+    expect(sessionSummaryAfterEvent(session, event).status).toBe("running");
+  });
+});

@@ -1,0 +1,6 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/cases/live-goal-pause-resume.ts
+    };
+    const question = page.getByRole("region", { name: "等待回答", exact: true });
+    await expect(question).toBeVisible({ timeout: 180_000 }); await expect(question.getByRole("radio", { name: /^允许/u })).toBeVisible();
+    expect(existsSync(join(env.workspace, GOAL_TASK.file))).toBe(false);

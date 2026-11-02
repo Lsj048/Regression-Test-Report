@@ -1,0 +1,486 @@
+import { randomUUID } from "node:crypto";
+import { ProviderError, errorMessage } from "../../api/foundation/errors.js";
+import { assertJsonValue, type JsonObject, type JsonValue } from "../../api/foundation/json.js";
+import { newId } from "../../api/foundation/id.js";
+import {
+  hasRepeatedReasoningAt,
+  REPETITIVE_REASONING_TERMINATION,
+  REASONING_REPETITION_CHECK_INTERVAL_CHARS,
+  REASONING_REPETITION_MIN_CHARS,
+} from "../../api/model/metadata.js";
+import type {
+  ChatMessage,
+  ModelOutcome,
+  ModelProvider,
+  ModelRequestPlan,
+  ModelToolCall,
+  ProviderStreamEvent,
+  TokenUsage,
+} from "../../api/model/types.js";
+
+type Fetch = typeof globalThis.fetch;
+
+export interface OpenAIChatProviderOptions {
+  readonly baseUrl: string;
+  readonly apiKey?: string;
+  readonly headers?: Readonly<Record<string, string>>;
+  readonly fetch?: Fetch;
+}
+
+interface ToolAccumulator {
+  id: string;
+  name: string;
+  arguments: string;
+}
+
+interface RecoveredLongCatCalls {
+  readonly text: string;
+  readonly calls: readonly ModelToolCall[];
+}
+
+const longCatToolBlock = /<longcat_tool_call>([\s\S]*?)<\/longcat_tool_call>/gu;
+const longCatArgument = /<longcat_arg_key>([\s\S]*?)<\/longcat_arg_key>\s*<longcat_arg_value>([\s\S]*?)<\/longcat_arg_value>/gu;
+
+const LONGCAT_TOOL_OPEN = "<longcat_tool_call>";
+const LONGCAT_TOOL_CLOSE = "</longcat_tool_call>";
+
+interface LongCatToolBlockScan {
+  scannedTo: number;
+  lastOpen: number;
+  lastClose: number;
+}
+
+function advanceLongCatToolBlockScan(reasoning: string, end: number, scan: LongCatToolBlockScan): boolean {
+  // Only exclude open argument text from reasoning-loop detection; never decode or execute it.
+  const overlap = Math.max(LONGCAT_TOOL_OPEN.length, LONGCAT_TOOL_CLOSE.length) - 1;
+  const searchStart = Math.max(0, scan.scannedTo - overlap);
+  const segment = reasoning.slice(searchStart, end);
+  const updateLast = (tag: string, previous: number): number => {
+    let last = previous;
+    let relative = segment.indexOf(tag);
+    while (relative >= 0) {
+      last = Math.max(last, searchStart + relative);
+      relative = segment.indexOf(tag, relative + 1);
+    }
+    return last;
+  };
+  scan.lastOpen = updateLast(LONGCAT_TOOL_OPEN, scan.lastOpen);
+  scan.lastClose = updateLast(LONGCAT_TOOL_CLOSE, scan.lastClose);
+  scan.scannedTo = end;
+  return scan.lastOpen > scan.lastClose;
+}
+
+function decodeXmlText(value: string): string {
+  return value.replace(/&#(x[0-9a-f]+|[0-9]+);|&(amp|lt|gt|quot|apos);/giu, (match, numeric: string | undefined, named: string | undefined) => {
+    if (numeric) {
+      const radix = numeric[0]?.toLowerCase() === "x" ? 16 : 10;
+      const point = Number.parseInt(radix === 16 ? numeric.slice(1) : numeric, radix);
+      return Number.isFinite(point) ? String.fromCodePoint(point) : match;
+    }
+    return ({ amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" } as const)[named?.toLowerCase() as "amp" | "lt" | "gt" | "quot" | "apos"] ?? match;
+  });
+}
+
+function parseLongCatArgument(value: string): JsonValue {
+  const decoded = decodeXmlText(value.trim());
+  try {
+    const parsed: unknown = JSON.parse(decoded);
+    assertJsonValue(parsed, "longcat_tool_call.argument");
+    return parsed;
+  } catch {
+    return decoded;
+  }
+}
+
+function recoverLongCatCalls(text: string, allowedNames: ReadonlySet<string>): RecoveredLongCatCalls {
+  const calls: ModelToolCall[] = [];
+  const cleaned = text.replace(longCatToolBlock, (block, rawBody: string) => {
+    const nameMatch = /^\s*([^\s<]+)([\s\S]*)$/u.exec(rawBody);
+    if (!nameMatch) return block;
+    const name = decodeXmlText(nameMatch[1]!.trim());
+    if (!allowedNames.has(name)) return block;
+    const body = nameMatch[2] ?? "";
+    const args: Record<string, JsonValue> = {};
+    let pairs = 0;
+    const remainder = body.replace(longCatArgument, (_pair, rawKey: string, rawValue: string) => {
+      const key = decodeXmlText(rawKey.trim());
+      if (!key || Object.hasOwn(args, key)) return _pair;
+      args[key] = parseLongCatArgument(rawValue);
+      pairs += 1;
+      return "";
+    });
+    if (remainder.trim() !== "" || (body.trim() !== "" && pairs === 0)) return block;
+    calls.push({ id: `call_${randomUUID()}`, name, arguments: JSON.stringify(args) });
+    return "";
+  });
+  return { text: cleaned.trim(), calls: Object.freeze(calls) };
+}
+
+const ownedBodyFields = new Set(["model", "messages", "tools", "tool_choice", "stream", "stream_options", "max_tokens", "temperature", "top_p", "seed", "reasoning_effort"]);
+
+function lowerContent(content: string | readonly import("../../api/model/types.js").ContentBlock[]): JsonValue {
+  if (typeof content === "string") return content;
+  return content.map((block) => block.type === "text"
+    ? { type: "text", text: block.text }
+    : { type: "image_url", image_url: { url: block.imageUrl, ...(block.detail === undefined ? {} : { detail: block.detail }) } });
+}
+
+function lowerMessage(message: ChatMessage): JsonValue {
+  switch (message.role) {
+    case "system": return { role: "system", content: message.content };
+    case "user": return { role: "user", content: lowerContent(message.content) };
+    case "tool": return { role: "tool", tool_call_id: message.toolCallId, content: lowerContent(message.content) };
+    case "assistant":
+      return {
+        role: "assistant",
+        content: message.content,
+        ...(message.reasoningContent === undefined ? {} : { reasoning_content: message.reasoningContent }),
+        ...(message.toolCalls === undefined ? {} : {
+          tool_calls: message.toolCalls.map((call) => ({
+            id: call.id,
+            type: "function",
+            function: { name: call.name, arguments: call.arguments },
+          })),
+        }),
+      };
+  }
+}
+
+const OPENAI_CHAT_PROVIDER_BINDING = Object.freeze({
+  apiVersion: "model-provider-binding.longcat/v1" as const,
+  id: "openai-chat",
+  version: "1.0.0",
+});
+
+function bodyFor(plan: ModelRequestPlan): JsonObject {
+  const extensions: JsonObject = {};
+  for (const [key, value] of Object.entries(plan.providerOptions ?? {})) {
+    if (ownedBodyFields.has(key)) throw new ProviderError(`providerOptions cannot override protocol-owned field ${key}`, "PROVIDER_OPTIONS_CONFLICT", false);
+    extensions[key] = value;
+  }
+  return {
+    ...extensions,
+    model: plan.model,
+    messages: plan.messages.map(lowerMessage),
+    tools: plan.tools.map((tool) => ({ type: "function", function: tool as unknown as JsonValue })),
+    tool_choice: plan.toolChoice as JsonValue,
+    stream: true,
+    stream_options: { include_usage: true },
+    ...(plan.maxOutputTokens === undefined ? {} : { max_tokens: plan.maxOutputTokens }),
+    ...(plan.temperature === undefined ? {} : { temperature: plan.temperature }),
+    ...(plan.topP === undefined ? {} : { top_p: plan.topP }),
+    ...(plan.seed === undefined ? {} : { seed: plan.seed }),
+    ...(plan.reasoningEffort === undefined ? {} : { reasoning_effort: plan.reasoningEffort }),
+  };
+}
+
+function mapFinishReason(reason: unknown): ModelOutcome["finishReason"] {
+  switch (reason) {
+    case "stop": return "stop";
+    case "tool_calls": return "tool_calls";
+    case "length": return "length";
+    case "content_filter": return "content_filter";
+    default: return "unknown";
+  }
+}
+
+function usageFrom(value: unknown): TokenUsage {
+  if (!value || typeof value !== "object") return {};
+  const usage = value as Record<string, unknown>;
+  const details = usage["completion_tokens_details"] && typeof usage["completion_tokens_details"] === "object"
+    ? usage["completion_tokens_details"] as Record<string, unknown>
+    : {};
+  const promptDetails = usage["prompt_tokens_details"] && typeof usage["prompt_tokens_details"] === "object"
+    ? usage["prompt_tokens_details"] as Record<string, unknown>
+    : {};
+  return {
+    ...(typeof usage["prompt_tokens"] === "number" ? { promptTokens: usage["prompt_tokens"] } : {}),
+    ...(typeof usage["completion_tokens"] === "number" ? { completionTokens: usage["completion_tokens"] } : {}),
+    ...(typeof details["reasoning_tokens"] === "number" ? { reasoningTokens: details["reasoning_tokens"] } : {}),
+    ...(typeof promptDetails["cached_tokens"] === "number" ? { cachedTokens: promptDetails["cached_tokens"] } : {}),
+    ...(typeof usage["total_tokens"] === "number" ? { totalTokens: usage["total_tokens"] } : {}),
+  };
+}
+
+function retryAfterMs(headers: Headers): number | undefined {
+  const value = headers.get("retry-after");
+  if (!value) return undefined;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.ceil(seconds * 1_000);
+  const date = Date.parse(value);
+  if (!Number.isFinite(date)) return undefined;
+  return Math.max(0, date - Date.now());
+}
+
+async function* sseData(response: Response, stallMs: number, controller: AbortController): AsyncGenerator<string> {
+  if (!response.body) throw new ProviderError("Provider returned an empty HTTP body", "PROVIDER_EMPTY_BODY", true);
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let dataLines: string[] = [];
+
+  const nextChunk = async (): Promise<ReadableStreamReadResult<Uint8Array>> => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        reader.read(),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => {
+            const error = new ProviderError("Provider stream stalled", "PROVIDER_CHUNK_STALL", true);
+            controller.abort(error);
+            reject(error);
+          }, stallMs);
+        }),
+      ]);
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+  };
+
+  try {
+    while (true) {
+      const { done, value } = await nextChunk();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let newline: number;
+      while ((newline = buffer.indexOf("\n")) >= 0) {
+        const line = buffer.slice(0, newline).replace(/\r$/u, "");
+        buffer = buffer.slice(newline + 1);
+        if (line === "") {
+          if (dataLines.length > 0) yield dataLines.join("\n");
+          dataLines = [];
+        } else if (line.startsWith("data:")) {
+          dataLines.push(line.slice(5).trimStart());
+        }
+      }
+    }
+    buffer += decoder.decode();
+    const finalLine = buffer.replace(/\r?\n$/u, "");
+    if (finalLine.startsWith("data:")) dataLines.push(finalLine.slice(5).trimStart());
+    if (dataLines.length > 0) yield dataLines.join("\n");
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+export class OpenAIChatProvider implements ModelProvider {
+  readonly binding = OPENAI_CHAT_PROVIDER_BINDING;
+  readonly #fetch: Fetch;
+
+  constructor(private readonly options: OpenAIChatProviderOptions) {
+    if (!options.baseUrl) throw new ProviderError("Provider baseUrl is required", "PROVIDER_CONFIG_INVALID", false);
+    this.#fetch = options.fetch ?? globalThis.fetch;
+  }
+
+  async invoke(
+    plan: ModelRequestPlan,
+    options: {
+      readonly signal?: AbortSignal;
+      readonly onEvent?: (event: ProviderStreamEvent) => Promise<void> | void;
+    },
+  ): Promise<ModelOutcome> {
+    const requestController = new AbortController();
+    const signals = [requestController.signal, ...(options.signal ? [options.signal] : [])];
+    const signal = signals.length === 1 ? signals[0]! : AbortSignal.any(signals);
+    const absoluteTimer = setTimeout(() => requestController.abort(new ProviderError("Provider request exceeded the absolute timeout", "PROVIDER_ABSOLUTE_TIMEOUT", true)), plan.timeouts.absoluteMs);
+    const headerTimer = setTimeout(() => requestController.abort(new ProviderError("Provider headers timed out", "PROVIDER_HEADER_TIMEOUT", true)), plan.timeouts.headersMs);
+    let outputCommitted = false;
+    try {
+      const requestBody = bodyFor(plan);
+      const response = await this.#fetch(`${this.options.baseUrl.replace(/\/$/u, "")}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          accept: "text/event-stream",
+          ...(this.options.apiKey ? { authorization: `Bearer ${this.options.apiKey}` } : {}),
+          ...this.options.headers,
+        },
+        body: JSON.stringify(requestBody),
+        signal,
+      });
+      clearTimeout(headerTimer);
+      if (!response.ok) {
+        const text = await response.text();
+        throw new ProviderError(
+          `Provider HTTP ${response.status}: ${text.slice(0, 2_000)}`,
+          `PROVIDER_HTTP_${response.status}`,
+          response.status === 408 || response.status === 409 || response.status === 429 || response.status >= 500,
+          false,
+          (() => {
+            const delay = retryAfterMs(response.headers);
+            return delay === undefined ? {} : { retryAfterMs: delay };
+          })(),
+        );
+      }
+
+      let reasoning = "";
+      let content = "";
+      let finishReason: ModelOutcome["finishReason"] | undefined;
+      let usage: TokenUsage = {};
+      let eventCount = 0;
+      let responseId: string | undefined;
+      let doneMarker = false;
+      let repetitiveReasoning = false;
+      let nextRepetitionCheckAt = REASONING_REPETITION_MIN_CHARS;
+      const longCatToolBlockScan: LongCatToolBlockScan = { scannedTo: 0, lastOpen: -1, lastClose: -1 };
+      const calls = new Map<number, ToolAccumulator>();
+
+      stream:
+      for await (const data of sseData(response, plan.timeouts.chunkStallMs, requestController)) {
+        if (data === "[DONE]") {
+          doneMarker = true;
+          continue;
+        }
+        eventCount += 1;
+        let value: unknown;
+        try {
+          value = JSON.parse(data);
+        } catch (error) {
+          throw new ProviderError("Provider emitted malformed SSE JSON", "PROVIDER_SSE_JSON", false, outputCommitted, { cause: error });
+        }
+        assertJsonValue(value, "provider.event");
+        if (value === null || Array.isArray(value) || typeof value !== "object") throw new ProviderError("Provider event must be an object", "PROVIDER_SSE_SHAPE", false, outputCommitted);
+        const record = value as Record<string, JsonValue>;
+        if (typeof record["id"] === "string") responseId = record["id"];
+        if (record["usage"] !== undefined) {
+          usage = usageFrom(record["usage"]);
+          await options.onEvent?.({ kind: "usage", usage });
+        }
+        const choices = record["choices"];
+        if (!Array.isArray(choices)) continue;
+        for (const rawChoice of choices) {
+          if (!rawChoice || Array.isArray(rawChoice) || typeof rawChoice !== "object") continue;
+          const choice = rawChoice as Record<string, JsonValue>;
+          const choiceFinishReason = choice["finish_reason"] === null || choice["finish_reason"] === undefined
+            ? undefined
+            : mapFinishReason(choice["finish_reason"]);
+          const delta = choice["delta"];
+          if (!delta || Array.isArray(delta) || typeof delta !== "object") {
+            if (choiceFinishReason !== undefined) {
+              finishReason = choiceFinishReason;
+              await options.onEvent?.({ kind: "finish", reason: finishReason });
+            }
+            continue;
+          }
+          const d = delta as Record<string, JsonValue>;
+          if (typeof d["reasoning_content"] === "string" && d["reasoning_content"] !== "") {
+            reasoning += d["reasoning_content"];
+            outputCommitted = true;
+            await options.onEvent?.({ kind: "reasoning_delta", text: d["reasoning_content"] });
+          }
+          if (typeof d["content"] === "string" && d["content"] !== "") {
+            content += d["content"];
+            outputCommitted = true;
+            await options.onEvent?.({ kind: "content_delta", text: d["content"] });
+          }
+          const toolCalls = d["tool_calls"];
+          if (Array.isArray(toolCalls)) {
+            for (const rawCall of toolCalls) {
+              if (!rawCall || Array.isArray(rawCall) || typeof rawCall !== "object") continue;
+              const call = rawCall as Record<string, JsonValue>;
+              const index = typeof call["index"] === "number" ? call["index"] : 0;
+              const existing = calls.get(index) ?? { id: "", name: "", arguments: "" };
+              if (typeof call["id"] === "string") {
+                if (existing.id && existing.id !== call["id"]) throw new ProviderError(`Conflicting tool call ids at index ${index}`, "PROVIDER_TOOL_CALL_CONFLICT", false, outputCommitted);
+                existing.id = call["id"];
+              }
+              const fn = call["function"];
+              let name: string | undefined;
+              let argumentsDelta: string | undefined;
+              if (fn && !Array.isArray(fn) && typeof fn === "object") {
+                const functionRecord = fn as Record<string, JsonValue>;
+                if (typeof functionRecord["name"] === "string") name = functionRecord["name"];
+                if (typeof functionRecord["arguments"] === "string") argumentsDelta = functionRecord["arguments"];
+              }
+              if (name) existing.name += name;
+              if (argumentsDelta) existing.arguments += argumentsDelta;
+              calls.set(index, existing);
+              outputCommitted = true;
+              await options.onEvent?.({
+                kind: "tool_call_delta",
+                index,
+                ...(typeof call["id"] === "string" ? { id: call["id"] } : {}),
+                ...(name ? { name } : {}),
+                ...(argumentsDelta ? { arguments: argumentsDelta } : {}),
+              });
+            }
+          }
+          if (finishReason === undefined && content === "" && calls.size === 0) {
+            while (reasoning.length >= nextRepetitionCheckAt) {
+              const checkAt = nextRepetitionCheckAt;
+              nextRepetitionCheckAt += REASONING_REPETITION_CHECK_INTERVAL_CHARS;
+              if (!advanceLongCatToolBlockScan(reasoning, checkAt, longCatToolBlockScan)
+                && hasRepeatedReasoningAt(reasoning, checkAt)) {
+                repetitiveReasoning = true;
+                finishReason = "length";
+                await options.onEvent?.({ kind: "finish", reason: finishReason });
+                requestController.abort();
+                break stream;
+              }
+            }
+          }
+          if (choiceFinishReason !== undefined) {
+            finishReason = choiceFinishReason;
+            await options.onEvent?.({ kind: "finish", reason: finishReason });
+          }
+        }
+      }
+
+      if (eventCount === 0) throw new ProviderError("Provider returned HTTP 200 without SSE data", "PROVIDER_EMPTY_STREAM", true, outputCommitted);
+      let toolCalls: ModelToolCall[] = [...calls.entries()].sort(([left], [right]) => left - right).map(([index, call]) => {
+        if (!call.id || !call.name) throw new ProviderError(`Incomplete tool call at index ${index}`, "PROVIDER_TOOL_CALL_INCOMPLETE", true, outputCommitted);
+        return { id: call.id, name: call.name, arguments: call.arguments };
+      });
+      let inferredTermination: string | undefined;
+      if (!finishReason && toolCalls.length > 0) {
+        finishReason = "tool_calls";
+        inferredTermination = "missing_finish_reason_with_complete_tool_calls";
+        await options.onEvent?.({ kind: "finish", reason: finishReason });
+      }
+      if (!finishReason) throw new ProviderError("Provider stream ended without finish_reason", "PROVIDER_MISSING_FINISH", true, outputCommitted);
+      if (!repetitiveReasoning && toolCalls.length === 0 && plan.tools.length > 0) {
+        const allowedNames = new Set(plan.tools.map((tool) => tool.name));
+        const recoveredReasoning = recoverLongCatCalls(reasoning, allowedNames);
+        const recoveredContent = recoverLongCatCalls(content, allowedNames);
+        const recoveredCalls = [...recoveredReasoning.calls, ...recoveredContent.calls];
+        if (recoveredCalls.length > 0) {
+          reasoning = recoveredReasoning.text;
+          content = recoveredContent.text;
+          toolCalls = recoveredCalls;
+          finishReason = "tool_calls";
+          await options.onEvent?.({ kind: "finish", reason: finishReason });
+        }
+      }
+      return Object.freeze({
+        outcomeId: newId("outcome"),
+        attemptId: newId("attempt"),
+        content,
+        reasoningContent: reasoning,
+        toolCalls: Object.freeze(toolCalls),
+        finishReason,
+        usage,
+        ...((responseId || repetitiveReasoning || !doneMarker || inferredTermination) ? {
+          responseMetadata: {
+            ...(responseId ? { responseId } : {}),
+            ...(repetitiveReasoning
+              ? { streamTermination: REPETITIVE_REASONING_TERMINATION }
+              : inferredTermination
+              ? { streamTermination: inferredTermination }
+              : !doneMarker ? { streamTermination: "finish_reason_without_done" } : {}),
+          },
+        } : {}),
+      });
+    } catch (error) {
+      if (error instanceof ProviderError) throw error;
+      if (signal.aborted) {
+        const reason = signal.reason;
+        if (reason instanceof ProviderError) throw new ProviderError(reason.message, reason.code, reason.recoverable, outputCommitted, { cause: error });
+        throw new ProviderError(`Provider request aborted: ${errorMessage(reason)}`, "PROVIDER_ABORTED", true, outputCommitted, { cause: error });
+      }
+      throw new ProviderError(`Provider request failed: ${errorMessage(error)}`, "PROVIDER_TRANSPORT", true, outputCommitted, { cause: error });
+    } finally {
+      clearTimeout(headerTimer);
+      clearTimeout(absoluteTimer);
+    }
+  }
+}

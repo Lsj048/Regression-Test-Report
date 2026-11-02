@@ -1,0 +1,125 @@
+import type { JsonValue } from "../../../kernel/api/foundation/json.js";
+import type { JsonSchema } from "../../../kernel/api/foundation/schema.js";
+import type { ContentBlock, ToolSchema } from "../../../kernel/api/model/types.js";
+import type { ToolDefinition, ToolPermissionTarget, ToolTurnContext } from "../../../kernel/api/tool/types.js";
+import { RESOURCE_SCOPE_ENFORCER } from "../../common/execution-constraints/resource-scope.js";
+
+const object = (
+  properties: Readonly<Record<string, JsonSchema>>,
+  required: readonly string[] = [],
+): JsonSchema => ({
+  type: "object",
+  properties,
+  ...(required.length === 0 ? {} : { required }),
+  additionalProperties: false,
+});
+
+const string = (description: string, extra: JsonSchema = {}): JsonSchema => ({ type: "string", description, ...extra });
+const boolean = (description: string): JsonSchema => ({ type: "boolean", description });
+const integer = (description: string, extra: JsonSchema = {}): JsonSchema => ({ type: "integer", description, ...extra });
+
+export const FILESYSTEM_SEARCH_TOOL_NAMES = Object.freeze(["Glob", "Grep"] as const);
+export type FilesystemSearchToolName = typeof FILESYSTEM_SEARCH_TOOL_NAMES[number];
+
+export const FILESYSTEM_SEARCH_TOOL_SCHEMAS: readonly ToolSchema[] = Object.freeze([
+  {
+    name: "Glob",
+    description: [
+      "Fast file pattern matching that works across codebases of any size.",
+      "",
+      "Usage:",
+      "- Supports patterns such as **/*.js and src/**/*.ts.",
+      "- Returns at most 100 matching absolute file paths sorted by modification time, newest first.",
+      "- Use Glob to find files by name or path pattern instead of running find through Bash.",
+      "- Narrow path to an absolute directory when the repository is large; omit it to search the current workspace root.",
+    ].join("\n"),
+    parameters: object({
+      pattern: string("Glob pattern to match files against."),
+      path: string("Absolute directory to search. Omit this field to use the current workspace root; do not pass null or undefined as text."),
+    }, ["pattern"]),
+  },
+  {
+    name: "Grep",
+    description: [
+      "A portable repository content-search Tool with regular-expression support.",
+      "",
+      "Usage:",
+      "- Use Grep for file-content searches instead of invoking grep or rg through Bash.",
+      "- Supports regular expressions such as log.*Error and function\\s+\\w+.",
+      "- Filter files with glob, or use a common file type such as js, py, rust, or go.",
+      "- output_mode=content returns matching lines; files_with_matches returns paths and is the default; count returns match counts.",
+      "- Context flags apply to content mode. head_limit limits returned entries and defaults to 250; pass 0 only when unlimited output is genuinely needed.",
+      "- In content mode, lines longer than 2000 characters are abbreviated to windows around matches. Use the returned match_ref with character_offset and character_limit to inspect one in bounded chunks.",
+      "- Results remain bounded even with head_limit=0. When nextOffset is present, repeat the search with offset=nextOffset.",
+      "- Patterns normally match one line. Set multiline=true when a pattern must span line boundaries.",
+    ].join("\n"),
+    parameters: object({
+      pattern: string("Regular-expression pattern for a new search. Omit it only when continuing a returned match_ref."),
+      path: string("File or absolute directory to search. Omit it to use the current workspace root."),
+      glob: string("Glob pattern used to filter files, such as *.js or *.{ts,tsx}."),
+      output_mode: string("content shows matching lines; files_with_matches shows file paths and is the default; count shows match counts.", { enum: ["content", "files_with_matches", "count"] }),
+      "-B": integer("Lines to show before each match in content mode; ignored in other modes.", { minimum: 0 }),
+      "-A": integer("Lines to show after each match in content mode; ignored in other modes.", { minimum: 0 }),
+      "-C": integer("Lines before and after each match.", { minimum: 0 }),
+      context: integer("Alias for -C. Applies only in content mode.", { minimum: 0 }),
+      "-n": boolean("Show line numbers in content mode. Defaults to true."),
+      "-i": boolean("Perform a case-insensitive search."),
+      "-o": boolean("Print only the matched portions in content mode."),
+      type: string("Common file type to search, such as ts, py, rust, go, or java."),
+      head_limit: integer("Maximum returned lines or entries. Defaults to 250; pass 0 for all entries within the Tool's output cap.", { minimum: 0 }),
+      offset: integer("Entries to skip before applying head_limit. Defaults to 0.", { minimum: 0 }),
+      multiline: boolean("Enable matching across line boundaries, with dot also matching newlines. Defaults to false."),
+      match_ref: string("Opaque reference returned for an abbreviated long line. Provide it instead of pattern to read that line by character range."),
+      character_offset: integer("Zero-based Unicode character offset when continuing match_ref. Defaults to 0.", { minimum: 0 }),
+      character_limit: integer("Maximum characters to return when continuing match_ref. Defaults to 2000; pass 0 for the largest safe chunk.", { minimum: 0 }),
+    }),
+  },
+]);
+
+const schemaByName = new Map(FILESYSTEM_SEARCH_TOOL_SCHEMAS.map((schema) => [schema.name, schema]));
+
+function text(value: JsonValue): readonly ContentBlock[] {
+  return [{ type: "text", text: typeof value === "string" ? value : JSON.stringify(value) }];
+}
+
+export function filesystemSearchTool(
+  name: FilesystemSearchToolName,
+  options: {
+    readonly execute: (args: JsonValue, context: ToolTurnContext) => Promise<JsonValue>;
+    readonly permission: (args: JsonValue) => ToolPermissionTarget;
+    readonly parallel?: boolean;
+    readonly render?: (args: JsonValue, value: JsonValue) => readonly ContentBlock[];
+  },
+): ToolDefinition {
+  const schema = schemaByName.get(name);
+  if (schema === undefined) throw new Error(`Unknown filesystem search Tool schema: ${name}`);
+  return Object.freeze({
+    ...schema,
+    constraintEnforcers: [RESOURCE_SCOPE_ENFORCER],
+    output: { schema: {}, render: options.render ?? ((_args: JsonValue, value: JsonValue) => text(value)) },
+    execute: options.execute,
+    permission: options.permission,
+    ...(options.parallel === undefined ? {} : { isConcurrencySafe: () => options.parallel === true }),
+  });
+}
+
+export function objectValue(value: JsonValue, name: string): Readonly<Record<string, JsonValue>> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(`${name} must be an object`);
+  return value as Readonly<Record<string, JsonValue>>;
+}
+
+export function stringValue(value: Readonly<Record<string, JsonValue>>, key: string): string {
+  const item = value[key];
+  if (typeof item !== "string") throw new Error(`${key} must be a string`);
+  return item;
+}
+
+export function optionalString(value: Readonly<Record<string, JsonValue>>, key: string): string | undefined {
+  const item = value[key];
+  return typeof item === "string" ? item : undefined;
+}
+
+export function optionalNumber(value: Readonly<Record<string, JsonValue>>, key: string): number | undefined {
+  const item = value[key];
+  return typeof item === "number" && Number.isFinite(item) ? item : undefined;
+}

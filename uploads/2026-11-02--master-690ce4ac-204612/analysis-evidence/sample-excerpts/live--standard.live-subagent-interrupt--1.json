@@ -1,0 +1,352 @@
+{
+  "kind": "derived-causal-event-excerpt",
+  "scope": "Selected original durable events cited by manual attribution. Reasoning text is omitted where marked. This is a readable excerpt, not a full trace or a new G1 sample.",
+  "sampleDirectory": "live/artifacts/test-results/web-regression-standard-li-675e2-running-background-observer-repeat1",
+  "sourceTrajectory": "live/artifacts/test-results/web-regression-standard-li-675e2-running-background-observer-repeat1/trajectory.jsonl.gz",
+  "sourceTrajectorySha256": "1e90d628a97299a5cce79e411f20a84a133661e8f2d846e4bf7b1651ca5a96f5",
+  "manifest": {
+    "kind": "manifest",
+    "schemaVersion": 1,
+    "sample": {
+      "caseId": "standard.live-subagent-interrupt",
+      "mode": "standard",
+      "model": {
+        "execution": "live",
+        "name": "LongCat-2.0",
+        "revision": "provider-unreported",
+        "providerBaseUrl": "https://aigc.sankuai.com/v1/openai/native",
+        "settings": {
+          "maxOutputTokens": 4096,
+          "contextWindowTokens": 1048576,
+          "temperature": 0,
+          "thinking": {
+            "enabled": true,
+            "budgetTokens": 1024
+          }
+        }
+      },
+      "repeatEachIndex": 1,
+      "retry": 0,
+      "testStatus": "failed"
+    },
+    "capturedAt": "2026-11-02T14:55:13.627Z",
+    "cleanupStartedAt": "2026-11-02T14:55:13.432Z",
+    "processesStopped": true,
+    "source": "durable SQLite facts; ordered within each table; includes cleanup events; not raw HTTP",
+    "redaction": "known credential values replaced; original payload hashes verified before redaction"
+  },
+  "complete": {
+    "kind": "complete",
+    "events": 326,
+    "turns": 2,
+    "messages": 23
+  },
+  "selectedSequences": [
+    74,
+    129,
+    141,
+    149,
+    208,
+    243,
+    304,
+    320
+  ],
+  "events": [
+    {
+      "kind": "event",
+      "seq": 74,
+      "event_id": "event_b9f695ac-105b-4547-bd34-4cd8924ed809",
+      "session_id": "session_60ab2a93-2d9f-481e-8bda-4568756f666e",
+      "turn_id": "turn_6c1daf84-9649-4a6f-8fef-5b06cb6ce634",
+      "type": "subagent.created",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 678,
+      "payload_sha256": "0cdee9a0ec0ed2d55c3296687642825be4b16c3194b10b7af5be52c518b9c09e",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:51:23.559Z",
+      "payload": {
+        "bindingChecksum": "5a4db4268d781b0c27e609e6b8a7edd11d3f57acca2a3f5cb9f1ee4b2b30f4b3",
+        "bindingId": "binding_2a4aac75-ec25-411f-b3eb-334d04767a09",
+        "continuable": true,
+        "createdAt": "2026-11-02T14:51:23.558Z",
+        "depth": 1,
+        "initialTurnId": "turn_7e76ea47-01f8-40a2-984f-7b2dd076e18f",
+        "label": "发布窗口观察员",
+        "mode": "spawn",
+        "parentCallId": "call_2d48e5ae95404f138740d6e8",
+        "parentSessionId": "session_60ab2a93-2d9f-481e-8bda-4568756f666e",
+        "parentTurnId": "turn_6c1daf84-9649-4a6f-8fef-5b06cb6ce634",
+        "schemaVersion": 1,
+        "subagentId": "session_ff8620ff-29c6-47e3-b0e3-d5bfad34f5ab",
+        "toolFilter": {
+          "deny": [
+            "CronCreate",
+            "CronDelete",
+            "CronList",
+            "ScheduleWakeup",
+            "EnterWorktree",
+            "ExitWorktree"
+          ]
+        }
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 129,
+      "event_id": "event_f6b3ac9c-9d85-45ee-9bb2-007c9790a0f1",
+      "session_id": "session_ff8620ff-29c6-47e3-b0e3-d5bfad34f5ab",
+      "turn_id": "turn_7e76ea47-01f8-40a2-984f-7b2dd076e18f",
+      "type": "tool.dispatch.started",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 546,
+      "payload_sha256": "b2d209bdf0217f0f692f1702e7113919f0fd219b92efce3983404645a1db61e4",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:51:26.929Z",
+      "payload": {
+        "actionId": "action:call_9e9103f2ec44a47b",
+        "actionPlanId": "plan_62885e87-cc56-41e6-992b-79004cf93082",
+        "arguments": {
+          "command": "node scripts/watch-release-window.mjs 2>&1",
+          "description": "Run the release window watcher script and observe output",
+          "timeout": 600000
+        },
+        "callId": "call_9e9103f2ec44a47b",
+        "name": "Bash",
+        "nestingDepth": 0,
+        "ordinal": 0,
+        "origin": {
+          "component": "Bash",
+          "kind": "tool",
+          "package": "@longcat/tools-builtin",
+          "version": "1.0.0"
+        },
+        "sessionId": "session_ff8620ff-29c6-47e3-b0e3-d5bfad34f5ab",
+        "turnId": "turn_7e76ea47-01f8-40a2-984f-7b2dd076e18f"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 141,
+      "event_id": "event_148f8a11-1d22-4c96-9d7f-1a3499580828",
+      "session_id": "session_60ab2a93-2d9f-481e-8bda-4568756f666e",
+      "turn_id": "turn_6c1daf84-9649-4a6f-8fef-5b06cb6ce634",
+      "type": "tool.call",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 3288,
+      "payload_sha256": "3aa1393cb7276aa3eb4e0a30821d2f5f54c52adb4deda6c54c873de8953c4ab4",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:51:32.160Z",
+      "payload": {
+        "actionId": "action:call_16f8a03bdd4042cbaf82f4e0",
+        "actionPlanId": "plan_958fd163-02ba-4452-9a31-04e35e6340c8",
+        "arguments": {
+          "content": "<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>发布窗口观察 — 决策</title>\n<style>\n  * { box-sizing: border-box; margin: 0; padding: 0; }\n  body {\n    font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;\n    background: #f5f7fa;\n    min-height: 100vh;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: 24px;\n  }\n  .card {\n    background: #fff;\n    border-radius: 16px;\n    box-shadow: 0 4px 24px rgba(0,0,0,0.08);\n    padding: 40px 36px;\n    max-width: 480px;\n    width: 100%;\n    text-align: center;\n  }\n  .badge {\n    display: inline-block;\n    background: #e8f4fd;\n    color: #1677ff;\n    font-size: 13px;\n    font-weight: 600;\n    padding: 4px 14px;\n    border-radius: 20px;\n    margin-bottom: 18px;\n  }\n  h1 {\n    font-size: 22px;\n    color: #1a1a1a;\n    margin-bottom: 10px;\n  }\n  .subtitle {\n    font-size: 14px;\n    color: #8c8c8c;\n    margin-bottom: 32px;\n    line-height: 1.6;\n  }\n  .btn-group {\n    display: flex;\n    gap: 16px;\n  }\n  .btn {\n    flex: 1;\n    padding: 14px 20px;\n    border: none;\n    border-radius: 10px;\n    font-size: 16px;\n    font-weight: 600;\n    cursor: pointer;\n    transition: all 0.2s ease;\n    text-decoration: none;\n    display: block;\n  }\n  .btn-continue {\n    background: #1677ff;\n    color: #fff;\n  }\n  .btn-continue:hover {\n    background: #0958d9;\n    transform: translateY(-1px);\n    box-shadow: 0 4px 12px rgba(22,119,255,0.3);\n  }\n  .btn-freeze {\n    background: #fff;\n    color: #cf1322;\n    border: 2px solid #ffccc7;\n  }\n  .btn-freeze:hover {\n    background: #fff1f0;\n    border-color: #ff4d4f;\n    transform: translateY(-1px);\n    box-shadow: 0 4px 12px rgba(207,19,34,0.15);\n  }\n  .btn-icon {\n    display: block;\n    font-size: 24px;\n    margin-bottom: 6px;\n  }\n  .footer {\n    margin-top: 28px;\n    font-size: 12px;\n    color: #bfbfbf;\n  }\n</style>\n</head>\n<body>\n  <div class=\"card\">\n    <span class=\"badge\">发布窗口观察中</span>\n    <h1>请选择后续操作</h1>\n    <p class=\"subtitle\">\"发布窗口观察员\"正在后台持续观察发布窗口状态。请在下方选择你希望执行的操作。</p>\n    <div class=\"btn-group\">\n      <button class=\"btn btn-continue\" onclick=\"handleDecision('continue')\">\n        <span class=\"btn-icon\">👁️</span>\n        继续观察\n      </button>\n      <button class=\"btn btn-freeze\" onclick=\"handleDecision('freeze')\">\n        <span class=\"btn-icon\">❄️</span>\n        冻结发布\n      </button>\n    </div>\n</longcat_think>\n",
+          "file_path": "/private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html"
+        },
+        "callId": "call_16f8a03bdd4042cbaf82f4e0",
+        "name": "Write",
+        "nestingDepth": 0,
+        "ordinal": 0,
+        "origin": {
+          "component": "Write",
+          "kind": "tool",
+          "package": "@longcat/tools-builtin",
+          "version": "1.0.0"
+        },
+        "sessionId": "session_60ab2a93-2d9f-481e-8bda-4568756f666e",
+        "turnId": "turn_6c1daf84-9649-4a6f-8fef-5b06cb6ce634"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 149,
+      "event_id": "event_f7aea944-3515-47ef-8326-1a2cb3bab5a9",
+      "session_id": "session_60ab2a93-2d9f-481e-8bda-4568756f666e",
+      "turn_id": "turn_6c1daf84-9649-4a6f-8fef-5b06cb6ce634",
+      "type": "tool.result",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 3335,
+      "payload_sha256": "5fdc0bf4af61a8cec31d37919db62dfff93cb11debb1394b75d52d47662a6561",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:51:32.178Z",
+      "payload": {
+        "actionId": "action:call_16f8a03bdd4042cbaf82f4e0",
+        "actionPlanId": "plan_958fd163-02ba-4452-9a31-04e35e6340c8",
+        "callId": "call_16f8a03bdd4042cbaf82f4e0",
+        "canonicalValue": {
+          "content": "<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>发布窗口观察 — 决策</title>\n<style>\n  * { box-sizing: border-box; margin: 0; padding: 0; }\n  body {\n    font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif;\n    background: #f5f7fa;\n    min-height: 100vh;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    padding: 24px;\n  }\n  .card {\n    background: #fff;\n    border-radius: 16px;\n    box-shadow: 0 4px 24px rgba(0,0,0,0.08);\n    padding: 40px 36px;\n    max-width: 480px;\n    width: 100%;\n    text-align: center;\n  }\n  .badge {\n    display: inline-block;\n    background: #e8f4fd;\n    color: #1677ff;\n    font-size: 13px;\n    font-weight: 600;\n    padding: 4px 14px;\n    border-radius: 20px;\n    margin-bottom: 18px;\n  }\n  h1 {\n    font-size: 22px;\n    color: #1a1a1a;\n    margin-bottom: 10px;\n  }\n  .subtitle {\n    font-size: 14px;\n    color: #8c8c8c;\n    margin-bottom: 32px;\n    line-height: 1.6;\n  }\n  .btn-group {\n    display: flex;\n    gap: 16px;\n  }\n  .btn {\n    flex: 1;\n    padding: 14px 20px;\n    border: none;\n    border-radius: 10px;\n    font-size: 16px;\n    font-weight: 600;\n    cursor: pointer;\n    transition: all 0.2s ease;\n    text-decoration: none;\n    display: block;\n  }\n  .btn-continue {\n    background: #1677ff;\n    color: #fff;\n  }\n  .btn-continue:hover {\n    background: #0958d9;\n    transform: translateY(-1px);\n    box-shadow: 0 4px 12px rgba(22,119,255,0.3);\n  }\n  .btn-freeze {\n    background: #fff;\n    color: #cf1322;\n    border: 2px solid #ffccc7;\n  }\n  .btn-freeze:hover {\n    background: #fff1f0;\n    border-color: #ff4d4f;\n    transform: translateY(-1px);\n    box-shadow: 0 4px 12px rgba(207,19,34,0.15);\n  }\n  .btn-icon {\n    display: block;\n    font-size: 24px;\n    margin-bottom: 6px;\n  }\n  .footer {\n    margin-top: 28px;\n    font-size: 12px;\n    color: #bfbfbf;\n  }\n</style>\n</head>\n<body>\n  <div class=\"card\">\n    <span class=\"badge\">发布窗口观察中</span>\n    <h1>请选择后续操作</h1>\n    <p class=\"subtitle\">\"发布窗口观察员\"正在后台持续观察发布窗口状态。请在下方选择你希望执行的操作。</p>\n    <div class=\"btn-group\">\n      <button class=\"btn btn-continue\" onclick=\"handleDecision('continue')\">\n        <span class=\"btn-icon\">👁️</span>\n        继续观察\n      </button>\n      <button class=\"btn btn-freeze\" onclick=\"handleDecision('freeze')\">\n        <span class=\"btn-icon\">❄️</span>\n        冻结发布\n      </button>\n    </div>\n</longcat_think>\n",
+          "filePath": "/private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html",
+          "type": "create"
+        },
+        "content": [
+          {
+            "text": "Created /private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html successfully.",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "name": "Write",
+        "ordinal": 0,
+        "origin": {
+          "component": "Write",
+          "kind": "tool",
+          "package": "@longcat/tools-builtin",
+          "version": "1.0.0"
+        },
+        "status": "succeeded"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 208,
+      "event_id": "event_98adf1a6-4682-4c52-9f36-549b201d464e",
+      "session_id": "session_60ab2a93-2d9f-481e-8bda-4568756f666e",
+      "turn_id": "turn_6c1daf84-9649-4a6f-8fef-5b06cb6ce634",
+      "type": "tool.call",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 1398,
+      "payload_sha256": "eb8c43e35149e4b39dbeb94479509ed9c3ea2be473da4999dfa3a85da5a528ad",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:51:38.536Z",
+      "payload": {
+        "actionId": "action:call_9ce5b7ec6c6d4a2ab8100537",
+        "actionPlanId": "plan_c6706616-dc19-4c43-a736-1711f7993279",
+        "arguments": {
+          "file_path": "/private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html",
+          "new_string": "    <div class=\"btn-group\">\n      <button class=\"btn btn-continue\" onclick=\"handleDecision('continue')\">\n        <span class=\"btn-icon\">👁️</span>\n        继续观察\n      </button>\n      <button class=\"btn btn-freeze\" onclick=\"handleDecision('freeze')\">\n        <span class=\"btn-icon\">❄️</span>\n        冻结发布\n      </button>\n    </div>\n    <div id=\"result\" style=\"margin-top:24px; font-size:14px; color:#595959; display:none;\"></div>",
+          "old_string": "    <div class=\"btn-group\">\n      <button class=\"btn btn-continue\" onclick=\"handleDecision('continue')\">\n        <span class=\"btn-icon\">👁️</span>\n        继续观察\n      </button>\n      <button class=\"btn btn-freeze\" onclick=\"handleDecision('freeze')\">\n        <span class=\"btn-icon\">❄️</span>\n        冻结发布\n      </button>\n    </div>",
+          "replace_all": false
+        },
+        "callId": "call_9ce5b7ec6c6d4a2ab8100537",
+        "name": "Edit",
+        "nestingDepth": 0,
+        "ordinal": 0,
+        "origin": {
+          "component": "Edit",
+          "kind": "tool",
+          "package": "@longcat/tools-builtin",
+          "version": "1.0.0"
+        },
+        "sessionId": "session_60ab2a93-2d9f-481e-8bda-4568756f666e",
+        "turnId": "turn_6c1daf84-9649-4a6f-8fef-5b06cb6ce634"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 243,
+      "event_id": "event_e827bf5f-d667-4294-8c46-a95f6dcf7bad",
+      "session_id": "session_60ab2a93-2d9f-481e-8bda-4568756f666e",
+      "turn_id": "turn_6c1daf84-9649-4a6f-8fef-5b06cb6ce634",
+      "type": "tool.call",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 1429,
+      "payload_sha256": "b1808e7d99edbefecddd6a27e5457715113d24cdc19e1a9ae44fa2da005083e6",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:51:42.149Z",
+      "payload": {
+        "actionId": "action:call_5ba168a4cd58432b9aed6242",
+        "actionPlanId": "plan_b5fa0e16-8d99-471d-a529-7e461d6b1ef1",
+        "arguments": {
+          "file_path": "/private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html",
+          "new_string": "  .footer {\n    margin-top: 28px;\n    font-size: 12px;\n    color: #bfbfbf;\n  }\n  .btn:active { transform: translateY(0) !important; }\n</style>\n<script>\n  function handleDecision(choice) {\n    var result = document.getElementById('result');\n    result.style.display = 'block';\n    if (choice === 'continue') {\n      result.innerHTML = '✅ 你选择了 <strong>继续观察</strong>。协作者将继续在后台观察发布窗口状态。';\n    } else if (choice === 'freeze') {\n      result.innerHTML = '❄️ 你选择了 <strong>冻结发布</strong>。正在停止协作者的观察工作…';\n    }\n    var btns = document.querySelectorAll('.btn');\n    btns.forEach(function(b) { b.disabled = true; b.style.opacity = '0.6'; b.style.cursor = 'default'; });\n  }\n</script>",
+          "old_string": "  .footer {\n    margin-top: 28px;\n    font-size: 12px;\n    color: #bfbfbf;\n  }\n</style>",
+          "replace_all": false
+        },
+        "callId": "call_5ba168a4cd58432b9aed6242",
+        "name": "Edit",
+        "nestingDepth": 0,
+        "ordinal": 0,
+        "origin": {
+          "component": "Edit",
+          "kind": "tool",
+          "package": "@longcat/tools-builtin",
+          "version": "1.0.0"
+        },
+        "sessionId": "session_60ab2a93-2d9f-481e-8bda-4568756f666e",
+        "turnId": "turn_6c1daf84-9649-4a6f-8fef-5b06cb6ce634"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 304,
+      "event_id": "event_3a0f6c9a-1562-4b0d-ab94-075bddb0b0be",
+      "session_id": "session_60ab2a93-2d9f-481e-8bda-4568756f666e",
+      "turn_id": "turn_6c1daf84-9649-4a6f-8fef-5b06cb6ce634",
+      "type": "model.completed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 1373,
+      "payload_sha256": "c42c090da44f3144c64816ae994965209d4fefd86aad77d918cb033a419ef1a9",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:51:52.119Z",
+      "payload": {
+        "attemptId": "attempt_9c002bae-f1a4-4d75-9738-1bb924310746",
+        "content": "表单已就绪，请用浏览器打开以下文件：\n\n📄 `/private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html`\n\n页面中会显示\"发布窗口观察中\"状态，并提供两个可点击按钮：\n\n- 👁️ **继续观察**\n- ❄️ **冻结发布**\n\n请点击你的选择，我在此等待你的决定。",
+        "finishReason": "stop",
+        "outcomeId": "outcome_6fdca136-44fb-404f-8bd8-75341ec48cf8",
+        "request": {
+          "attempt": 0,
+          "planId": "plan_41857a3b-8556-4390-9a5c-e68fc53b4954",
+          "requestHash": "3a5cd84c1efbc35b7a62dea0fbe4c910a736a47abb59f03c632233df80e2d429"
+        },
+        "responseMetadata": {
+          "responseId": "1c2303bcae3c4907b71097028d995142"
+        },
+        "toolCalls": [],
+        "usage": {
+          "cachedTokens": 12672,
+          "completionTokens": 197,
+          "promptTokens": 14823,
+          "reasoningTokens": 112,
+          "totalTokens": 15020
+        }
+      },
+      "omittedFields": [
+        "payload.reasoningContent"
+      ]
+    },
+    {
+      "kind": "event",
+      "seq": 320,
+      "event_id": "event_1f86dc2e-d856-4b9b-a71f-708f3abb9a49",
+      "session_id": "session_ff8620ff-29c6-47e3-b0e3-d5bfad34f5ab",
+      "turn_id": "turn_7e76ea47-01f8-40a2-984f-7b2dd076e18f",
+      "type": "tool.result",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 497,
+      "payload_sha256": "e04daa7c766d1357cd44112ca2c41b8ff68f45da6c233f34f315e01cc8b28776",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:55:13.555Z",
+      "payload": {
+        "actionId": "action:call_9e9103f2ec44a47b",
+        "actionPlanId": "plan_62885e87-cc56-41e6-992b-79004cf93082",
+        "callId": "call_9e9103f2ec44a47b",
+        "content": [
+          {
+            "text": "TOOL_CANCELLED: Root Web task interrupted: 网页服务正在关闭",
+            "type": "text"
+          }
+        ],
+        "errorCode": "TOOL_CANCELLED",
+        "errorMessage": "Root Web task interrupted: 网页服务正在关闭",
+        "isError": true,
+        "name": "Bash",
+        "ordinal": 0,
+        "origin": {
+          "component": "Bash",
+          "kind": "tool",
+          "package": "@longcat/tools-builtin",
+          "version": "1.0.0"
+        },
+        "status": "cancelled"
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/common/tools/integrations-schemas.ts
+import type { ToolSchema } from "../../../kernel/api/model/types.js";
+import { object, string, boolean, integer } from "../tool-definition/schema.js";
+
+export const integrationToolSchemas = Object.freeze({
+  SendFeedback: { name: "SendFeedback", description: "Submit a structured product feedback report without secrets.", parameters: object({ type: string("Feedback type.", { enum: ["bug", "idea", "missing_capability"] }), title: string("Specific one-line summary."), details: string("Factual report with reproduction details."), area: string("Optional product area.") }, ["type", "title", "details"]) },
+  DesignSync: { name: "DesignSync", description: "Invoke a connected design-system synchronization service. Call its list operation to discover supported actions.", parameters: object({ operation: string("Design service operation."), arguments: { type: "object" } }, ["operation", "arguments"]) },
+  Projects: { name: "Projects", description: "Inspect, search, write, or delete durable project documents.", parameters: object({ method: string("Project document operation.", { enum: ["project_info", "project_read", "project_search", "project_write", "project_delete"] }), path: string("Document path."), content: string("Inline document content."), local_path: string("Workspace file to import."), present_to_user: boolean("Mark the document as the user-facing deliverable."), query: string("Search query."), n: integer("Maximum search hits.", { minimum: 1, maximum: 100 }) }, ["method"]) },
+  RemoteTrigger: { name: "RemoteTrigger", description: "Manage a connected remote trigger service.", parameters: object({ action: string("Trigger operation.", { enum: ["list", "get", "create", "update", "run"] }), trigger_id: string("Trigger ID."), body: { type: "object" } }, ["action"]) },
+  ShowOnboardingRolePicker: { name: "ShowOnboardingRolePicker", description: "Show the host onboarding role picker and return the selected role.", parameters: object({}) },

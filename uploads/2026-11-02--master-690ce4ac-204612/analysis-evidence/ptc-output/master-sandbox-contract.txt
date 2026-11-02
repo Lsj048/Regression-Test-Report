@@ -1,0 +1,30 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/ptc/run-code.ts
+export function createTurnCodeTool(): ToolDefinition {
+  const tool: ToolDefinition = {
+    constraintEnforcers: [RESOURCE_SCOPE_ENFORCER],
+    name: "RunCode",
+    description: "Execute JavaScript with top-level await in a fresh sandbox. Invoke known Tools with tools.call(name, arguments); use tools.list() only to verify the live authorized catalog. Return a JSON-compatible value as the final result. Host modules, process access, filesystem access, and direct network access are unavailable.",
+    parameters: {
+      type: "object",
+      properties: {
+        code: { type: "string", description: "JavaScript source executed inside an async function. The tools.list() and tools.call(name, arguments) functions are available." },
+        description: { type: "string", description: "Short active-voice description of the program's purpose." },
+        timeout: { type: "integer", minimum: 1, maximum: MAX_TIMEOUT_MS, description: "Overall timeout in milliseconds. Defaults to 30000." },
+      },
+      required: ["code"],
+      additionalProperties: false,
+    },
+    promptSections: [{
+      key: "usage",
+      order: 100,
+      content: [
+        "RunCode is the only direct entry point for programmatic Tool calling.",
+        "Write JavaScript with top-level await and return the final JSON-compatible value. Each RunCode call starts with a fresh JavaScript global scope.",
+        "The current model request already includes the callable Tool contracts. Invoke known Tools directly with await tools.call(name, arguments), and use await tools.list() only when you need to verify the live authorized catalog. tools.call returns an envelope containing status, isError, content, and value when the Tool provides a canonical value.",
+        "Calls made by one RunCode invocation are serialized. Inspect every returned status and isError before depending on the result.",
+        "The sandbox does not expose require, import, process, filesystem, network, or raw Host objects. Those capabilities are available only through granted Tools.",
+      ].join("\n"),
+    }],
+    output: {
+      schema: { type: "object" },

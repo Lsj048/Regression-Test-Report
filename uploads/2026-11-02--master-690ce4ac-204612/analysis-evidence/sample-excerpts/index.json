@@ -1,0 +1,274 @@
+[
+  {
+    "caseId": "standard.deterministic-guard-drain-limit",
+    "repeatEachIndex": 0,
+    "category": "套件契约过期（断言/夹具兼容）",
+    "excerpt": "analysis-evidence/sample-excerpts/deterministic--standard.deterministic-guard-drain-limit--0.json",
+    "bytes": 3481,
+    "sha256": "144cf94211a511468c70ba27620b28d25e1c52540e712ea4827bbf73b09ea59c"
+  },
+  {
+    "caseId": "standard.deterministic-guard-drain-limit",
+    "repeatEachIndex": 1,
+    "category": "套件契约过期（断言/夹具兼容）",
+    "excerpt": "analysis-evidence/sample-excerpts/deterministic--standard.deterministic-guard-drain-limit--1.json",
+    "bytes": 3497,
+    "sha256": "363f47cea1bdc21df48a8a4e9ac45bc981dcb5ab0698e2d79217fd791e73c080"
+  },
+  {
+    "caseId": "standard.deterministic-guard-drain-limit",
+    "repeatEachIndex": 2,
+    "category": "套件契约过期（断言/夹具兼容）",
+    "excerpt": "analysis-evidence/sample-excerpts/deterministic--standard.deterministic-guard-drain-limit--2.json",
+    "bytes": 3497,
+    "sha256": "0d93e396b91244f5d638a39ce0162b59d4c0f1d3efbca8c198d26f0b8fc52250"
+  },
+  {
+    "caseId": "standard.deterministic-guard-drain-limit",
+    "repeatEachIndex": 3,
+    "category": "套件契约过期（断言/夹具兼容）",
+    "excerpt": "analysis-evidence/sample-excerpts/deterministic--standard.deterministic-guard-drain-limit--3.json",
+    "bytes": 3497,
+    "sha256": "eb8537a6434b7e1bdf7fa1f69269a0755bea7fae27fb59a47df2539840f89906"
+  },
+  {
+    "caseId": "standard.deterministic-guard-drain-limit",
+    "repeatEachIndex": 4,
+    "category": "套件契约过期（断言/夹具兼容）",
+    "excerpt": "analysis-evidence/sample-excerpts/deterministic--standard.deterministic-guard-drain-limit--4.json",
+    "bytes": 3497,
+    "sha256": "948e25bb3b394a8434c22c62a9d9a0d8192491d59da626c114372d2f6b0d2627"
+  },
+  {
+    "caseId": "assistant.live-memory-update",
+    "repeatEachIndex": 0,
+    "category": "待复核：召回后辅助捕获的准出门槛",
+    "excerpt": "analysis-evidence/sample-excerpts/live--assistant.live-memory-update--0.json",
+    "bytes": 86713,
+    "sha256": "e96ea67b13e02becffc03313af6561efbf8f0b5c8b2dcb6da5e2cb42400b9c0a"
+  },
+  {
+    "caseId": "ptc.live-file-handoff-summary",
+    "repeatEachIndex": 0,
+    "category": "上游模型输出/调用错误：PTC 未交付",
+    "excerpt": "analysis-evidence/sample-excerpts/live--ptc.live-file-handoff-summary--0.json",
+    "bytes": 6906,
+    "sha256": "1ca6aaf03ad22fd966febf09c140142b098f502d6a7e168cd285c9fd18d143fd"
+  },
+  {
+    "caseId": "ptc.live-file-handoff-summary",
+    "repeatEachIndex": 1,
+    "category": "断言路径误读：PTC 相对路径与已恢复程序错误",
+    "excerpt": "analysis-evidence/sample-excerpts/live--ptc.live-file-handoff-summary--1.json",
+    "bytes": 128883,
+    "sha256": "0637740a8940fd3f8310978164fec67a1602e17affcdd8844e6a340d8e4f185e"
+  },
+  {
+    "caseId": "ptc.live-file-handoff-summary",
+    "repeatEachIndex": 4,
+    "category": "上游模型违背禁 shell 的文件处理路径",
+    "excerpt": "analysis-evidence/sample-excerpts/live--ptc.live-file-handoff-summary--4.json",
+    "bytes": 81867,
+    "sha256": "08dc6f6990a83630554ad09f169e1bbf94ffbbff4a68bad49c5687db255e8b61"
+  },
+  {
+    "caseId": "assistant.live-code-review-finding",
+    "repeatEachIndex": 1,
+    "category": "断言恢复覆盖不足：审查发现参数修复",
+    "excerpt": "analysis-evidence/sample-excerpts/live--assistant.live-code-review-finding--1.json",
+    "bytes": 89446,
+    "sha256": "7ac8b8c5c0df61cbe8e7c58af8e6c20fdbd923a2e10620b3d08c9e19500e85bf"
+  },
+  {
+    "caseId": "standard.live-subagent-interrupt",
+    "repeatEachIndex": 1,
+    "category": "上游模型选路违约：另写 HTML 未提问",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-subagent-interrupt--1.json",
+    "bytes": 20160,
+    "sha256": "db3f23c2821836acc0b01e94758b0fc77d44301cc592bed5daec9d30cd8c4707"
+  },
+  {
+    "caseId": "goal.live-cancel",
+    "repeatEachIndex": 1,
+    "category": "断言恢复覆盖不足：Goal 提问批次拒绝",
+    "excerpt": "analysis-evidence/sample-excerpts/live--goal.live-cancel--1.json",
+    "bytes": 110340,
+    "sha256": "cd21ba3a760e2ad98cb009095ff0faa12567acc0a4320e027582c41b5af356b8"
+  },
+  {
+    "caseId": "goal.live-complete",
+    "repeatEachIndex": 0,
+    "category": "断言恢复覆盖不足：Goal 证据参数修复",
+    "excerpt": "analysis-evidence/sample-excerpts/live--goal.live-complete--0.json",
+    "bytes": 108589,
+    "sha256": "261de6b7d9500295ad8e0192de90c954741294d61081f8b72d632585fc57b6d8"
+  },
+  {
+    "caseId": "goal.live-complete",
+    "repeatEachIndex": 1,
+    "category": "断言恢复覆盖不足：Goal 证据参数修复",
+    "excerpt": "analysis-evidence/sample-excerpts/live--goal.live-complete--1.json",
+    "bytes": 108657,
+    "sha256": "ba159fe59b98b73295abc615e127a7f135961884151145847b1d8c5b8ad92622"
+  },
+  {
+    "caseId": "goal.live-complete",
+    "repeatEachIndex": 2,
+    "category": "断言恢复覆盖不足：Goal 证据参数修复",
+    "excerpt": "analysis-evidence/sample-excerpts/live--goal.live-complete--2.json",
+    "bytes": 109063,
+    "sha256": "746135a7699671642b9a7949371244561537c8e7380b42b136c77bb2a9f07487"
+  },
+  {
+    "caseId": "assistant.live-monitor-stop",
+    "repeatEachIndex": 2,
+    "category": "上游模型未主动停止监听",
+    "excerpt": "analysis-evidence/sample-excerpts/live--assistant.live-monitor-stop--2.json",
+    "bytes": 94330,
+    "sha256": "814f5c34add5a9d196c50be607bc32f04bee378b734e2bb2a43c846fc3df1f34"
+  },
+  {
+    "caseId": "standard.live-task-detail-readback",
+    "repeatEachIndex": 3,
+    "category": "待复核：TaskCreate 额外字段门槛",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-task-detail-readback--3.json",
+    "bytes": 124141,
+    "sha256": "022e88591efe1a5a93249b8df44737f6c330362c67275d94a4e44a884926ead1"
+  },
+  {
+    "caseId": "standard.live-web-fetch-page",
+    "repeatEachIndex": 0,
+    "category": "Case 设计：题面与工具/审批限制不一致",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-web-fetch-page--0.json",
+    "bytes": 9824,
+    "sha256": "9d60e864f52bcb989710148abdcb410286bb0bcb6b0b42bdb9b0072a3aabc925"
+  },
+  {
+    "caseId": "standard.live-web-fetch-page",
+    "repeatEachIndex": 1,
+    "category": "上游模型重复调用未收敛",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-web-fetch-page--1.json",
+    "bytes": 168580,
+    "sha256": "5703c878c202bb3e9b895f85c051ba3b7522e61cd230d2e178b704212006c3c4"
+  },
+  {
+    "caseId": "standard.live-web-fetch-page",
+    "repeatEachIndex": 3,
+    "category": "Case 设计：题面与工具/审批限制不一致",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-web-fetch-page--3.json",
+    "bytes": 8264,
+    "sha256": "fa2e3cb214e9aef8f746df4b92e4c15d1d137d10656d349b33e46b2dd210c4ef"
+  },
+  {
+    "caseId": "assistant.live-project-search",
+    "repeatEachIndex": 3,
+    "category": "Case 设计：项目搜索的工具边界未说明",
+    "excerpt": "analysis-evidence/sample-excerpts/live--assistant.live-project-search--3.json",
+    "bytes": 97859,
+    "sha256": "7eb83a075279c716b2e7ed84326d2dcd97a5e41312e57919e9f11ac96ed73844"
+  },
+  {
+    "caseId": "goal.live-pause-resume",
+    "repeatEachIndex": 3,
+    "category": "环境：DNS 解析失败（冻结规则不补样）",
+    "excerpt": "analysis-evidence/sample-excerpts/live--goal.live-pause-resume--3.json",
+    "bytes": 10182,
+    "sha256": "86e4b807ac296b9835648fb31b17ab5ee7e3ee6a9b06d6cbec027aae4e765f8c"
+  },
+  {
+    "caseId": "standard.live-task-reminder",
+    "repeatEachIndex": 3,
+    "category": "环境：DNS 解析失败（冻结规则不补样）",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-task-reminder--3.json",
+    "bytes": 5515,
+    "sha256": "6836b66d4de42a1a1dbdf3cb88f98402b9b1b242628f5f4611125ac14705aee1"
+  },
+  {
+    "caseId": "standard.live-input-fifo",
+    "repeatEachIndex": 3,
+    "category": "环境：DNS 解析失败（冻结规则不补样）",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-input-fifo--3.json",
+    "bytes": 5512,
+    "sha256": "cf21d4da338f5df892f4ad556aa06c67453d4b43cfa44d7f2c8faf5457dd3e87"
+  },
+  {
+    "caseId": "standard.live-notebook-cell-edit",
+    "repeatEachIndex": 0,
+    "category": "套件契约过期（断言/结果格式兼容）",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-notebook-cell-edit--0.json",
+    "bytes": 70140,
+    "sha256": "335d05d5233fb12e5c3b1facba0933b33382f8b00e81187ae912d45c9dcf70c8"
+  },
+  {
+    "caseId": "standard.live-notebook-cell-edit",
+    "repeatEachIndex": 1,
+    "category": "套件契约过期（断言/结果格式兼容）",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-notebook-cell-edit--1.json",
+    "bytes": 70078,
+    "sha256": "3020a4934f52fc794efa1ea7ebed97a006be7f4e069293b93a7b26d33a4aa4ee"
+  },
+  {
+    "caseId": "standard.live-notebook-cell-edit",
+    "repeatEachIndex": 2,
+    "category": "套件契约过期（断言/结果格式兼容）",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-notebook-cell-edit--2.json",
+    "bytes": 70208,
+    "sha256": "0e1bddcc43c582fa0c337ddd43c8876bbe84fd305e4aa05ac2d6df915b469513"
+  },
+  {
+    "caseId": "standard.live-notebook-cell-edit",
+    "repeatEachIndex": 3,
+    "category": "套件契约过期（断言/结果格式兼容）",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-notebook-cell-edit--3.json",
+    "bytes": 70146,
+    "sha256": "d519f7117c1f1ad37807459f45f1f5ee2cb03cc49764c45646aed7cdaedb3689"
+  },
+  {
+    "caseId": "standard.live-notebook-cell-edit",
+    "repeatEachIndex": 4,
+    "category": "套件契约过期（断言/结果格式兼容）",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-notebook-cell-edit--4.json",
+    "bytes": 70203,
+    "sha256": "ef3bcd834d1fa639df064f0e7a1d23cfd3976e0b64244e8a2403d9b85b6704dc"
+  },
+  {
+    "caseId": "standard.live-context-compaction",
+    "repeatEachIndex": 3,
+    "category": "上游辅助摘要污染，压缩未完成",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-context-compaction--3.json",
+    "bytes": 163106,
+    "sha256": "53d0c16e892cb497127d890f18e6b00970121fdbbfe95b1fb550d4e8562d044e"
+  },
+  {
+    "caseId": "standard.live-context-compaction",
+    "repeatEachIndex": 4,
+    "category": "上游辅助摘要污染，压缩未完成",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-context-compaction--4.json",
+    "bytes": 160072,
+    "sha256": "fda876762cea24a1f9acbb20337db24a69432d037ee995589334462b79daf76c"
+  },
+  {
+    "caseId": "standard.live-manual-context-compaction",
+    "repeatEachIndex": 3,
+    "category": "上游辅助摘要污染，压缩未完成",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-manual-context-compaction--3.json",
+    "bytes": 83130,
+    "sha256": "aac96a0ff96efbf8bcbd1b4e1475c5f9d046b34f279aba4cf137689bb27ee2ef"
+  },
+  {
+    "caseId": "standard.live-subagent-message",
+    "repeatEachIndex": 4,
+    "category": "LCH 宿主审批作用域缺陷，并叠加就绪断言不识别恢复",
+    "excerpt": "analysis-evidence/sample-excerpts/live--standard.live-subagent-message--4.json",
+    "bytes": 75648,
+    "sha256": "1db134dc4ca1e294b8f773dcd312fb9beae44b0c78d91256bf580797e445cfb3"
+  },
+  {
+    "caseId": "assistant.live-project-read",
+    "repeatEachIndex": 4,
+    "category": "断言恢复覆盖不足：Projects 查询参数纠正",
+    "excerpt": "analysis-evidence/sample-excerpts/live--assistant.live-project-read--4.json",
+    "bytes": 322780,
+    "sha256": "4972dc4ff1c9532045144726da11c071608b42b3d9f563c7cebe0607a48d5882"
+  }
+]

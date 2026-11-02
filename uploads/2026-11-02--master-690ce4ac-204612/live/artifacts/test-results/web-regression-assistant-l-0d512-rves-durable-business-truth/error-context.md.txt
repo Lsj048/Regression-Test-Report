@@ -1,0 +1,241 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> assistant.live-memory-update >> assistant live memory-update preserves durable business truth
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+AssertionError: The expression evaluated to a falsy value:
+
+  assert.ok(checkpoints[stage].captures.some(c => c.outcomeId === payload(eventPath, models[index])["outcomeId"] && c.sourceSessionId === turn.sessionId && c.sourceTurnId === turn.turnId))
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-NlXbCH/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "根据我已保存的个人偏好，我每周工作周报的固定标题是什么？… 刚刚" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]: 根据我已保存的个人偏好，我每周工作周报的固定标题是什么？…
+          - time [ref=e59]: 刚刚
+        - button "根据我已保存的个人偏好，我每周工作周报的固定标题是什么？… 的会话操作" [ref=e60] [cursor=pointer]
+      - generic [ref=e65]:
+        - button "把我的工作周报固定标题改为白鹭周报，替换旧标题并长期记住… 刚刚" [ref=e66] [cursor=pointer]:
+          - generic [ref=e67]: 把我的工作周报固定标题改为白鹭周报，替换旧标题并长期记住…
+          - time [ref=e69]: 刚刚
+        - button "把我的工作周报固定标题改为白鹭周报，替换旧标题并长期记住… 的会话操作" [ref=e70] [cursor=pointer]
+      - generic [ref=e75]:
+        - button "请长期记住：我的工作周报固定标题为海棠周报。简短确认即可… 刚刚" [ref=e76] [cursor=pointer]:
+          - generic [ref=e77]: 请长期记住：我的工作周报固定标题为海棠周报。简短确认即可…
+          - time [ref=e79]: 刚刚
+        - button "请长期记住：我的工作周报固定标题为海棠周报。简短确认即可… 的会话操作" [ref=e80] [cursor=pointer]
+    - button "归档会话" [ref=e85] [cursor=pointer]
+    - button "设置" [ref=e89] [cursor=pointer]
+  - main [ref=e93]:
+    - generic [ref=e94]:
+      - generic [ref=e95]:
+        - generic [ref=e96]: 根据我已保存的个人偏好，我每周工作周报的固定标题是什么？…
+        - button "复制会话 ID session_0317bf66-ebae-4f6a-bb2a-873c64dc2386" [ref=e98] [cursor=pointer]:
+          - generic [ref=e99]: session_0317bf66-ebae-4f6a-bb2a-873c64dc2386
+      - generic [ref=e103]:
+        - button "对话" [ref=e104] [cursor=pointer]
+        - button "轨迹" [ref=e107] [cursor=pointer]
+    - generic [ref=e110]:
+      - generic [ref=e113]:
+        - generic [ref=e116]:
+          - generic [ref=e117]: 根据我已保存的个人偏好，我每周工作周报的固定标题是什么？请只回答当前标题，不操作项目资料或文件。
+          - generic:
+            - time: 22:21
+            - button "复制消息"
+        - group [ref=e119]:
+          - generic "用时 1 秒" [ref=e120] [cursor=pointer]
+        - generic [ref=e124]:
+          - paragraph [ref=e126]:
+            - text: 您每周工作周报的固定标题是：
+            - strong [ref=e127]: 白鹭周报
+            - text: 。
+          - generic:
+            - button "复制回答"
+            - button "赞"
+            - button "踩"
+            - button "从此回答分叉会话"
+      - generic [ref=e130]:
+        - textbox "继续输入消息" [ref=e131]
+        - generic [ref=e132]:
+          - generic [ref=e133]:
+            - button "添加" [ref=e135] [cursor=pointer]
+            - generic [ref=e138] [cursor=pointer]: 个人助理
+            - button "权限：只读" [ref=e144] [cursor=pointer]:
+              - generic [ref=e147]: 只读
+          - generic [ref=e150]:
+            - button "模型：LongCat-2.0" [ref=e152] [cursor=pointer]:
+              - generic [ref=e153]: LongCat-2.0
+              - generic [ref=e154]: 思考
+            - generic "模型缓存与上下文用量" [ref=e157]:
+              - meter "最近一次模型请求缓存命中 9,472 / 10,946 输入令牌（86.5%）" [ref=e158]:
+                - generic [ref=e159]: 缓存
+                - strong [ref=e160]: 87%
+              - meter "上下文已使用 10,946 / 1,048,576 令牌（1.0%）；最近一次模型请求" [ref=e161]:
+                - generic [ref=e162]: 令牌
+                - strong [ref=e163]: 1%
+            - button "发送消息" [disabled] [ref=e164]
+    - generic [ref=e167]:
+      - generic [ref=e170]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e171] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  156 |         const result = data.results.find(r => r.callId === call.callId)!;
+  157 |         const events = (type: string) => data.events.filter(e => e.type === type && payload(eventPath, e)["callId"] === call.callId);
+  158 |         const dispatch = events("tool.dispatch.started"), raw = events("tool.raw_result");
+  159 |         assert.equal(dispatch.length, 1); assert.equal(raw.length, 1);
+  160 |         assert.deepEqual(payload(eventPath, dispatch[0]!), call.payload, "dispatch changed arguments/identity");
+  161 |         const rawPayload = payload(eventPath, raw[0]!);
+  162 |         for (const field of ["callId", "actionPlanId", "name", "ordinal", "status", "isError", "content", "canonicalValue"]) assert.deepEqual(rawPayload[field], result.payload[field], `project result changed ${field}`);
+  163 |         assert.ok(call.seq < dispatch[0]!.seq && dispatch[0]!.seq < raw[0]!.seq && raw[0]!.seq < result.seq);
+  164 |         const permission = data.events.filter(e => e.type === "permission.decision" && jsonObject(payload(eventPath, e)["execution"], "permission")["callId"] === call.callId);
+  165 |         assert.equal(permission.length, 1);
+  166 |         const decision = payload(eventPath, permission[0]!);
+  167 |         const execution = jsonObject(decision["execution"], "permission execution");
+  168 |         for (const field of ["sessionId", "turnId", "actionId", "callId", "name", "arguments", "ordinal", "nestingDepth"]) assert.deepEqual(execution[field], call.payload[field]);
+  169 |         assert.equal(decision["allowed"], true);
+  170 |         assert.ok(permission[0]!.seq < dispatch[0]!.seq);
+  171 |         assert.deepEqual(decision["target"], { action: "Projects", resource: path || "*", mutates: method === "project_delete", permissionRequired: method === "project_delete" });
+  172 |         let expected: unknown;
+  173 |         if (method === "project_read") {
+  174 |           assert.ok(Object.hasOwn(documents, path) && !(deleted && "target" in scenario && path === scenario.target));
+  175 |           expected = { path, content: documents[path] };
+  176 |           if (kind === "project-read" && path === scenarios["project-read"].target) targetCalls++;
+  177 |         } else if (method === "project_info") {
+  178 |           const value = jsonObject(result.payload["canonicalValue"], "project listing");
+  179 |           const paths: string[] = Object.keys(documents).filter(x => !(deleted && "target" in scenario && x === scenario.target));
+  180 |           assert.deepEqual([...(value["documents"] as string[])].sort(), paths.sort());
+  181 |           expected = { root: join(workspace, ".longcat-harness", "tools", "projects"), documents: value["documents"], count: paths.length };
+  182 |         } else if (method === "project_search") {
+  183 |           assert.equal(typeof args["query"], "string");
+  184 |           const query = (args["query"] as string).toLowerCase();
+  185 |           const candidates: [string, string][] = Object.entries(documents).filter(([p, text]) => text.toLowerCase().includes(query) && !(deleted && "target" in scenario && p === scenario.target));
+  186 |           const value = jsonObject(result.payload["canonicalValue"], "search result");
+  187 |           const hits = objects(value["hits"]);
+  188 |           const limit = Math.min(100, Math.max(1, Math.floor(Number(args["n"] ?? 5))));
+  189 |           assert.equal(hits.length, Math.min(limit, candidates.length));
+  190 |           assert.equal(new Set(hits.map(x => x["path"])).size, hits.length);
+  191 |           for (const hit of hits) {
+  192 |             const found = candidates.find(([p]) => p === hit["path"]); assert.ok(found);
+  193 |             const index = found[1].toLowerCase().indexOf(query);
+  194 |             assert.equal(hit["snippet"], found[1].slice(Math.max(0, index - 120), index + query.length + 240));
+  195 |           }
+  196 |           expected = { query, hits };
+  197 |           if (kind === "project-search" && query.trim() && hits.some(hit => hit["path"] === "migrations/settlement.txt")) targetCalls++;
+  198 |         } else {
+  199 |           assert.equal(kind, "project-delete"); assert.equal(path, scenarios["project-delete"].target);
+  200 |           assert.equal(deleted, false, "duplicate deletion");
+  201 |           const requested = data.events.filter(e => e.type === "permission.approval.requested" && jsonObject(payload(eventPath, e)["execution"], "approval execution")["callId"] === call.callId);
+  202 |           assert.equal(requested.length, 1);
+  203 |           const requestId = payload(eventPath, requested[0]!)["requestId"];
+  204 |           const responded = data.events.filter(e => e.type === "permission.approval.responded" && payload(eventPath, e)["requestId"] === requestId);
+  205 |           assert.equal(responded.length, 1); assert.deepEqual(payload(eventPath, responded[0]!)["response"], { allowed: true });
+  206 |           const answers = data.events.filter(e => e.type === "host.question.answered" && payload(eventPath, e)["requestId"] === requestId);
+  207 |           assert.equal(answers.length, 1); assert.equal(answers[0]!.turn_id, call.turnId);
+  208 |           assert.ok(requested[0]!.seq < answers[0]!.seq && answers[0]!.seq < dispatch[0]!.seq);
+  209 |           assert.ok(requested[0]!.seq < responded[0]!.seq && responded[0]!.seq < dispatch[0]!.seq, "deletion preceded approval");
+  210 |           expected = { path, deleted: true }; deleted = true; targetCalls++;
+  211 |         }
+  212 |         assert.deepEqual(result.payload["canonicalValue"], expected);
+  213 |         assert.deepEqual(JSON.parse(messageContent(result.payload["content"])), expected);
+  214 |         const linked = turnEvidence[0]!.messages.filter(m => m["role"] === "tool" && m.message["toolCallId"] === call.callId);
+  215 |         assert.equal(linked.length, 1); assert.equal(linked[0]!["source_event_seq"], result.seq);
+  216 |         assert.equal(messageContent(linked[0]!.message["content"]), messageContent(result.payload["content"]));
+  217 |         const consumed = objects(turnEvidence[0]!.finalPlan.plan["messages"]).filter(m => m["role"] === "tool" && m["toolCallId"] === call.callId);
+  218 |         assert.equal(consumed.length, 1); assert.equal(messageContent(consumed[0]!["content"]), messageContent(result.payload["content"]));
+  219 |         assert.ok(result.seq < turnEvidence[0]!.finalPlan.event.seq, "answer did not consume tool result");
+  220 |         toolDetails.push({ name: "Projects", argumentsJson: JSON.stringify(args, null, 2), renderedResult: messageContent(result.payload["content"]), approved: method === "project_delete" });
+  221 |       }
+  222 |       assert.ok(targetCalls > 0, "core project method never occurred");
+  223 |       if (kind === "project-delete") assert.equal(targetCalls, 1);
+  224 |       assertProjectFiles(workspace, documents, deleted ? scenarios["project-delete"].target : undefined);
+  225 |       const dispatchOrder = data.events.filter(e => e.type === "tool.dispatch.started");
+  226 |       for (let i = 1; i < dispatchOrder.length; i++) {
+  227 |         const previousId = payload(eventPath, dispatchOrder[i - 1]!)["callId"];
+  228 |         const previousRaw = data.events.find(e => e.type === "tool.raw_result" && payload(eventPath, e)["callId"] === previousId)!;
+  229 |         assert.ok(previousRaw.seq < dispatchOrder[i]!.seq, "exclusive project operations overlapped");
+  230 |       }
+  231 |       const answer = turnEvidence[0]!.finalAnswer;
+  232 |       assert.ok(answer.includes(scenario.marker));
+  233 |       if (kind === "project-read") assert.ok(answer.includes("林澈"));
+  234 |       if (kind === "project-search") assert.ok(answer.includes("migrations/settlement.txt"));
+  235 |     } else {
+  236 |       assert.deepEqual(calls, [], "memory task used unrelated tools");
+  237 |       assertMemoryMutation(kind as "memory-update" | "memory-delete", checkpoints, sessionIds);
+  238 |       for (const [stage, turn] of turnEvidence.entries()) {
+  239 |         const events = data.events.filter(e => e.session_id === turn.sessionId);
+  240 |         const captures = events.filter(e => e.type === "service.call.completed" && componentId(eventPath, e) === "memory.long_term");
+  241 |         const models = events.filter(e => e.type === "model.completed");
+  242 |         assert.equal(captures.length, models.length, "missing capture after model answer");
+  243 |         for (const [index, capture] of captures.entries()) {
+  244 |           const done = payload(eventPath, capture), attrs = jsonObject(done["attributes"], "capture attributes");
+  245 |           const starts = events.filter(e => e.type === "service.call.started" && payload(eventPath, e)["serviceCallId"] === done["serviceCallId"]);
+  246 |           assert.equal(starts.length, 1);
+  247 |           const started = payload(eventPath, starts[0]!);
+  248 |           const startedAttrs = jsonObject(started["attributes"], "capture start attributes");
+  249 |           assert.equal(jsonObject(startedAttrs["request"], "capture request")["purpose"], "long_term_memory_capture");
+  250 |           assert.equal(started["evaluationId"], done["evaluationId"]);
+  251 |           for (const field of ["requestHash", "policyStateRevision", "serviceOrdinal", "callerKind", "serviceId", "serviceVersion"]) assert.deepEqual(startedAttrs[field], attrs[field]);
+  252 |           assert.ok(models[index]!.seq < starts[0]!.seq && starts[0]!.seq < capture.seq);
+  253 |           assert.equal(attrs["policyPoint"], "after_model_without_actions");
+  254 |           assert.equal(attrs["packageId"], "@longcat/policy-long-term-memory");
+  255 |           assert.equal(jsonObject(attrs["result"], "capture result")["finishReason"], "stop");
+> 256 |           assert.ok(checkpoints[stage]!.captures.some(c => c.outcomeId === payload(eventPath, models[index]!)["outcomeId"] && c.sourceSessionId === turn.sessionId && c.sourceTurnId === turn.turnId));
+      |                  ^ AssertionError: The expression evaluated to a falsy value:
+  257 |         }
+  258 |         for (const { plan } of turn.plans) {
+  259 |           const recalled = objects(plan["messages"]).filter(m => messageContent(m["content"]).startsWith("<long_term_memory>"));
+  260 |           if (stage === 1) assert.ok(recalled.some(m => messageContent(m["content"]).includes(scenario.oldValue)), "change did not see saved record");
+  261 |           if (stage === 2) {
+  262 |             assert.ok(!JSON.stringify(plan["messages"]).includes(scenario.oldValue), "deleted/replaced preference leaked to new session");
+  263 |             if (kind === "memory-update") assert.ok(recalled.some(m => messageContent(m["content"]).includes(checkpoints[1]!.activeMemories[0]!.text)), "recall did not consume updated record");
+  264 |             else assert.deepEqual(recalled, []);
+  265 |             for (const prompt of prompts.slice(0, 2)) assert.ok(!JSON.stringify(plan["messages"]).includes(JSON.stringify(prompt).slice(1, -1)), "old conversation leaked into recall");
+  266 |           }
+  267 |         }
+  268 |       }
+  269 |       assert.ok(turnEvidence[2]!.finalAnswer.includes(scenario.marker));
+  270 |       assert.ok(!turnEvidence[2]!.finalAnswer.includes(scenario.oldValue));
+  271 |       assert.deepEqual(readdirSync(workspace), [], "memory workflow changed workspace");
+  272 |     }
+  273 |     return { ...finishAudit(data, eventPath, sessionIds[0]!, forbidden, contract), toolDetails,
+  274 |       sessionEvidence: turnEvidence.map(({ sessionId, turnId, prompt, finalAnswer }) => ({ sessionId, turnId, prompt, finalAnswer })),
+  275 |       memoryCheckpoints: checkpoints };
+  276 |   } finally { data.database.close(); data.messages.close(); }
+  277 | }
+  278 | 
+```

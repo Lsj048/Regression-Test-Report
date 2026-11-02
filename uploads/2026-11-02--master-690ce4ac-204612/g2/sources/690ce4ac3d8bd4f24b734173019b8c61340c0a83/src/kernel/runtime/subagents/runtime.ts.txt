@@ -1,0 +1,787 @@
+import type { Clock } from "../../api/foundation/clock.js";
+import { ContractError, errorMessage } from "../../api/foundation/errors.js";
+import { newId } from "../../api/foundation/id.js";
+import type { JsonObject, JsonValue } from "../../api/foundation/json.js";
+import type { ToolApprovalResponse } from "../../api/tool/permission.js";
+import type { AgentKernel, PendingTurnHandle, TurnHandle } from "../agent/agent-kernel.js";
+import type { PolicyRuntime } from "../policy/runtime.js";
+import { isTerminalState } from "../state/machine.js";
+import type { AgentState, DurableEvent, TurnRepository } from "../state/types.js";
+import type {
+  DelegateSubagentRequest,
+  DelegateSubagentResult,
+  SubagentDescriptor,
+  SubagentFollowupResult,
+  SubagentInterruptResult,
+  SubagentListEntry,
+  SubagentMode,
+  SubagentRuntimeOptions,
+  SubagentSettlement,
+  SubagentToolFilter,
+} from "./types.js";
+
+interface ActiveChild {
+  readonly descriptor: SubagentDescriptor;
+  readonly turnId: string;
+  readonly lifecycle: Promise<AgentState>;
+}
+
+function object(value: JsonValue | undefined): Readonly<Record<string, JsonValue>> | undefined {
+  return value !== null && value !== undefined && typeof value === "object" && !Array.isArray(value)
+    ? value as Readonly<Record<string, JsonValue>>
+    : undefined;
+}
+
+function optionalFilter(value: JsonValue | undefined): SubagentToolFilter | undefined {
+  const record = object(value);
+  if (record === undefined) return undefined;
+  const allow = Array.isArray(record["allow"]) && record["allow"].every((item) => typeof item === "string")
+    ? record["allow"] as readonly string[]
+    : undefined;
+  const deny = Array.isArray(record["deny"]) && record["deny"].every((item) => typeof item === "string")
+    ? record["deny"] as readonly string[]
+    : undefined;
+  return allow === undefined && deny === undefined ? undefined : { ...(allow === undefined ? {} : { allow }), ...(deny === undefined ? {} : { deny }) };
+}
+
+function parseDescriptor(value: JsonValue): SubagentDescriptor | undefined {
+  const record = object(value);
+  if (record === undefined || record["schemaVersion"] !== 1
+    || typeof record["subagentId"] !== "string"
+    || typeof record["parentSessionId"] !== "string"
+    || typeof record["parentTurnId"] !== "string"
+    || typeof record["initialTurnId"] !== "string"
+    || (record["mode"] !== "spawn" && record["mode"] !== "fork")
+    || typeof record["label"] !== "string"
+    || typeof record["depth"] !== "number" || !Number.isSafeInteger(record["depth"]) || record["depth"] < 1
+    || typeof record["continuable"] !== "boolean"
+    || typeof record["createdAt"] !== "string"
+    || typeof record["bindingId"] !== "string"
+    || typeof record["bindingChecksum"] !== "string") return undefined;
+  const toolFilter = optionalFilter(record["toolFilter"]);
+  return Object.freeze({
+    schemaVersion: 1,
+    subagentId: record["subagentId"],
+    parentSessionId: record["parentSessionId"],
+    parentTurnId: record["parentTurnId"],
+    ...(typeof record["parentCallId"] === "string" ? { parentCallId: record["parentCallId"] } : {}),
+    initialTurnId: record["initialTurnId"],
+    mode: record["mode"],
+    label: record["label"],
+    depth: record["depth"],
+    continuable: record["continuable"],
+    createdAt: record["createdAt"],
+    bindingId: record["bindingId"],
+    bindingChecksum: record["bindingChecksum"],
+    ...(typeof record["persona"] === "string" ? { persona: record["persona"] } : {}),
+    ...(toolFilter === undefined ? {} : { toolFilter: toolFilter as SubagentToolFilter & JsonObject }),
+  });
+}
+
+function outputFrom(state: AgentState, events: readonly DurableEvent[]): string {
+  const outcome = object(state.phaseData["outcome"]);
+  if (typeof outcome?.["content"] === "string") return outcome["content"];
+  if (outcome?.["content"] !== undefined) return JSON.stringify(outcome["content"]);
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (event?.type !== "model.completed") continue;
+    const payload = object(event.payload);
+    if (typeof payload?.["content"] === "string" && payload["content"].length > 0) return payload["content"];
+  }
+  return "";
+}
+
+function modeOptions(options: SubagentRuntimeOptions, mode: SubagentMode): { readonly persona?: string; readonly toolFilter?: SubagentToolFilter } {
+  return options[mode] ?? {};
+}
+
+/** In-process spawn/fork lifecycle manager. */
+export class SubagentRuntime {
+  readonly #active = new Map<string, ActiveChild>();
+  readonly #descriptors = new Map<string, SubagentDescriptor>();
+  readonly #locks = new Map<string, Promise<void>>();
+  readonly #completionNoticeTurns = new Map<string, Set<Promise<AgentState>>>();
+  readonly #continuationWaiters = new Map<string, Set<() => void>>();
+  readonly #foregroundSubagents = new Set<string>();
+  readonly #maxDepth: number;
+  readonly #completionNotices: boolean;
+  #closing = false;
+
+  constructor(
+    private readonly kernel: AgentKernel,
+    private readonly repository: TurnRepository,
+    private readonly policies: PolicyRuntime,
+    private readonly clock: Clock,
+    private readonly options: SubagentRuntimeOptions,
+  ) {
+    const boundPolicy = this.policies.binding.componentById.get(options.policyBridge.componentId);
+    if (boundPolicy === undefined) {
+      throw new ContractError("Subagent runtime requires SubagentContextPolicy in the active binding", "SUBAGENT_POLICY_MISSING");
+    }
+    const policyConfig = object(boundPolicy.config as JsonValue | undefined);
+    const configuredDepth = options.maxDepth ?? policyConfig?.["maxDepth"] ?? 3;
+    if (typeof configuredDepth !== "number" || !Number.isSafeInteger(configuredDepth) || configuredDepth < 0) {
+      throw new ContractError("subagent maxDepth must be a non-negative safe integer", "SUBAGENT_DEPTH_INVALID");
+    }
+    if (options.completionNotices === false) {
+      throw new ContractError("Background completion notices are required by SubagentContextPolicy", "SUBAGENT_NOTICES_REQUIRED");
+    }
+    this.#maxDepth = configuredDepth;
+    this.#completionNotices = true;
+  }
+
+  get maxDepth(): number {
+    return this.#maxDepth;
+  }
+
+  async waitForTurn(handle: Pick<TurnHandle, "sessionId" | "turnId" | "completion">): Promise<AgentState> {
+    let state = await handle.completion;
+    while (state.turnOutcome?.kind === "waiting" && state.turnOutcome.expectations.some((reason) => reason.kind === "subagent")) {
+      await this.waitForIdle(handle.sessionId);
+      if (await this.#treeCancelled(state.rootTurnId, state.sessionId)) return state;
+      const continuation = (await this.repository.listStates(handle.sessionId))
+        .filter((candidate) => candidate.rootTurnId === state.rootTurnId && candidate.turnId !== state.turnId)
+        .at(-1);
+      if (continuation !== undefined) {
+        state = await this.kernel.wait(continuation.turnId);
+        continue;
+      }
+      const waitingForUser = await this.#hasDescendantWaitingForUser(handle.sessionId);
+      if (waitingForUser) return state;
+      const descendants = await this.#allDescendants(handle.sessionId);
+      if (!descendants.some((descriptor) => this.#active.has(descriptor.subagentId))) {
+        throw new ContractError(`Turn ${state.turnId} is waiting for subagents but has no continuation Turn`, "SUBAGENT_WAIT_ORPHANED");
+      }
+    }
+    // A user-input wait is a settled Turn boundary. Unrelated descendants may
+    // continue in the background and must not delay presentation of the question.
+    if (state.turnOutcome?.kind !== "waiting") await this.waitForIdle(handle.sessionId);
+    return state;
+  }
+
+  async waitForIdle(parentSessionId: string): Promise<void> {
+    while (true) {
+      const descendants = await this.#allDescendants(parentSessionId);
+      const active = descendants.flatMap((descriptor) => {
+        const child = this.#active.get(descriptor.subagentId);
+        return child === undefined ? [] : [child.lifecycle];
+      });
+      const notices = [...(this.#completionNoticeTurns.get(parentSessionId) ?? [])];
+      if (active.length === 0 && notices.length === 0) return;
+      await Promise.allSettled([...active, ...notices]);
+    }
+  }
+
+  async interruptDescendants(parentSessionId: string, reason = "ancestor Turn interrupted by host"): Promise<void> {
+    const parent = await this.#latestState(parentSessionId);
+    const descendants = await this.#allDescendants(parentSessionId);
+    if (parent !== undefined && !await this.#treeCancelled(parent.rootTurnId, parentSessionId)) {
+      await this.repository.appendEvents(parent.rootTurnId, [{ type: "turn.advance.cancelled", payload: {
+        scope: "execution_tree", sessionIds: [parentSessionId, ...descendants.map(item => item.subagentId)], reason,
+      } }]);
+    }
+    await Promise.allSettled(descendants.toReversed().map(async (descriptor) => {
+      const active = this.#active.get(descriptor.subagentId);
+      if (active === undefined) return;
+      const state = await this.repository.loadState(active.turnId);
+      if (!isTerminalState(state.kind)) await this.kernel.interrupt(active.turnId, reason, "parent");
+    }));
+  }
+
+  async delegate(request: DelegateSubagentRequest): Promise<DelegateSubagentResult> {
+    if (this.#closing) throw new ContractError("Subagent runtime is closing", "SUBAGENT_RUNTIME_CLOSING");
+    request.signal.throwIfAborted();
+    const parent = await this.#callingDescriptor(request.parentSessionId, request.parentTurnId);
+    if (parent !== undefined) this.#assertBinding(parent);
+    const depth = (parent?.depth ?? 0) + 1;
+    if (depth > this.#maxDepth) {
+      throw new ContractError(`Subagent depth ${depth} exceeds the configured maximum ${this.#maxDepth}`, "SUBAGENT_DEPTH_EXCEEDED");
+    }
+    const continuable = true;
+    const subagentId = newId("session");
+    const turnId = newId("turn");
+    const composition = modeOptions(this.options, request.mode);
+    const descriptor: SubagentDescriptor = Object.freeze({
+      schemaVersion: 1,
+      subagentId,
+      parentSessionId: request.parentSessionId,
+      parentTurnId: request.parentTurnId,
+      ...(request.parentCallId === undefined ? {} : { parentCallId: request.parentCallId }),
+      initialTurnId: turnId,
+      mode: request.mode,
+      label: request.label,
+      depth,
+      continuable,
+      createdAt: this.clock.now().toISOString(),
+      bindingId: this.policies.binding.bindingId,
+      bindingChecksum: this.policies.binding.checksum,
+      ...(composition.persona === undefined ? {} : { persona: composition.persona }),
+      ...(composition.toolFilter === undefined ? {} : { toolFilter: composition.toolFilter as SubagentToolFilter & JsonObject }),
+    });
+    await this.repository.appendEvents(request.parentTurnId, [{ type: "subagent.created", payload: descriptor }]);
+    this.#descriptors.set(subagentId, descriptor);
+
+    const history = request.mode === "fork" ? await this.kernel.completedHistoryPrefix(request.parentTurnId) : [];
+    const parentState = await this.repository.loadState(request.parentTurnId);
+    let handle: TurnHandle;
+    if (!request.runInBackground) this.#foregroundSubagents.add(subagentId);
+    try {
+      handle = await this.#start(descriptor, {
+        turnId,
+        prompt: request.prompt,
+        initialHistory: history,
+        rootTurnId: parentState.rootTurnId,
+        parentTurnId: request.parentTurnId,
+        ...(request.parentCallId === undefined ? {} : { causedByCallId: request.parentCallId }),
+      }, request.runInBackground);
+    } catch (error) {
+      this.#foregroundSubagents.delete(subagentId);
+      await this.repository.appendEvents(request.parentTurnId, [{
+        type: "subagent.start_failed",
+        payload: { subagentId, message: errorMessage(error) },
+      }]);
+      throw error;
+    }
+    if (request.runInBackground) return Object.freeze({ kind: "background", subagentId, turnId });
+
+    const abort = (): void => {
+      const activeTurnId = this.#active.get(subagentId)?.turnId ?? turnId;
+      void this.kernel.interrupt(activeTurnId, "parent delegation was cancelled", "parent");
+    };
+    if (request.signal.aborted) abort();
+    else request.signal.addEventListener("abort", abort, { once: true });
+    let state: AgentState;
+    try {
+      state = await this.waitForTurn(handle);
+      while (state.turnOutcome?.kind === "waiting") {
+        state = await this.#waitForContinuation(state, request.signal);
+      }
+    } finally {
+      request.signal.removeEventListener("abort", abort);
+      this.#foregroundSubagents.delete(subagentId);
+    }
+    const events = await this.repository.turnEvents(state.turnId);
+    if (state.turnOutcome?.kind !== "completed") {
+      throw new ContractError(`Subagent ${subagentId} stopped as ${state.turnOutcome?.kind ?? state.turnState.kind}: ${outputFrom(state, events) || JSON.stringify(state.phaseData)}`, "SUBAGENT_TURN_FAILED");
+    }
+    return Object.freeze({ kind: "foreground", subagentId, turnId: state.turnId, output: outputFrom(state, events) });
+  }
+
+  async followup(
+    parentSessionId: string,
+    subagentId: string,
+    message: string,
+    cause?: { readonly turnId: string; readonly callId: string },
+  ): Promise<SubagentFollowupResult> {
+    if (!message.trim()) throw new ContractError("Subagent follow-up message must not be empty", "SUBAGENT_MESSAGE_EMPTY");
+    return this.#serialized(subagentId, async () => {
+      const descriptor = await this.#directChild(parentSessionId, subagentId);
+      this.#assertBinding(descriptor);
+      if (!descriptor.continuable) throw new ContractError(`Subagent ${subagentId} is one-shot and cannot receive follow-ups`, "SUBAGENT_NOT_CONTINUABLE");
+      this.#descriptors.set(subagentId, descriptor);
+      const causalState = cause === undefined ? undefined : await this.repository.loadState(cause.turnId);
+      if (causalState !== undefined && causalState.sessionId !== parentSessionId) {
+        throw new ContractError(`Turn ${cause!.turnId} does not belong to requester Session ${parentSessionId}`, "SUBAGENT_CAUSE_SESSION_MISMATCH");
+      }
+      const causal = causalState === undefined ? {} : {
+        rootTurnId: causalState.rootTurnId,
+        parentTurnId: causalState.turnId,
+        causedByCallId: cause!.callId,
+      };
+      const active = this.#active.get(subagentId);
+      if (active !== undefined) {
+        const state = await this.repository.loadState(active.turnId);
+        if (!isTerminalState(state.kind)) {
+          const queued = await this.kernel.queueInput({ sessionId: descriptor.subagentId, content: message, ...causal });
+          return Object.freeze({ subagentId, messageId: queued.inputId });
+        }
+        this.#active.delete(subagentId);
+      }
+
+      const latest = await this.#latestState(subagentId);
+      const handle = await this.#start(descriptor, {
+        turnId: newId("turn"),
+        prompt: message,
+        initialHistory: [],
+        ...(causalState === undefined
+          ? latest === undefined ? {} : { rootTurnId: latest.rootTurnId, parentTurnId: latest.turnId }
+          : causal),
+      }, true);
+      return Object.freeze({ subagentId, messageId: handle.inputId, turnId: handle.turnId });
+    });
+  }
+
+  /** Continue one descendant from an explicitly correlated Host input. */
+  async continueFromInput(
+    requesterSessionId: string,
+    subagentId: string,
+    input: {
+      readonly turnId: string;
+      readonly inputId: string;
+      readonly content: string;
+      readonly rootTurnId: string;
+      readonly parentTurnId: string;
+      readonly causedByCallId: string;
+    },
+  ): Promise<TurnHandle | undefined> {
+    return this.#serialized(subagentId, async () => {
+      const descriptor = await this.#descendant(requesterSessionId, subagentId);
+      this.#assertBinding(descriptor);
+      const active = this.#active.get(subagentId);
+      if (active !== undefined) {
+        const state = await this.repository.loadState(active.turnId);
+        if (!isTerminalState(state.kind)) return undefined;
+        this.#active.delete(subagentId);
+      }
+      return this.#start(descriptor, {
+        turnId: input.turnId,
+        inputId: input.inputId,
+        prompt: input.content,
+        initialHistory: [],
+        rootTurnId: input.rootTurnId,
+        parentTurnId: input.parentTurnId,
+        causedByCallId: input.causedByCallId,
+      }, !this.#foregroundSubagents.has(subagentId));
+    });
+  }
+
+  /** Resume a descendant Turn that was durably paused for Tool approval. */
+  async resumeApproval(
+    requesterSessionId: string,
+    subagentId: string,
+    turnId: string,
+    requestId: string,
+    response: ToolApprovalResponse,
+  ): Promise<AgentState> {
+    return this.#serialized(subagentId, async () => {
+      const descriptor = await this.#descendant(requesterSessionId, subagentId);
+      this.#assertBinding(descriptor);
+      const state = await this.repository.loadState(turnId);
+      if (state.sessionId !== subagentId) throw new ContractError(`Turn ${turnId} does not belong to subagent ${subagentId}`, "SUBAGENT_TURN_MISMATCH");
+      const active = this.#active.get(subagentId);
+      if (active !== undefined) throw new ContractError(`Subagent ${subagentId} already has an active Turn`, "SUBAGENT_BUSY");
+      this.#descriptors.set(subagentId, descriptor);
+      const completion = this.kernel.resumeApproval(turnId, requestId, response);
+      this.#activate(descriptor, { turnId, completion }, true);
+      return completion;
+    });
+  }
+
+  async interrupt(requesterSessionId: string, subagentId: string): Promise<SubagentInterruptResult> {
+    const descriptor = await this.#descendant(requesterSessionId, subagentId);
+    if (!descriptor.continuable) throw new ContractError(`Subagent ${subagentId} is not a controllable background agent`, "SUBAGENT_NOT_CONTINUABLE");
+    const active = this.#active.get(subagentId);
+    const latest = active === undefined ? await this.#latestState(subagentId) : await this.repository.loadState(active.turnId);
+    if (latest === undefined || isTerminalState(latest.kind)) {
+      return Object.freeze({ subagentId, accepted: true, ...(latest === undefined ? {} : { turnId: latest.turnId }) });
+    }
+    await this.kernel.interrupt(latest.turnId, `interrupted by ancestor ${requesterSessionId}`, "parent");
+    return Object.freeze({ subagentId, accepted: true, turnId: latest.turnId });
+  }
+
+  async list(requesterSessionId: string, scope: "children" | "descendants" = "children"): Promise<readonly SubagentListEntry[]> {
+    const descriptors = scope === "children"
+      ? (await this.#children(requesterSessionId)).filter((descriptor) => descriptor.continuable)
+      : (await this.#allDescendants(requesterSessionId)).filter((descriptor) => descriptor.continuable);
+    const entries = await Promise.all(descriptors.map(async (descriptor): Promise<SubagentListEntry> => {
+      const active = this.#active.get(descriptor.subagentId);
+      const latest = active === undefined ? await this.#latestState(descriptor.subagentId) : await this.repository.loadState(active.turnId);
+      const status = latest?.turnOutcome?.kind === "waiting"
+        ? "waiting" as const
+        : active !== undefined && latest?.turnState.kind !== "settled"
+        ? "running" as const
+        : latest?.kind === "paused" ? "idle" as const : "ready" as const;
+      return Object.freeze({
+        subagentId: descriptor.subagentId,
+        label: descriptor.label,
+        mode: descriptor.mode,
+        status,
+        parentSessionId: descriptor.parentSessionId,
+        depth: descriptor.depth,
+        continuable: descriptor.continuable,
+        ...(latest === undefined ? {} : { turnId: latest.turnId, turnState: latest.turnState.kind, ...(latest.turnOutcome === undefined ? {} : { turnOutcome: latest.turnOutcome.kind }) }),
+      });
+    }));
+    return Object.freeze(entries);
+  }
+
+  async close(): Promise<void> {
+    if (this.#closing) return;
+    this.#closing = true;
+    for (const sessionId of this.#continuationWaiters.keys()) this.#notifyContinuation(sessionId);
+    const active = [...this.#active.values()];
+    await Promise.allSettled(active.map(async (child) => {
+      const state = await this.repository.loadState(child.turnId);
+      if (!isTerminalState(state.kind)) await this.kernel.interrupt(child.turnId, "subagent runtime closed", "host_shutdown");
+      await child.lifecycle.catch(() => undefined);
+    }));
+    await Promise.allSettled([...this.#completionNoticeTurns.values()].flatMap((notices) => [...notices]));
+    this.#active.clear();
+    this.#foregroundSubagents.clear();
+  }
+
+  async #start(
+    descriptor: SubagentDescriptor,
+    input: {
+      readonly turnId: string;
+      readonly inputId?: string;
+      readonly prompt: string;
+      readonly initialHistory: readonly import("../../api/model/types.js").ChatMessage[];
+      readonly rootTurnId?: string;
+      readonly parentTurnId?: string;
+      readonly causedByCallId?: string;
+    },
+    notifyParent: boolean,
+  ): Promise<TurnHandle> {
+    this.#assertBinding(descriptor);
+    const policyState = this.options.policyBridge.initialState(descriptor);
+    const handle = await this.kernel.startTurn({
+      sessionId: descriptor.subagentId,
+      turnId: input.turnId,
+      ...(input.inputId === undefined ? {} : { inputId: input.inputId }),
+      content: input.prompt,
+      ...(input.rootTurnId === undefined ? {} : { rootTurnId: input.rootTurnId }),
+      ...(input.parentTurnId === undefined ? {} : { parentTurnId: input.parentTurnId }),
+      ...(input.causedByCallId === undefined ? {} : { causedByCallId: input.causedByCallId }),
+      initialHistory: input.initialHistory,
+      initialPolicyState: { [this.options.policyBridge.componentId]: policyState },
+      delegationDepth: descriptor.depth,
+      parentSessionId: descriptor.parentSessionId,
+      metadata: { origin: "subagent", subagent: descriptor },
+      ...(descriptor.toolFilter === undefined ? {} : { toolRestriction: descriptor.toolFilter }),
+    });
+    this.#notifyContinuation(descriptor.subagentId);
+    this.#activate(descriptor, handle, notifyParent);
+    return handle;
+  }
+
+  async #startPending(descriptor: SubagentDescriptor, previous: AgentState, notifyParent: boolean): Promise<PendingTurnHandle> {
+    this.#assertBinding(descriptor);
+    const policyState = this.options.policyBridge.initialState(descriptor);
+    const input = await this.repository.peekNextInput(descriptor.subagentId);
+    if (input === undefined) throw new ContractError(`Subagent ${descriptor.subagentId} has no pending input`, "INPUT_NOT_PENDING");
+    const handle = await this.kernel.startPendingTurn({
+      sessionId: descriptor.subagentId,
+      turnId: newId("turn"),
+      inputId: input.inputId,
+      rootTurnId: input.rootTurnId ?? previous.rootTurnId,
+      parentTurnId: input.parentTurnId ?? previous.turnId,
+      ...(input.causedByCallId === undefined ? {} : { causedByCallId: input.causedByCallId }),
+      initialPolicyState: { [this.options.policyBridge.componentId]: policyState },
+      delegationDepth: descriptor.depth,
+      parentSessionId: descriptor.parentSessionId,
+      metadata: { origin: "subagent", subagent: descriptor },
+      ...(descriptor.toolFilter === undefined ? {} : { toolRestriction: descriptor.toolFilter }),
+    });
+    this.#notifyContinuation(descriptor.subagentId);
+    this.#activate(descriptor, handle, notifyParent);
+    return handle;
+  }
+
+  #activate(descriptor: SubagentDescriptor, handle: Pick<TurnHandle, "turnId" | "completion">, notifyParent: boolean): void {
+    let active!: ActiveChild;
+    const lifecycle = this.waitForTurn({ sessionId: descriptor.subagentId, turnId: handle.turnId, completion: handle.completion })
+      .then(async (state) => {
+        try {
+          const deliver = await this.#serialized(descriptor.subagentId, async () => {
+            const ownsActivationSlot = this.#active.get(descriptor.subagentId) === active;
+            if (this.#closing) {
+              if (state.turnOutcome?.kind !== "waiting") await this.#settled(descriptor, state, false);
+              return;
+            }
+            if (ownsActivationSlot && state.kind === "completed" && await this.repository.pendingInputCount(descriptor.subagentId) > 0) {
+              await this.#startPending(descriptor, state, notifyParent);
+              return;
+            }
+            if (state.turnOutcome?.kind === "waiting") return;
+            return this.#settled(descriptor, state, notifyParent);
+          });
+          // A parent can be sending this child a follow-up. Never wait for
+          // parent initialization while holding the child lock.
+          if (deliver) {
+            const delivery = deliver().then(() => state);
+            this.#trackCompletionNotice(descriptor.parentSessionId, delivery);
+            await delivery;
+          }
+          return state;
+        } finally {
+          if (this.#active.get(descriptor.subagentId) === active) this.#active.delete(descriptor.subagentId);
+        }
+      });
+    active = { descriptor, turnId: handle.turnId, lifecycle };
+    this.#active.set(descriptor.subagentId, active);
+    this.#descriptors.set(descriptor.subagentId, descriptor);
+    void lifecycle.catch(() => undefined);
+  }
+
+  async #settled(descriptor: SubagentDescriptor, state: AgentState, notifyParent = true): Promise<(() => Promise<void>) | undefined> {
+    if (state.turnOutcome?.kind === "waiting") {
+      throw new ContractError(`Waiting Turn ${state.turnId} cannot settle subagent ${descriptor.subagentId}`, "SUBAGENT_WAITING_NOT_SETTLED");
+    }
+    const events = await this.repository.turnEvents(state.turnId);
+    const settlement: SubagentSettlement = Object.freeze({
+      subagentId: descriptor.subagentId,
+      turnId: state.turnId,
+      state: state.turnOutcome?.kind ?? "interrupted",
+      output: outputFrom(state, events),
+      label: descriptor.label,
+      mode: descriptor.mode,
+      parentSessionId: descriptor.parentSessionId,
+      ...(descriptor.parentCallId === undefined ? {} : { parentCallId: descriptor.parentCallId }),
+      ...(state.turnOutcome?.kind === "failed" ? { error: state.turnOutcome.error as unknown as JsonValue } : {}),
+    });
+    const parentCause = await this.#parentCause(descriptor, state);
+    const { parentCallId: _initialParentCallId, ...settlementWithoutCause } = settlement;
+    const attributedSettlement: SubagentSettlement = Object.freeze({
+      ...settlementWithoutCause,
+      ...(parentCause.parentCallId === undefined ? {} : { parentCallId: parentCause.parentCallId }),
+    });
+    await this.repository.appendEvents(parentCause.parentTurnId, [{ type: "subagent.settled", payload: attributedSettlement }]);
+    if (!notifyParent || !this.#completionNotices || this.#closing) return;
+    const parentState = await this.repository.loadState(parentCause.parentTurnId);
+    if (parentState.turnOutcome !== undefined
+      && parentState.turnOutcome.kind !== "completed"
+      && parentState.turnOutcome.kind !== "waiting") return;
+    const status = state.turnOutcome?.kind === "completed" ? "completed" as const
+      : state.turnOutcome?.kind === "failed" || state.turnOutcome?.kind === "blocked" ? "failed" as const
+        : "killed" as const;
+    const message = this.options.policyBridge.renderCompletionNotice({
+      subagentId: descriptor.subagentId,
+      childTurnId: state.turnId,
+      depth: descriptor.depth,
+      parentSessionId: descriptor.parentSessionId,
+      parentTurnId: parentCause.parentTurnId,
+      ...(parentCause.parentCallId === undefined ? {} : { parentCallId: parentCause.parentCallId }),
+      mode: descriptor.mode,
+      label: descriptor.label,
+      ...(descriptor.persona === undefined ? {} : { persona: descriptor.persona }),
+      status,
+      output: attributedSettlement.output,
+      ...(attributedSettlement.error === undefined ? {} : { error: attributedSettlement.error }),
+    });
+    const retainStoppedNotice = () => this.kernel.submitRuntimeMessage({
+      sessionId: descriptor.parentSessionId, turnId: parentCause.parentTurnId,
+      source: "subagent_notification", sourceId: this.options.policyBridge.completionNoticeInputId(descriptor.subagentId, state.turnId),
+      message: { role: "user", content: message },
+    });
+    if (await this.#treeCancelled(parentState.rootTurnId, parentState.sessionId)) {
+      await retainStoppedNotice();
+      return;
+    }
+    const inputId = this.options.policyBridge.completionNoticeInputId(descriptor.subagentId, state.turnId);
+    // Admit before releasing the lock: a crash after this point leaves a
+    // recoverable FIFO input, not an in-memory-only completion callback.
+    await this.kernel.queueInput({
+      sessionId: descriptor.parentSessionId, inputId, content: message,
+      parentTurnId: parentCause.parentTurnId, rootTurnId: parentState.rootTurnId,
+      ...(parentCause.parentCallId === undefined ? {} : { causedByCallId: parentCause.parentCallId }),
+      origin: { kind: "subagent_notification", subagentId: descriptor.subagentId,
+        childTurnId: state.turnId, label: descriptor.label, status,
+        ...(parentCause.parentCallId === undefined ? {} : { parentCallId: parentCause.parentCallId }) },
+    });
+    return async () => {
+      if (this.#closing) return; // The admitted input survives Host shutdown.
+      try {
+        const parentDescriptor = await this.#callingDescriptor(descriptor.parentSessionId, parentCause.parentTurnId);
+        const queued = await this.kernel.startPendingTurn({
+          sessionId: descriptor.parentSessionId,
+          inputId,
+          parentTurnId: parentCause.parentTurnId,
+          ...(parentCause.parentCallId === undefined ? {} : { causedByCallId: parentCause.parentCallId }),
+          rootTurnId: parentState.rootTurnId,
+          ...(parentDescriptor === undefined ? {} : {
+            delegationDepth: parentDescriptor.depth,
+            parentSessionId: parentDescriptor.parentSessionId,
+            metadata: { origin: "subagent", subagent: parentDescriptor },
+            ...(parentDescriptor.toolFilter === undefined ? {} : { toolRestriction: parentDescriptor.toolFilter }),
+          }),
+        });
+        this.#trackCompletionNotice(descriptor.parentSessionId, queued.completion);
+      } catch (error) {
+        if (error instanceof ContractError && error.code === "SUBAGENT_NOTICE_CANCELLED") {
+          await this.repository.cancelInput(descriptor.parentSessionId, inputId);
+          await retainStoppedNotice();
+          return;
+        }
+        await this.repository.appendEvents(parentCause.parentTurnId, [{
+          type: "subagent.notice_failed",
+          payload: { subagentId: descriptor.subagentId, turnId: state.turnId, message: errorMessage(error) },
+        }]).catch(() => undefined);
+        throw error;
+      }
+    };
+  }
+
+  async #treeCancelled(rootTurnId: string, sessionId: string): Promise<boolean> {
+    return (await this.repository.turnEventsByTypes(rootTurnId, ["turn.advance.cancelled"]))
+      .some(event => {
+        const payload = object(event.payload);
+        return payload?.["scope"] === "execution_tree" && Array.isArray(payload["sessionIds"]) && payload["sessionIds"].includes(sessionId);
+      });
+  }
+
+  async #hasDescendantWaitingForUser(parentSessionId: string): Promise<boolean> {
+    const descendants = await this.#allDescendants(parentSessionId);
+    const latest = await Promise.all(descendants.map((descriptor) => this.#latestState(descriptor.subagentId)));
+    return latest.some((state) => state?.turnOutcome?.kind === "waiting"
+      && state.turnOutcome.expectations.some((expectation) => expectation.kind === "user_input"));
+  }
+
+  /** Resolve the parent-side Turn/call that caused this child activation. */
+  async #parentCause(
+    descriptor: SubagentDescriptor,
+    childState: AgentState,
+  ): Promise<{ readonly parentTurnId: string; readonly parentCallId?: string }> {
+    let cursor = childState;
+    const visited = new Set<string>();
+    while (!visited.has(cursor.turnId)) {
+      visited.add(cursor.turnId);
+      const parentTurnId = cursor.parentTurnId;
+      if (parentTurnId === undefined) break;
+      const parent = await this.repository.loadState(parentTurnId).catch(() => undefined);
+      if (parent === undefined) break;
+      if (parent.sessionId === descriptor.parentSessionId) {
+        return {
+          parentTurnId: parent.turnId,
+          ...(cursor.causedByCallId === undefined ? {} : { parentCallId: cursor.causedByCallId }),
+        };
+      }
+      cursor = parent;
+    }
+    return {
+      parentTurnId: descriptor.parentTurnId,
+      ...(descriptor.parentCallId === undefined ? {} : { parentCallId: descriptor.parentCallId }),
+    };
+  }
+
+  async #waitForContinuation(previous: AgentState, signal: AbortSignal): Promise<AgentState> {
+    while (true) {
+      if (this.#closing) throw new ContractError("Subagent runtime is closing", "SUBAGENT_RUNTIME_CLOSING");
+      const continuation = (await this.repository.listStates(previous.sessionId))
+        .filter((candidate) => candidate.parentTurnId === previous.turnId)
+        .at(-1);
+      if (continuation !== undefined) return this.kernel.wait(continuation.turnId);
+      signal.throwIfAborted();
+      await new Promise<void>((resolve, reject) => {
+        const waiters = this.#continuationWaiters.get(previous.sessionId) ?? new Set<() => void>();
+        const cleanup = (): void => {
+          waiters.delete(wake);
+          if (waiters.size === 0) this.#continuationWaiters.delete(previous.sessionId);
+          signal.removeEventListener("abort", abort);
+        };
+        const wake = (): void => { cleanup(); resolve(); };
+        const abort = (): void => { cleanup(); reject(signal.reason ?? new ContractError("Subagent continuation wait was cancelled", "SUBAGENT_WAIT_CANCELLED")); };
+        waiters.add(wake);
+        this.#continuationWaiters.set(previous.sessionId, waiters);
+        signal.addEventListener("abort", abort, { once: true });
+        if (signal.aborted) abort();
+        else void this.repository.listStates(previous.sessionId).then((states) => {
+          if (states.some((candidate) => candidate.parentTurnId === previous.turnId)) wake();
+        }, (error: unknown) => { cleanup(); reject(error); });
+      });
+    }
+  }
+
+  #notifyContinuation(sessionId: string): void {
+    for (const wake of [...(this.#continuationWaiters.get(sessionId) ?? [])]) wake();
+  }
+
+  #trackCompletionNotice(parentSessionId: string, completion: Promise<AgentState>): void {
+    let notices = this.#completionNoticeTurns.get(parentSessionId);
+    if (notices === undefined) {
+      notices = new Set();
+      this.#completionNoticeTurns.set(parentSessionId, notices);
+    }
+    notices.add(completion);
+    void completion.finally(() => {
+      notices!.delete(completion);
+      if (notices!.size === 0) this.#completionNoticeTurns.delete(parentSessionId);
+    }).catch(() => undefined);
+  }
+
+  async #callingDescriptor(parentSessionId: string, parentTurnId: string): Promise<SubagentDescriptor | undefined> {
+    const live = this.#descriptors.get(parentSessionId);
+    if (live !== undefined) return live;
+    const events = await this.repository.turnEvents(parentTurnId);
+    for (const event of events) {
+      if (event.type !== "turn.created") continue;
+      const metadata = object(object(event.payload)?.["metadata"]);
+      const descriptor = metadata?.["subagent"] === undefined ? undefined : parseDescriptor(metadata["subagent"]);
+      if (descriptor !== undefined && descriptor.subagentId === parentSessionId) {
+        this.#descriptors.set(parentSessionId, descriptor);
+        return descriptor;
+      }
+    }
+    return undefined;
+  }
+
+  async #children(parentSessionId: string): Promise<readonly SubagentDescriptor[]> {
+    const events = await this.repository.events(parentSessionId);
+    const descriptors: SubagentDescriptor[] = [];
+    const seen = new Set<string>();
+    for (const event of events) {
+      if (event.type !== "subagent.created") continue;
+      const descriptor = parseDescriptor(event.payload);
+      if (descriptor === undefined || descriptor.parentSessionId !== parentSessionId || seen.has(descriptor.subagentId)) continue;
+      seen.add(descriptor.subagentId);
+      descriptors.push(descriptor);
+      this.#descriptors.set(descriptor.subagentId, descriptor);
+    }
+    return Object.freeze(descriptors);
+  }
+
+  async #allDescendants(parentSessionId: string): Promise<readonly SubagentDescriptor[]> {
+    const result: SubagentDescriptor[] = [];
+    const visited = new Set<string>();
+    const visit = async (sessionId: string): Promise<void> => {
+      if (visited.has(sessionId)) return;
+      visited.add(sessionId);
+      for (const child of await this.#children(sessionId)) {
+        result.push(child);
+        await visit(child.subagentId);
+      }
+    };
+    await visit(parentSessionId);
+    return Object.freeze(result);
+  }
+
+  async #directChild(parentSessionId: string, subagentId: string): Promise<SubagentDescriptor> {
+    const descriptor = (await this.#children(parentSessionId)).find((candidate) => candidate.subagentId === subagentId);
+    if (descriptor === undefined) throw new ContractError(`Subagent ${subagentId} is not a direct child of ${parentSessionId}`, "SUBAGENT_UNAUTHORIZED");
+    return descriptor;
+  }
+
+  async #descendant(parentSessionId: string, subagentId: string): Promise<SubagentDescriptor> {
+    const descriptor = (await this.#allDescendants(parentSessionId)).find((candidate) => candidate.subagentId === subagentId);
+    if (descriptor === undefined) throw new ContractError(`Subagent ${subagentId} is not a descendant of ${parentSessionId}`, "SUBAGENT_UNAUTHORIZED");
+    return descriptor;
+  }
+
+  async #latestState(sessionId: string): Promise<AgentState | undefined> {
+    return (await this.repository.listStates(sessionId)).at(-1);
+  }
+
+  #assertBinding(descriptor: SubagentDescriptor): void {
+    if (descriptor.bindingChecksum !== this.policies.binding.checksum) {
+      throw new ContractError(
+        `Subagent ${descriptor.subagentId} was created under binding ${descriptor.bindingChecksum}, but the active binding is ${this.policies.binding.checksum}`,
+        "SUBAGENT_BINDING_DRIFT",
+      );
+    }
+  }
+
+  async #serialized<T>(key: string, operation: () => Promise<T>): Promise<T> {
+    const previous = this.#locks.get(key) ?? Promise.resolve();
+    let release!: () => void;
+    const current = new Promise<void>((resolve) => { release = resolve; });
+    const tail = previous.then(() => current);
+    this.#locks.set(key, tail);
+    await previous;
+    try {
+      return await operation();
+    } finally {
+      release();
+      if (this.#locks.get(key) === tail) this.#locks.delete(key);
+    }
+  }
+}

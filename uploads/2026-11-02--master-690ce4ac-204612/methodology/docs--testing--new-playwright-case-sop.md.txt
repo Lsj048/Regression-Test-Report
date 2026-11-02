@@ -1,0 +1,231 @@
+# 新增 Playwright Case：从设计到登记的 SOP
+
+目标：接手的人能按顺序完成一个 Case，知道每步改哪里、什么算完成。以下用两个**现有 Case**讲清做法：真实模型的内容搜索，以及确定性模型的 500 后恢复。它们是参照，不要再注册一个同义 Case。新增时换成你的业务目标、ID 和文件名。
+
+只做文档阅读不会启动实验。执行下面的取样命令会启动隔离服务和浏览器；live 还会消耗真实模型额度。所有测试使用任务自己的目录和随机端口，不操作日常 8088。
+
+## 0. 从套件分支开始，PR 也合回套件分支
+
+回归套件不整体合入 master。Case 工作从最新 `origin/devops/luoshijie02` 开始，PR 目标是 `devops/luoshijie02`。下面是新工作副本的示意命令，先替换分支名和路径；不要覆盖已有 checkout：
+
+```bash
+git fetch origin
+git worktree add -b codex/new-case /absolute/new-case-worktree origin/devops/luoshijie02
+cd /absolute/new-case-worktree
+```
+
+产品 Bug 与 Case 分开：另从最新 `origin/master` 开修复分支，带必要产品测试和缺陷说明，向 master 交付；Case 本身留在套件分支。即使你在套件树上验证修复成功，也不能据此声称 master 已通过。分支同步、周入口的测试覆盖范围及兼容性见[总体方案](harness-evaluation.md#4-分支与交付方式)。
+
+## 1. 写代码前，先把设计说清楚
+
+按顺序读：
+
+1. 根目录 [AGENTS.md](../../AGENTS.md) 和 [spec/README.md](../../spec/README.md)，再读目标机制的条款与验收场景。Kernel/spec 修改必须另获具体授权。
+2. [测试分层选择](test-selection.md)：确定确实需要网页 Case；单元/集成已足够证明的内部逻辑不重复堆网页测试。
+3. [Case 设计准则](case-design.md)：题面与断言强度一致，核心机制够小，业务真值独立，明确允许变化。
+4. [Case 台账](../../test/e2e/cases/README.md) 与注册表，确认没有同义覆盖；读相关真实 Mode、Tool/Policy 实现，不能猜。
+5. [技术方案](web-regression.md) 看接口；[运行手册](../../scripts/evaluation/README.md) 看工具链与凭据。安装了 `lch-web-regression` 的 Codex 同时读取 skill。
+
+先在台账登记“设计中”，留下这张简短设计单，不填虚构通过数：
+
+```text
+Case ID / live 或 deterministic / Mode：
+自然题面（多轮分别写）：
+最小夹具和独立业务真值：
+唯一核心机制；必经 Tool/Policy：
+允许的只读复核、表达或合法恢复：
+必须拒绝的错值、越权、重复副作用等：
+时间预算及依据：
+明确不覆盖什么：
+代码、规范与已有 Case 入口：
+状态：设计中；证据：尚未取样
+```
+
+## 2. 这些文件怎样把一个 Case 跑起来
+
+下面路径都相对 `test/e2e/`。`<domain>` 表示你选择的场景文件名，例如 `live-content-search`，不是要创建一个真的叫 `<domain>` 的文件。
+
+```mermaid
+flowchart TD
+    CMD["运行命令：选 live 或 deterministic，再用 grep 选 Case"] --> REG["evaluation-cases.ts：这个 Case 测什么，属于哪组"]
+    REG --> MAP["case-drivers.ts：按 Case ID 找到对应的网页操作代码"]
+    MAP --> RUN["web-regression.spec.ts：为每个样本准备环境"]
+    RUN --> PREP["调用 cases/场景.ts 的 prepareWorkspace：写入测试材料"]
+    PREP --> ENV["启动模型服务或代理、Web Host、独立工作区与数据库"]
+    FIX["fixtures/：提供所需测试文件、受控服务或故障脚本"] -.-> ENV
+    ENV --> DRIVER["调用 cases/场景.ts 的 run：网页输入、点击、等待"]
+    DRIVER --> AUDIT["audits/场景.ts：读取真实记录，判断执行和业务结果"]
+    AUDIT --> UI["Driver 检查页面和刷新，保存审计、耗时等附件"]
+    UI --> END["共用 spec 收集失败现场、停止进程、导出轨迹"]
+    DATA["场景-scenario.ts：题目、材料内容、正确值、Case 声明"] -.-> REG
+    DATA -.-> DRIVER
+    DATA -.-> AUDIT
+```
+
+### 容易混淆的文件，分别写什么
+
+- **`<domain>-scenario.ts`：描述这道题。** 例如内容搜索的题面是什么、准备哪两个文件、联系人正确值是什么。只定义数据和 Case 声明，不负责启动浏览器或点击页面。文件材料由 Driver 的 `prepareWorkspace` 实际写入；故障家族也可以共用 `deterministic-scenarios.ts`，不是每项都建一个新文件。
+- **`cases/<domain>.ts`：怎么在网页上做这道题。** 这里的 Driver 是一段操作代码：准备材料、输入题面、点击、等待、调用后台检查、检查回答和刷新。不要自己再写一套服务启动和进程清理。
+- **`evaluation-cases.ts`：有哪些题，各自要求什么。** 登记 Case ID、模式、真实或确定性模型、必须发生的行为、时间预算和附件；`EVALUATION_CASES` 是总登记，`EVALUATION_PROFILES.*.caseIds` 决定哪组执行哪些题。这里不写点击步骤。
+- **`case-drivers.ts`：这道题由哪段操作代码执行。** 在 `EVALUATION_CASE_DRIVERS` 登记 Driver，用相同 Case ID 与上面的声明配对。这里不重新定义题面和断言。
+- **`fixtures/`：测试需要的材料或受控服务。** 可以是静态文件，也可以是模拟模型 500 的服务脚本。脚本收到并检查真实请求，再按规定返回；不是提前写好业务结果让测试通过。普通 live Case 不一定需要新增这里的文件。
+- **`web-regression.spec.ts`：所有 Case 共用的运行入口。** 逐样本分配目录和端口，调用 Driver 准备材料，启动服务后调用 `run`，最后保存现场、停止进程并导出轨迹。新 Case 通常复用；只有需要接入新模型/故障服务时才改 `prepareModel` 等对应位置。
+- **`audits/<domain>.ts`：后台到底做对了没有。** 读取真实 SQLite、事件和业务文件，核对工具是否执行、返回值是否正确、后续模型是否实际使用；由 Driver 调用。页面看着正确不能替代这一层。
+
+Contract 就是 Case 声明。核对 `contractVersion`、ID/mode、`modelExecution`、prompt、finalMarker、artifactFiles、timingBudgetsMs、requiredTools、allowedOptionalTools、requiredPolicyEvidence、toolSurface；Standard 按目标填写 `planModeExpectation`。`finalMarker` 只是辅助检查，不能代替业务结果。
+
+Driver 的 `timingBudgetKeys` 与实际 timings 完整键集合必须和 Contract 相同。live 专属 `modelSettings` 要说明理由；deterministic 不能带此覆盖项。正反例放 `test/unit/` 或 `test/integration/`；周实验要携带的新评测自检逐文件登记 `suite-companions.json`，不登记产品测试。状态和成绩最后写 `cases/README.md`。
+
+## 3. 例一：新增真实模型 Case
+
+参照 `standard.live-content-search`：用户要在发布资料中搜索 Apollo，并报告命中文档及联系人。目标是**真实内容搜索及结果消费**，不是测试模型会不会说“陈禾”。允许必要的 Glob/Read 和重复只读复核，但无搜索、错误联系人、没有结果来源都不能通过。
+
+按下面顺序写，前一步明确后再做后一步：
+
+1. **场景与 Contract。** 参照 [live-content-search-scenario.ts](../../test/e2e/live-content-search-scenario.ts)，在新场景文件中写自然题面、小文件夹具、独立目标值和 Contract。这个例子要求搜索/只读、不使用终端、不联网、不修改文件；所以不能在断言里默许用 Bash 代替搜索。`requiredTools` 只放 Grep，Glob/Read 属允许但不计覆盖的路径。
+2. **后台审计。** 参照 [audits/live-content-search.ts](../../test/e2e/audits/live-content-search.ts)。从真实数据库开始：`commonAudit` 取得事实，公共/领域审计核对绑定和逐调用身份，再验证搜索来源、目标模型请求实际消费、正确答案、文件未变，最后 `finishAudit` 返回 Contract 所需结果。不要只检查最终答案包含联系人。已有合法拒绝只可按真实错误与零执行链精确放行，不全局过滤失败。
+3. **页面 Driver。** 参照 [cases/live-content-search.ts](../../test/e2e/cases/live-content-search.ts)。`prepareWorkspace` 写最小材料；`run` 打开隔离网页，核对 Mode、模型、权限和工作区，从输入框发送题面。页面外 HTTP 只能观察状态，不能替代用户操作。使用原绝对 deadline 等完成，调用审计，检查全部相关页面结果，再刷新检查。
+4. **标准附件。** Driver 用 `attachJson(..., "sqlite-audit", {...audit, model: env.model})` 和 `attachJson(..., "timings", {...})` 保存结果，用 `browserDiagnostics` 收集并检查意外浏览器错误。共用 spec 保存 service log、失败诊断和 trajectory。清理前才取得到的专属证据放在 `attachArtifactsBeforeCleanup`，失败也要保留。
+5. **注册。** 在 `evaluation-cases.ts` 的 `EVALUATION_CASES` 及 `EVALUATION_PROFILES.live.caseIds` 注册 Contract；在 `case-drivers.ts` 注册 Driver。场景文件被导入不代表已经加入执行集。
+6. **正反控制。** 参照 [evaluation-live-content-search.test.ts](../../test/unit/evaluation-live-content-search.test.ts)：合理重复搜索/读取通过；无真实搜索、无联系人来源、错误联系人拒绝。新增测试文件若是随 suite 迁移的评测自检，登记 `suite-companions.json`。
+7. **收集、探针、冻结取样、台账。** 按第 5～7 节执行。涉及共享审计时，先跑受影响的原正反测试，再消耗真实模型样本。
+
+示例参数不能代替实际代码检查。用户要求改为其他搜索范围或结果目标时，夹具、题面、审计必须一起调整；不要仅替换 Case 名称。
+
+## 4. 例二：新增确定性故障 Case
+
+参照 `standard.deterministic-provider-500-recovery`：题面是“请计算11加22，只回复结果。”模型服务第一次返回受控 500，下一次返回 33。要证明真实 LCH 识别错误、选择有界重试、在同一轮完成，页面及刷新保留正确结果。
+
+这个例子可以固定两次请求与 attempt 0/1，因为它们正是受控故障协议；不能把这种固定次数照搬到真实模型自由选路 Case。
+
+1. **场景声明。** 在 [deterministic-scenarios.ts](../../test/e2e/deterministic-scenarios.ts) 记录普通题面、正确答案、预期错误、尝试序号、预算及 fixture revision。新 ID 表示新机制/边界，不能只换算式增加数量。
+2. **故障服务。** 在 [deterministic-fault-server.mjs](../../test/e2e/fixtures/deterministic-fault-server.mjs) 增加显式场景分支。先校验真实请求的任务、模型协议、历史及调用身份，再按阶段故障/恢复；未知请求必须拒绝并留证。不要无条件返回成功答案，不伪造工具结果或业务文件。改变协议时更新 revision 和审计预期。
+3. **Contract。** 该家族在 [evaluation-cases.ts](../../test/e2e/evaluation-cases.ts) 由 `deterministicFaultContract` 构造；把新项加入 `DETERMINISTIC_FAULT_CASES`，确认该集合确实进入 `EVALUATION_CASES` 和 deterministic profile。不同家族可以独立 Contract，不必硬塞这个工厂。
+4. **故障审计。** 参照 [audits/deterministic-faults.ts](../../test/e2e/audits/deterministic-faults.ts)。核对 fixture 无 violations、真实交换恰为 500→正常响应、失败身份、同 Turn 的重试提案 selected、后继请求、终态与持久答案。33 单独出现不代表通过。耗尽、取消、恢复后新任务是不同协议，不能套同一成功检查。
+5. **Driver 与注册。** 参照 [cases/deterministic-faults.ts](../../test/e2e/cases/deterministic-faults.ts)，经页面完成任务，核对错误展示、后续成功、刷新；清理前挂 `deterministic-fixture.json`。在 `case-drivers.ts` 显式增加工厂调用。
+6. **确认模型路由。** 检查 [web-regression.spec.ts](../../test/e2e/web-regression.spec.ts) 的 `prepareModel`：本例最终路由到 fault-server，并以进程参数传场景后缀。若新领域使用独立 fixture，必须在这里接入正确脚本、参数和环境；不要让它误落到 smoke 或其他前缀。Case ID 本身不能偷偷承载用户任务要求。
+7. **补故障反控。** 参照 [evaluation-deterministic-faults.test.ts](../../test/unit/evaluation-deterministic-faults.test.ts) 与 [deterministic-model-server.test.ts](../../test/integration/deterministic-model-server.test.ts)。确保“没注入错误直接返回33”“没有真实重试”“替身自己校验失败”不能被当恢复成功。若有副作用，补零执行/唯一执行证据。
+8. **按下节执行。** 计划内 500、429 或 SIGKILL 不送网络补样；不能修改生产重试预算来加速。崩溃测试只通过共用 `hostFault` 管理测试持有的 Host，保留崩溃前独立事实、旧/新 PID 和恢复结果。
+
+## 5. 单项验证：直接用这些命令
+
+在独立开发副本中执行，别在日常 8088 使用的目录重建。下面 ID 是现有示例，新增 Case 要换成自己的 ID。live 需先按[运行手册](../../scripts/evaluation/README.md#22-真实模型评测)设置 `LCH_EVAL_ALLOW_LIVE=1` 和 `LCH_EVAL_LIVE_*` 模型、地址、密钥及 revision；不要提交或打印密钥。
+
+### 5.1 首次准备，以及检查代码
+
+首次安装依赖和浏览器：
+
+```bash
+npm ci && npm run test:e2e:install
+```
+
+类型检查、构建、Core 和 Web UI 测试，一条命令完成：
+
+```bash
+npm run check && npm test
+```
+
+只改某个审计函数、想先看它的正反例时，可以聚焦执行。新增 Case 替换为自己的测试文件：
+
+```bash
+npm run build && node --test dist/test/unit/evaluation-live-content-search.test.js
+```
+
+### 5.2 先确认选对 Case，再单跑一次
+
+只列出目标，不执行 Case（这个 npm 入口仍会构建；列表检查也会写自己的产物目录）：
+
+```bash
+LCH_EVAL_PROFILE=live LCH_EVAL_REPEAT_EACH=1 LCH_EVAL_ARTIFACT_DIR="$(mktemp -d /tmp/lch-case-list.XXXXXX)" npm run test:e2e -- --list --grep 'standard\.live-content-search( |$)'
+```
+
+构建并运行该 Case 一次：
+
+```bash
+LCH_EVAL_PROFILE=live LCH_EVAL_REPEAT_EACH=1 LCH_EVAL_ARTIFACT_DIR="$(mktemp -d /tmp/lch-case-once.XXXXXX)" npm run test:e2e -- --grep 'standard\.live-content-search( |$)' --repeat-each=1 --workers=1 --retries=0
+```
+
+确定性 Case 把 profile 改为 `deterministic`，ID 换成 `standard\.deterministic-provider-500-recovery( |$)`。`No tests found` 不算通过；失败先看[归因指南](failure-attribution.md)，修正后再取样。
+
+### 5.3 一条命令跑五次单 Case
+
+**真实模型，同一个 Case 五个样本：**
+
+```bash
+LCH_EVAL_PROFILE=live LCH_EVAL_REPEAT_EACH=5 LCH_EVAL_ARTIFACT_DIR="$(mktemp -d /tmp/lch-case-live-5.XXXXXX)" npm run test:e2e -- --grep 'standard\.live-content-search( |$)' --repeat-each=5 --workers=1 --retries=0
+```
+
+**确定性 Case，开发阶段三个样本：**
+
+```bash
+LCH_EVAL_PROFILE=deterministic LCH_EVAL_REPEAT_EACH=3 LCH_EVAL_ARTIFACT_DIR="$(mktemp -d /tmp/lch-case-det-3.XXXXXX)" npm run test:e2e -- --grep 'standard\.deterministic-provider-500-recovery( |$)' --repeat-each=3 --workers=1 --retries=0
+```
+
+确定性也要跑五次时，把上一条的 `LCH_EVAL_REPEAT_EACH` 和 `--repeat-each` **都改为 5**，目录前缀可改为 `lch-case-det-5`。两个重复次数要一致，避免产物计划和实际执行不符。
+
+每条 `test:e2e` 命令会先构建，再由共用入口启动隔离服务、执行网页步骤、保存附件并清理；不用手动开 Web Host。它**不自动冻结源码，不自动补样，不做正式全量的最后校验**。用于稳定性登记时先按第 6 节固定版本，运行期间不改代码/配置。每条命令自动使用新产物目录，保存终端日志和退出码，不复用旧目录覆盖失败。不要用 `test:e2e:live -- --grep`，该 npm 包装不能这样转发筛选参数。
+
+### 5.4 跑完看哪里
+
+- `junit/playwright.xml`：实际 Case、样本数、成功/失败/跳过；必须与选项一致。
+- `test-results/`：成功样本的 sqlite-audit、timings、service log；失败样本的诊断、截图和 trace（环境已启动后才能取得相应现场）。
+- 各样本 `trajectory.jsonl.gz`：核对 Case/样本号、retry=0、导出计数和 `processesStopped`。成功不是只看最终回答，所有必要证据也必须齐全。
+
+`--grep` 只改变实际执行集合；`evaluation-run-contract.json` 仍描述 profile 全集。按实际选中 ID 检查，不能把单项成绩写成整个 profile 通过。稳定性门槛见[设计准则](case-design.md#5-什么叫稳定什么叫全量通过)。
+
+## 6. 要登记稳定成绩，先固定版本
+
+单项调试可以用当前开发代码；登记稳定成绩必须用同一份可追溯源码、构建、配置和模型。**当前没有“一条单 Case 命令顺便自动冻结和正式准出”的入口**；不要把 `test:e2e` 描述成已包含这些步骤。
+
+先把候选提交到本地（一 Case 一提交，台账先写待取样），再导出副本。只导出已提交内容，不切换或重置原工作区：
+
+```bash
+CASE_SHA=$(git rev-parse HEAD)
+CASE_TREE=$(git rev-parse 'HEAD^{tree}')
+CASE_RUN=$(mktemp -d /tmp/lch-case-qualification.XXXXXX)
+mkdir "$CASE_RUN/source"
+git archive --format=tar --output="$CASE_RUN/source.tar" "$CASE_SHA"
+tar -xf "$CASE_RUN/source.tar" -C "$CASE_RUN/source"
+printf '%s\n' "$CASE_SHA" > "$CASE_RUN/source-sha.txt"
+printf '%s\n' "$CASE_TREE" > "$CASE_RUN/source-tree.txt"
+cd "$CASE_RUN/source"
+npm ci && npm run test:e2e:install
+npm run check && npm test
+```
+
+在这个副本中用第 5.3 节命令取样。已有构建且要避免再次构建时，将命令中的 `npm run test:e2e --` 换成 `npx --no-install playwright test --config test/e2e/playwright.config.ts`，其余选项不变。记录实际产物目录，并在 `$CASE_RUN` 保存模型/配置、工具链及源码、服务端/前端编译产物哈希，采样前后复核。前置测试失败先保留并报告，不把单项通过当作整体准出。
+
+改题面、断言或实现后就另提交、另冻结、另建目录。live 单项 5/5、确定性开发 3/3、全量两路 5/5、两项压缩各 6/6；每批最多五项、最多三场完整实验，达标退出修订批次，未达标交人工 review。不得拼接不同实验的 PASS。
+
+需要**整条流水线自动准备、固定源码并校验全量**时，用运行手册中的 `evaluate:local`；它会在隔离目录合并候选与远端目标，测试的是合并后的树。需要**master 产品 + 套件 Case**时，用 `run-weekly.mjs`。这两个入口都不是单 Case 冻结命令，成绩按各自真实文件树记账。
+
+## 7. 完成后登记什么
+
+| 改动/结果 | 更新位置 |
+|---|---|
+| 新 Case 设计和单项成绩 | `test/e2e/cases/README.md`：ID、题面/机制/断言入口、允许变化/非覆盖、状态、冻结 SHA/tree、样本 P/F、证据根、首个分歧及剩余问题 |
+| 新 Contract/Driver/fixture | 对应源码注册和正反控制；不能只改台账没有接入 profile |
+| 新评测自检 | 需要周基线携带时登记 `suite-companions.json`；产品测试不混入清单 |
+| 发现产品 Bug | `docs/bugfix/<问题域>.md`，Case 台账链接；另从 master 开修复分支，带必要产品测试；Case PR 不夹带产品补丁 |
+| 新的通用经验 | 设计方法进 `case-design.md`，归因方法进 `failure-attribution.md`；不把单次过程复制到四份文档 |
+| 接口/命令变化 | 分别更新 `web-regression.md` 或 `scripts/evaluation/README.md` |
+| 阶段目标或部署变化 | 更新 `harness-evaluation.md`，不搬运逐样本成绩 |
+
+源码/配置/模型不同的成绩不拼接。登记使用**实际被测 SHA**：事后仅补台账的提交不反写成当时测试版本，也不改旧计划/附件。一 Case 的设计和断言修订在交付前可整理回原提交；若造成前向依赖或不可构建历史，就保持必要的依赖顺序，不为合并提交牺牲可验证性。远端推送另按用户授权执行。
+
+## 8. 交给另一位同事或 Codex 的完成清单
+
+```text
+[ ] 从 devops/luoshijie02 开发；Case PR 目标为 devops/luoshijie02
+[ ] 已读规范及实际 Tool/Policy/Mode；解释为什么要网页 Case、为何选这一路
+[ ] 设计单齐全，题面和断言严格程度一致，允许变化有依据
+[ ] Contract + profile + Driver 三处注册一致；新 fixture 路由正确
+[ ] 真实机制、业务真值、消费、页面/刷新和故障证据闭合
+[ ] 正反控制及受影响共享检查通过；没有宽松特例或多余重型机制
+[ ] 已在一个冻结版本完成规定样本；失败、替补和清理证据完整
+[ ] 台账明确单项/全量/待复核，原始证据可定位，未伪造 PASS
+[ ] 产品缺陷另登记/另提交；Kernel/spec 未经授权未改；8088 未操作
+[ ] 交付列出改了哪些文件、实际测试结果、证据路径及尚未完成的事项
+```
+
+没有运行、未达门槛或因凭据/兼容性阻断，就明确写“未完成”及原因，不勾选完成项、不报稳定。

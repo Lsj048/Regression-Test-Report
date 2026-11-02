@@ -1,0 +1,27 @@
+{
+  "code": "const res = await tools.call('Read', { file_path: 'handoff-items.json' });\nreturn res;",
+  "workspace": "/private/tmp/lch-e2e-UcgFQi/workspace",
+  "actualReadEnvelope": {
+    "callId": "call_0d1d29d2-bc39-42ef-8c0b-dafd26aa329b",
+    "content": [
+      {
+        "text": "     1\t{\"items\":[\"review\",\"release\",\"handoff\"]}\n     2\t\n[lines 1-2 of 2]",
+        "type": "text"
+      }
+    ],
+    "isError": false,
+    "name": "Read",
+    "operation": "invoke",
+    "status": "succeeded",
+    "value": {
+      "file": {
+        "content": "{\"items\":[\"review\",\"release\",\"handoff\"]}\n",
+        "filePath": "/private/tmp/lch-e2e-UcgFQi/workspace/handoff-items.json",
+        "numLines": 2,
+        "startLine": 1,
+        "totalLines": 2
+      },
+      "type": "text"
+    }
+  }
+}

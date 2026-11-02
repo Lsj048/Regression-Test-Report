@@ -1,0 +1,16 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/standard-live-notebook-cell-edit.ts
+      assert.ok(editArgs["edit_mode"] === undefined || editArgs["edit_mode"] === "replace", "NotebookEdit used a non-replacement edit mode");
+      const editValue = jsonObject(editResult.payload["canonicalValue"], "NotebookEdit canonical value");
+      assert.deepEqual(editValue, {
+        notebook_path: notebookPath, cell_id: scenario.targetCellId, cell_type: "code", edit_mode: "replace", language: "python",
+        old_source: index === 0 ? scenario.oldSource : scenario.newSource, new_source: scenario.newSource,
+        original_file: index === 0 ? originalNotebook : expectedNotebook, updated_file: expectedNotebook,
+      }, "NotebookEdit did not preserve the exact original-to-expected notebook chain");
+      assert.deepEqual(JSON.parse(messageContent(editResult.payload["content"])), editValue,
+        "NotebookEdit exposed a rendered result inconsistent with its canonical value");
+    }
+
+    const durableRows = data.messages.prepare(`
+      SELECT producing_turn_id, role, message_json, source_event_seq FROM messages
+      WHERE session_id = ? ORDER BY seq

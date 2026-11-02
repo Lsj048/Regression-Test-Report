@@ -1,0 +1,12 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/cases/live-input-fifo.ts
+    };
+    const session = await send(FIFO_PROMPTS[0], `${env.baseUrl}/api/sessions`);
+    const db = new DatabaseSync(join(env.stateDirectory, "event_log.sqlite"), { readOnly: true });
+    try {
+      await expect.poll(() => db.prepare("SELECT json_extract(payload_json,'$.arguments.command') AS command FROM event_log WHERE session_id=? AND type='tool.dispatch.started' AND json_extract(payload_json,'$.name')='Bash'").all(session.id).filter(row => isFifoCheckCommand(String(row["command"]))).length, { timeout: 120_000 }).toBe(1);
+      for (const prompt of FIFO_PROMPTS.slice(1)) {
+        await expect(page.getByTestId("stop-task")).toBeVisible(); await expect(page.getByTestId("composer-input")).toHaveAttribute("placeholder", /追加消息/u);
+        expect((await send(prompt, `${env.baseUrl}/api/sessions/${session.id}/messages`)).id).toBe(session.id);
+        await expect(page.locator(".user-message.queued").filter({ hasText: prompt })).toBeVisible();
+      }

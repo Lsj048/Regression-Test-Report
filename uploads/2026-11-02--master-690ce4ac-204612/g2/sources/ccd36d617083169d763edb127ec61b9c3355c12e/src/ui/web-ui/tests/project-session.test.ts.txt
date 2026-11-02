@@ -1,0 +1,665 @@
+import { describe, expect, it } from "vitest";
+import { groupTimelineItems } from "../client/timeline-groups.js";
+import { projectSession, projectSubagentFlow, rootSessionStatusFromEvent, toolResultText } from "../shared/project-session.js";
+import type { WebEvent, WebJson } from "../shared/protocol.js";
+
+function event(cursor: number, type: string, payload: WebJson): WebEvent {
+  return {
+    cursor,
+    eventId: `event-${cursor}`,
+    sessionId: "session-1",
+    sourceSessionId: "session-1",
+    turnId: "run-1",
+    type,
+    payload,
+    payloadHash: `hash-${cursor}`,
+    traceId: null,
+    createdAt: `2026-08-25T00:00:0${cursor}.000Z`,
+  };
+}
+
+describe("projectSession", () => {
+  for (const child of [false, true]) for (const rejected of [false, true]) {
+    it(`keeps same-turn call occurrences distinct (child=${child}, rejected=${rejected})`, () => {
+      const source = (cursor: number, type: string, payload: WebJson): WebEvent => ({
+        ...event(cursor, type, payload), ...(child ? { sourceSessionId: "child", turnId: "child-turn" } : {}),
+      });
+      const events = [
+        event(0, "subagent.created", { subagentId: "child", initialTurnId: "child-turn", parentSessionId: "session-1", mode: "spawn", depth: 1 }),
+        source(1, "model.completed", { toolCalls: [{ id: "same", name: "Read", arguments: '{"path":"first"}' }] }),
+        source(2, "tool.call", { actionPlanId: "plan1", actionId: "a", callId: "same", name: "Read", arguments: { path: "first" } }),
+        source(3, "tool.result", { actionPlanId: "plan1", actionId: "a", callId: "same", status: "succeeded", content: "first result" }),
+        source(4, "model.completed", { toolCalls: [{ id: "same", name: "Write", arguments: '{"path":"second","content":"new"}' }] }),
+        ...(!rejected ? [source(5, "tool.call", { actionPlanId: "plan2", actionId: "b", callId: "same", name: "Write", arguments: { path: "second", content: "new" } })] : []),
+        // A replayed old result while the new call is pending must not settle it.
+        source(6, "tool.result", { actionPlanId: "plan1", actionId: "a", callId: "same", status: "succeeded", content: "first result" }),
+        source(7, "tool.result", { actionPlanId: "plan2", ...(rejected ? { syntheticKind: "action_rejection" } : { actionId: "b" }),
+          callId: "same", name: "Write", status: rejected ? "denied" : "succeeded", content: "second result" }),
+      ];
+      const project = (input: readonly WebEvent[]) => {
+        const session = projectSession(input);
+        return child ? projectSubagentFlow(input, session.subagents[0]!).flatMap(step => step.tools) : session.items.filter(item => item.kind === "tool");
+      };
+      const expected = [
+        expect.objectContaining({ name: "Read", arguments: { path: "first" }, status: "succeeded", result: "first result" }),
+        expect.objectContaining({ name: "Write", arguments: { path: "second", content: "new" }, status: rejected ? "denied" : "succeeded", result: "second result" }),
+      ];
+      const cold = project(events);
+      expect(cold).toEqual(expected);
+      expect(new Set(cold.map(tool => tool.id)).size).toBe(2);
+      const delivered: WebEvent[] = [];
+      for (const next of events) {
+        delivered.push(next, next);
+        const live = project(delivered);
+        expect(live).toEqual(project(events.filter(item => item.cursor <= next.cursor)));
+        if (next.cursor === 6 && !rejected) expect(live[1]).toMatchObject({ name: "Write", status: "running" });
+      }
+      expect(project(delivered)).toEqual(cold);
+    });
+  }
+
+  it("matches legacy synthetic results to the current model step without action identity", () => {
+    const events = [
+      event(1, "model.completed", { toolCalls: [{ id: "same", name: "Read", arguments: '{"path":"one"}' }] }),
+      event(2, "tool.result", { callId: "same", name: "Read", syntheticKind: "action_rejection", status: "denied", content: "first rejection" }),
+      event(3, "model.completed", { toolCalls: [{ id: "same", name: "Write", arguments: '{"path":"two"}' }] }),
+      event(4, "tool.result", { callId: "same", name: "Write", syntheticKind: "action_rejection", status: "denied", content: "second rejection" }),
+    ];
+    const tools = projectSession(events).items.filter(item => item.kind === "tool");
+    expect(tools).toHaveLength(2);
+    expect(tools[0]).toMatchObject({ arguments: { path: "one" }, result: "first rejection" });
+    expect(tools[1]).toMatchObject({ arguments: { path: "two" }, result: "second rejection" });
+  });
+
+  it("shows a rejected model request without inventing a dispatch and keeps repeated IDs in separate turns", () => {
+    const events = [event(1, "model.completed", { content: "", toolCalls: [{ id: "same", name: "Lookup", arguments: '{"query":"report"}' }] }),
+      event(2, "tool.result", { callId: "same", name: "Lookup", syntheticKind: "action_rejection", status: "denied", content: "Not available" }),
+      { ...event(3, "tool.call", { callId: "same", name: "Read", arguments: {} }), turnId: "run-2" },
+      { ...event(4, "tool.result", { callId: "same", name: "Read", status: "succeeded", content: "Read successfully" }), turnId: "run-2" }];
+    const tools = projectSession(events).items.filter(item => item.kind === "tool");
+    expect(tools).toHaveLength(2);
+    expect(tools[0]).toMatchObject({ name: "Lookup", status: "denied", arguments: { query: "report" }, result: "Not available" });
+    expect(tools[1]).toMatchObject({ name: "Read", status: "succeeded", result: "Read successfully" });
+    expect(events.filter(item => item.type === "tool.call")).toHaveLength(1);
+  });
+  it("settles advance_turn while keeping its automatic input out of user messages", () => {
+    const decision = event(4, "state.transition.requested", { kind: "advance_turn", content: "继续" });
+    const projected = projectSession([
+      event(1, "turn.created", {}),
+      event(2, "input.promoted", { inputId: "auto", content: "继续", origin: { kind: "policy_advance" } }),
+      event(3, "model.completed", { content: "本轮已完成一部分工作" }),
+      decision,
+    ]);
+    expect(projected.items.some(item => item.kind === "user")).toBe(false);
+    expect(projected.status).toBe("completed");
+    expect(rootSessionStatusFromEvent(decision)).toBe("completed");
+  });
+  it("shows a question answer once across its queued, question-answer and promoted facts", () => {
+    const payload = { inputId: "answer-1", content: "详细差异" };
+    for (const types of [["input.queued", "host.question.answered", "input.promoted"], ["host.question.answered", "input.queued", "input.promoted"]]) {
+      const projection = projectSession(types.map((type, index) => event(index + 1, type, payload)));
+      expect(projection.items.filter((item) => item.kind === "user")).toHaveLength(1);
+      expect(projection.items[0]).not.toHaveProperty("delivery");
+    }
+  });
+  it("projects one compact durable result per model call and tool settlement", () => {
+    const projected = projectSession([
+      event(1, "turn.created", {}),
+      event(2, "input.promoted", { content: "检查项目" }),
+      event(3, "context.plan.committed", {}),
+      event(4, "model.completed", { content: "", reasoningContent: "先读取。" }),
+      event(5, "message.appended", { messageId: "message:model:run-1:outcome-1", sourceType: "model.completed" }),
+      event(6, "tool.call", { callId: "call-1", name: "read", arguments: { file_path: "README.md" } }),
+      event(7, "tool.result", { callId: "call-1", status: "succeeded", content: [{ type: "text", text: "hello" }] }),
+      event(8, "context.plan.committed", {}),
+      event(9, "model.completed", { content: "完成", reasoningContent: "" }),
+      event(10, "message.appended", { messageId: "message:model:run-1:outcome-2", sourceType: "model.completed" }),
+      event(11, "state.completed", {}),
+    ]);
+    expect(projected.status).toBe("completed");
+    expect(projected.items.map((item) => item.kind)).toEqual(["user", "assistant", "tool", "assistant"]);
+    expect(projected.items.at(-1)).toMatchObject({ kind: "assistant", content: "完成", streaming: false, actionable: true });
+    expect(projected.items.filter((item) => item.kind === "assistant").map((item) => item.id)).toEqual(["message:model:run-1:outcome-1", "message:model:run-1:outcome-2"]);
+    expect(projected.items.filter((item) => item.kind === "assistant")[0]).not.toHaveProperty("actionable");
+    expect(projected.items.find((item) => item.kind === "tool")).toMatchObject({ status: "succeeded" });
+  });
+
+  it("renders a replaceable live snapshot without making it durable", () => {
+    const live = { ...event(3, "model.stream.snapshot", { content: "正在输出", reasoningContent: "先分析" }), transient: true as const };
+    const projected = projectSession([
+      event(1, "turn.created", {}),
+      event(2, "context.plan.committed", {}),
+      live,
+    ]);
+    expect(projected.items.at(-1)).toMatchObject({ kind: "assistant", content: "正在输出", reasoning: "先分析", streaming: true });
+    expect(projected.activeLabel).toBe("LongCat 正在思考");
+  });
+
+  it.each([true, false])("does not turn a model attempt failure into a session failure (recoverable: %s)", (recoverable) => {
+    const failure = event(2, "model.failed", {
+      planId: "request-1", attempt: 0, code: "PROVIDER_ABSOLUTE_TIMEOUT", message: "请求超时", recoverable,
+    });
+    const projected = projectSession([event(1, "turn.created", {}), failure], "running");
+    expect(rootSessionStatusFromEvent(failure)).toBeUndefined();
+    expect(projected.status).toBe("running");
+    expect(projected.items).toEqual([expect.objectContaining({
+      kind: "model-error", planId: "request-1", attempt: 0, code: "PROVIDER_ABSOLUTE_TIMEOUT", content: "请求超时",
+    })]);
+  });
+
+  it("cleans an empty failed-attempt placeholder and reflects an explicit model retry", () => {
+    const projected = projectSession([
+      event(1, "turn.created", {}),
+      event(2, "model.request.started", {}),
+      event(3, "model.failed", { planId: "request-1", attempt: 0, message: "Provider stream stalled" }),
+      event(4, "state.transition.requested", { kind: "retry_model", reason: "retry stalled stream", retryClass: "transport" }),
+    ]);
+
+    expect(projected.status).toBe("running");
+    expect(projected.activeLabel).toBe("正在重试模型请求");
+    expect(projected.items.some((item) => item.kind === "assistant")).toBe(false);
+    expect(projected.items).toContainEqual(expect.objectContaining({ kind: "model-error", content: "Provider stream stalled" }));
+  });
+
+  it("keeps plan approval pending after a failed attempt is successfully retried", () => {
+    const events = [
+      event(1, "turn.created", {}),
+      event(2, "model.failed", { planId: "request-1", attempt: 0, message: "请求超时", recoverable: true }),
+      event(3, "model.completed", { request: { planId: "request-2", attempt: 1 }, content: "写入计划" }),
+      event(4, "tool.call", { callId: "write-plan", name: "Write", arguments: {} }),
+      event(5, "tool.result", { callId: "write-plan", status: "succeeded", content: "计划已保存" }),
+      event(6, "model.completed", { content: "请审批计划" }),
+      event(7, "host.human_input.requested", { requestId: "approval-1", plan: "# 实施计划", planFilePath: "/tmp/plan.md" }),
+    ];
+    for (const status of [undefined, "running"] as const) {
+      const projected = projectSession(events, status);
+      expect(projected.status).toBe("waiting");
+      expect(projected.activeLabel).toBe("等待你的回答");
+      expect(projected.items.at(-1)).toMatchObject({ kind: "human-input", status: "pending" });
+      expect(projected.items.filter((item) => item.kind === "notice")).toEqual([]);
+    }
+  });
+
+  it("does not revive an interaction cancelled in a previous turn", () => {
+    const events = [
+      event(1, "turn.created", {}),
+      { ...event(2, "turn.created", {}), turnId: "notification-turn" },
+      { ...event(3, "tool.call", { name: "ExitPlanMode", callId: "exit-call", arguments: {} }), turnId: "notification-turn" },
+      { ...event(4, "host.human_input.requested", { requestId: "legacy" }), turnId: "notification-turn" },
+      { ...event(5, "turn.interrupted", {}), turnId: "notification-turn" },
+      { ...event(6, "turn.created", {}), turnId: "continue-turn" },
+      { ...event(7, "model.completed", { content: "计划已批准，开始实现" }), turnId: "continue-turn" },
+    ];
+    expect(projectSession(events, "running").items.find((item) => item.kind === "human-input")).toMatchObject({ status: "cancelled", turnId: "notification-turn" });
+  });
+
+  it("keeps a durable approval actionable while waiting and ignores unrelated turn completion", () => {
+    const events = [
+      event(1, "turn.created", {}),
+      event(2, "host.human_input.requested", { requestId: "pending", callId: "exit", plan: "# Plan", planFilePath: "/tmp/plan.md" }),
+      { ...event(3, "turn.completed", {}), sourceSessionId: "child", turnId: "child-turn" },
+    ];
+    expect(projectSession(events, "waiting").items.find((item) => item.kind === "human-input")).toMatchObject({ status: "pending" });
+    expect(projectSession(events, "waiting").activeLabel).toBe("等待你的回答");
+  });
+
+  it("ends a failed stream without overwriting it with the successful retry", () => {
+    const projected = projectSession([
+      event(1, "turn.created", {}),
+      event(2, "model.stream.snapshot", { planId: "request-1", content: "未完成的输出", reasoningContent: "" }),
+      event(3, "model.failed", { planId: "request-1", attempt: 0, message: "请求超时" }),
+      event(4, "model.completed", { request: { planId: "request-2", attempt: 1 }, content: "重试成功" }),
+    ]);
+    expect(projected.items).toMatchObject([
+      { kind: "assistant", content: "未完成的输出", streaming: false },
+      { kind: "model-error", content: "请求超时" },
+      { kind: "assistant", content: "重试成功", streaming: false },
+    ]);
+    expect(projected.status).toBe("running");
+  });
+
+  it("only cancels pending plans when the turn actually fails", () => {
+    const projected = projectSession([
+      event(1, "turn.created", {}),
+      event(2, "host.human_input.requested", { requestId: "approval-1", plan: "# 实施计划", planFilePath: "/tmp/plan.md" }),
+      event(3, "model.failed", { attempt: 2, message: "最后一次请求失败", recoverable: false }),
+      event(4, "turn.failed", { message: "重试耗尽，任务失败" }),
+    ], "running");
+    expect(projected.status).toBe("failed");
+    expect(projected.items).toMatchObject([
+      { kind: "human-input", status: "cancelled" },
+      { kind: "model-error", content: "最后一次请求失败" },
+      { kind: "notice", tone: "error", content: "重试耗尽，任务失败" },
+    ]);
+  });
+
+  it("renders text blocks from a generic tool result", () => {
+    expect(toolResultText([{ type: "text", text: "one" }, { type: "text", text: "two" }])).toBe("one\ntwo");
+  });
+
+  it("does not let descendant lifecycle events overwrite the root session status", () => {
+    const childCompleted = {
+      ...event(1, "turn.completed", {}),
+      sourceSessionId: "session-child",
+      turnId: "run-child",
+    };
+    const childFailed = {
+      ...event(2, "state.failed", {}),
+      sourceSessionId: "session-child",
+      turnId: "run-child",
+    };
+
+    expect(rootSessionStatusFromEvent(childCompleted)).toBeUndefined();
+    expect(rootSessionStatusFromEvent(childFailed)).toBeUndefined();
+    expect(rootSessionStatusFromEvent(event(3, "turn.completed", {}))).toBe("completed");
+    expect(rootSessionStatusFromEvent(event(4, "turn.waiting", {}))).toBe("waiting");
+    expect(rootSessionStatusFromEvent(event(5, "turn.blocked", {}))).toBe("blocked");
+    expect(rootSessionStatusFromEvent(event(6, "state.transition.requested", { kind: "force_complete_turn" }))).toBe("completed");
+  });
+
+  it("keeps a business question in waiting after its Turn settles", () => {
+    const projected = projectSession([
+      event(1, "turn.created", {}),
+      event(2, "host.question", { requestId: "question:call-1", questions: [{ question: "A or B?", options: [] }] }),
+      event(3, "turn.waiting", { expectations: [{ kind: "user_input", requestId: "question:call-1" }] }),
+    ]);
+    expect(projected.status).toBe("waiting");
+    expect(projected.activeLabel).toBeUndefined();
+  });
+
+  it("keeps background subagents running until their settlement event arrives", () => {
+    const running = projectSession([
+      event(1, "turn.created", {}),
+      event(2, "tool.call", { callId: "call-child", name: "subagent", arguments: { description: "研究扩展机制" } }),
+      event(3, "tool.result", { callId: "call-child", status: "succeeded", content: [{ type: "text", text: "started subagent session-child" }] }),
+      event(4, "subagent.created", {
+        subagentId: "session-child",
+        initialTurnId: "run-child",
+        parentSessionId: "session-1",
+        parentCallId: "call-child",
+        label: "研究扩展机制",
+        mode: "spawn",
+        depth: 1,
+      }),
+    ]);
+    expect(running.items.some((item) => item.kind === "tool")).toBe(false);
+    expect(running.items).toContainEqual(expect.objectContaining({
+      kind: "subagent",
+      subagentId: "session-child",
+    }));
+    expect(running.subagents).toEqual([expect.objectContaining({
+      subagentId: "session-child",
+      parentCallId: "call-child",
+      label: "研究扩展机制",
+      status: "running",
+    })]);
+
+    const waiting = projectSession([
+      event(1, "turn.created", {}),
+      event(2, "subagent.created", {
+        subagentId: "session-child",
+        initialTurnId: "run-child",
+        parentSessionId: "session-1",
+        parentCallId: "call-child",
+        label: "研究扩展机制",
+        mode: "spawn",
+        depth: 1,
+      }),
+      { ...event(3, "turn.waiting", { expectations: [{ kind: "user_input", requestId: "question:1" }] }), sourceSessionId: "session-child", turnId: "run-child" },
+    ]);
+    expect(waiting.subagents).toEqual([expect.objectContaining({ status: "waiting" })]);
+
+    const settled = projectSession([
+      event(1, "turn.created", {}),
+      event(2, "tool.call", { callId: "call-child", name: "subagent", arguments: { description: "研究扩展机制" } }),
+      event(3, "tool.result", { callId: "call-child", status: "succeeded", content: [{ type: "text", text: "started subagent session-child" }] }),
+      event(4, "subagent.created", {
+        subagentId: "session-child",
+        initialTurnId: "run-child",
+        parentSessionId: "session-1",
+        parentCallId: "call-child",
+        label: "研究扩展机制",
+        mode: "spawn",
+        depth: 1,
+      }),
+      event(5, "subagent.settled", { subagentId: "session-child", turnId: "run-child", state: "completed", output: "研究完成" }),
+    ]);
+    expect(settled.items.some((item) => item.kind === "tool")).toBe(false);
+    expect(settled.items).toContainEqual(expect.objectContaining({ kind: "subagent", subagentId: "session-child" }));
+    expect(settled.subagents).toEqual([expect.objectContaining({ status: "completed", output: "研究完成" })]);
+  });
+
+  it("groups a subagent execution into model rounds with settled tool details", () => {
+    const child = (cursor: number, type: string, payload: WebJson): WebEvent => ({
+      ...event(cursor, type, payload),
+      sourceSessionId: "session-child",
+      turnId: "run-child",
+    });
+    const events = [
+      event(1, "subagent.created", {
+        subagentId: "session-child",
+        initialTurnId: "run-child",
+        parentSessionId: "session-1",
+        label: "检查接口设计",
+        mode: "spawn",
+        depth: 1,
+      }),
+      child(2, "input.promoted", { content: "检查 ActionPolicy" }),
+      child(3, "model.completed", { content: "", reasoningContent: "先读取接口定义。" }),
+      child(4, "tool.call", { callId: "call-read", name: "read", arguments: { file_path: "src/kernel/api/policy/types.ts" } }),
+      child(5, "tool.result", { callId: "call-read", status: "succeeded", content: [{ type: "text", text: "interface ActionPolicy {}" }] }),
+      child(6, "model.completed", { content: "接口检查完成", reasoningContent: "已经得到结论。" }),
+      event(7, "subagent.settled", { subagentId: "session-child", turnId: "run-child", state: "completed", output: "接口检查完成" }),
+    ];
+    const projected = projectSession(events);
+    const flow = projectSubagentFlow(events, projected.subagents[0]!);
+
+    expect(flow).toHaveLength(3);
+    expect(flow[0]).toMatchObject({ kind: "input", title: "接收任务", content: "检查 ActionPolicy" });
+    expect(flow[1]).toMatchObject({
+      kind: "model",
+      title: "调用 read",
+      status: "completed",
+      tools: [expect.objectContaining({ callId: "call-read", status: "succeeded", result: [{ type: "text", text: "interface ActionPolicy {}" }] })],
+    });
+    expect(flow[2]).toMatchObject({ kind: "model", title: "形成最终报告", content: "接口检查完成" });
+  });
+
+  it("aggregates multiple tools in one model round into a single flow step with a count title", () => {
+    const child = (cursor: number, type: string, payload: WebJson): WebEvent => ({
+      ...event(cursor, type, payload),
+      sourceSessionId: "session-child",
+      turnId: "run-child",
+    });
+    const events = [
+      event(1, "subagent.created", {
+        subagentId: "session-child",
+        initialTurnId: "run-child",
+        parentSessionId: "session-1",
+        label: "双工具检查",
+        mode: "spawn",
+        depth: 1,
+      }),
+      child(2, "input.promoted", { content: "检查接口设计" }),
+      child(3, "model.completed", { content: "", reasoningContent: "并行读取两个文件。", toolCalls: [
+        { id: "call-read-a", name: "read", arguments: { file_path: "a.ts" } },
+        { id: "call-read-b", name: "read", arguments: { file_path: "b.ts" } },
+      ] }),
+      child(4, "tool.call", { callId: "call-read-a", name: "read", arguments: { file_path: "a.ts" } }),
+      child(5, "tool.call", { callId: "call-read-b", name: "read", arguments: { file_path: "b.ts" } }),
+      child(6, "tool.result", { callId: "call-read-a", status: "succeeded", content: [{ type: "text", text: "interface A {}" }] }),
+      child(7, "tool.result", { callId: "call-read-b", status: "succeeded", content: [{ type: "text", text: "interface B {}" }] }),
+      child(8, "model.completed", { content: "接口检查完成", reasoningContent: "已经得到结论。" }),
+      event(9, "subagent.settled", { subagentId: "session-child", turnId: "run-child", state: "completed", output: "接口检查完成" }),
+    ];
+    const projected = projectSession(events);
+    const flow = projectSubagentFlow(events, projected.subagents[0]!);
+
+    expect(flow).toHaveLength(3);
+    expect(flow[0]).toMatchObject({ kind: "input", title: "接收任务" });
+    expect(flow[1]).toMatchObject({
+      kind: "model",
+      title: "执行 2 次工具调用",
+      status: "completed",
+      tools: [
+        expect.objectContaining({ callId: "call-read-a", status: "succeeded" }),
+        expect.objectContaining({ callId: "call-read-b", status: "succeeded" }),
+      ],
+    });
+    expect(flow[2]).toMatchObject({ kind: "model", title: "形成最终报告" });
+  });
+
+  it("does not show a failed subagent model attempt as a terminal execution failure", () => {
+    const child = (cursor: number, type: string, payload: WebJson): WebEvent => ({
+      ...event(cursor, type, payload),
+      sourceSessionId: "session-child",
+      turnId: "run-child",
+    });
+    const events = [
+      event(1, "subagent.created", {
+        subagentId: "session-child",
+        initialTurnId: "run-child",
+        parentSessionId: "session-1",
+        label: "检查重试语义",
+        mode: "spawn",
+        depth: 1,
+      }),
+      child(2, "input.promoted", { content: "检查任务" }),
+      child(3, "model.failed", { message: "Provider stream stalled" }),
+      child(4, "state.transition.requested", { kind: "retry_model", reason: "retry stalled stream", retryClass: "transport" }),
+      child(5, "model.completed", { content: "检查完成", reasoningContent: "重试成功。" }),
+      event(6, "subagent.settled", { subagentId: "session-child", turnId: "run-child", state: "completed", output: "检查完成" }),
+    ];
+    const projected = projectSession(events);
+    const flow = projectSubagentFlow(events, projected.subagents[0]!);
+
+    expect(flow.some((step) => step.kind === "failure")).toBe(false);
+    expect(flow.at(-1)).toMatchObject({ kind: "model", status: "completed", content: "检查完成" });
+  });
+
+  it("does not expose answer actions before a turn reaches a completed state", () => {
+    const projected = projectSession([
+      event(1, "turn.created", {}),
+      event(2, "model.completed", { content: "子 Agent 已启动，等待结果。", reasoningContent: "" }),
+      event(3, "message.appended", { messageId: "message:intermediate", sourceType: "model.completed" }),
+      event(4, "policy.evaluation.started", {}),
+    ]);
+    expect(projected.status).toBe("running");
+    expect(projected.items.at(-1)).toMatchObject({ kind: "assistant", streaming: false });
+    expect(projected.items.at(-1)).not.toHaveProperty("actionable");
+  });
+
+  it("shows appended inputs immediately and de-duplicates them when the run promotes them", () => {
+    const projected = projectSession([
+      event(1, "turn.created", {}),
+      event(2, "input.promoted", { inputId: "input-first", content: "第一条" }),
+      event(3, "input.queued", { inputId: "input-next", content: "追加要求" }),
+      event(4, "input.promoted", { inputId: "input-next", content: "追加要求" }),
+      event(5, "input.queued", { inputId: "input-cancelled", content: "不要执行" }),
+      event(6, "input.queue.cancelled", { inputId: "input-cancelled" }),
+      event(7, "turn.interrupted", {}),
+    ]);
+    const users = projected.items.filter((item) => item.kind === "user");
+    expect(users).toHaveLength(3);
+    expect(users[1]).toEqual(expect.objectContaining({ content: "追加要求" }));
+    expect(users[1]).not.toHaveProperty("delivery");
+    expect(users[2]).toEqual(expect.objectContaining({ content: "不要执行", delivery: "cancelled" }));
+  });
+
+  it("keeps active Turn activity before queued input and groups the promoted input with its own answer", () => {
+    const inTurn = (cursor: number, turnId: string, type: string, payload: WebJson): WebEvent => ({
+      ...event(cursor, type, payload),
+      turnId,
+    });
+    const sessionEvent = (cursor: number, type: string, payload: WebJson): WebEvent => {
+      const { turnId: _turnId, ...sessionScoped } = event(cursor, type, payload);
+      return sessionScoped;
+    };
+    const projection = projectSession([
+      inTurn(1, "turn-1", "turn.created", {}),
+      inTurn(2, "turn-1", "input.promoted", { inputId: "input-first", content: "第一条" }),
+      inTurn(3, "turn-1", "model.request.started", {}),
+      inTurn(4, "turn-1", "model.completed", { content: "", reasoningContent: "执行命令" }),
+      inTurn(5, "turn-1", "tool.call", { callId: "call-1", name: "Bash", arguments: { command: "node task.mjs" } }),
+      sessionEvent(6, "input.queued", { inputId: "input-next", content: "追加要求" }),
+      inTurn(7, "turn-1", "tool.result", { callId: "call-1", status: "succeeded", content: "done" }),
+      inTurn(8, "turn-1", "model.request.started", {}),
+      inTurn(9, "turn-1", "model.completed", { content: "第一轮完成", reasoningContent: "" }),
+      inTurn(10, "turn-1", "turn.completed", {}),
+      inTurn(11, "turn-2", "turn.created", {}),
+      inTurn(12, "turn-2", "input.promoted", { inputId: "input-next", content: "追加要求" }),
+      inTurn(13, "turn-2", "model.request.started", {}),
+      inTurn(14, "turn-2", "model.completed", { content: "第二轮完成", reasoningContent: "" }),
+      inTurn(15, "turn-2", "turn.completed", {}),
+    ]);
+
+    const groups = groupTimelineItems(projection.items);
+    expect(groups).toHaveLength(2);
+    expect(groups[0]).toMatchObject({
+      user: { content: "第一条" },
+      final: { content: "第一轮完成" },
+    });
+    expect(groups[0]?.activity).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "tool", name: "Bash" })]));
+    expect(groups[1]).toMatchObject({
+      user: { content: "追加要求" },
+      final: { content: "第二轮完成" },
+    });
+    expect(groups[1]?.user).not.toHaveProperty("delivery");
+  });
+
+  it("does not use a historical cancelled input as the insertion point for a later Turn", () => {
+    const projection = projectSession([
+      event(1, "input.promoted", { inputId: "input-first", content: "第一条" }),
+      event(2, "model.completed", { content: "第一轮完成", reasoningContent: "" }),
+      event(3, "turn.completed", {}),
+      event(4, "input.queued", { inputId: "input-cancelled", content: "已取消" }),
+      event(5, "input.queue.cancelled", { inputId: "input-cancelled" }),
+      event(6, "turn.interrupted", {}),
+      event(7, "turn.created", {}),
+      event(8, "input.promoted", { inputId: "input-third", content: "第三条" }),
+      event(9, "model.completed", { content: "第三轮完成", reasoningContent: "" }),
+      event(10, "turn.completed", {}),
+    ]);
+
+    expect(projection.items.map((item) => item.kind === "user" ? item.content : item.kind === "assistant" ? item.content : item.kind))
+      .toEqual(["第一条", "第一轮完成", "notice", "已取消", "第三条", "第三轮完成"]);
+    const groups = groupTimelineItems(projection.items);
+    expect(groups).toHaveLength(4);
+    expect(groups[1]?.activity).toContainEqual(expect.objectContaining({ kind: "notice", content: "任务已停止" }));
+    expect(groups[2]?.user).toMatchObject({ content: "已取消", delivery: "cancelled" });
+    expect(groups[3]).toMatchObject({
+      user: { content: "第三条" },
+      final: { content: "第三轮完成" },
+    });
+  });
+
+  it("treats a committed complete transition as terminal", () => {
+    const projected = projectSession(
+      [
+        event(1, "turn.created", {}),
+        event(2, "model.request.started", {}),
+        event(3, "model.completed", { content: "完成", reasoningContent: "" }),
+        event(4, "state.transition.requested", {
+          kind: "complete_turn",
+          outcome: { reason: "assistant_stop" },
+        }),
+      ],
+      "running",
+    );
+
+    expect(projected.status).toBe("completed");
+    expect(projected.activeLabel).toBeUndefined();
+  });
+
+  it("uses the authoritative session status to clear stale activity", () => {
+    const projected = projectSession(
+      [
+        event(1, "turn.created", {}),
+        event(2, "model.request.started", {}),
+        event(3, "model.completed", { content: "完成", reasoningContent: "" }),
+      ],
+      "completed",
+    );
+
+    expect(projected.status).toBe("completed");
+    expect(projected.activeLabel).toBeUndefined();
+  });
+
+  it("applies a durable session failure emitted before a run can be created", () => {
+    const projected = projectSession([
+      event(1, "ui.session.status.changed", { status: "failed", message: "启动失败" }),
+    ], "running");
+    expect(projected.status).toBe("failed");
+    expect(projected.activeLabel).toBeUndefined();
+    expect(projected.items[0]).toMatchObject({ kind: "notice", tone: "error", content: "启动失败" });
+  });
+
+  it("shows structured Host questions and records the answer without creating a new task", () => {
+    const projected = projectSession([
+      event(1, "turn.created", {}),
+      event(2, "host.question", { questions: [{ question: "是否允许写入？", options: [{ label: "允许" }, { label: "拒绝" }] }] }),
+      event(3, "host.question.answered", { inputId: "input_web_answer", content: "允许" }),
+    ]);
+    expect(projected.items[0]).toMatchObject({ kind: "notice", content: "是否允许写入？\n可选：允许 / 拒绝" });
+    expect(projected.items[1]).toMatchObject({ kind: "user", id: "input:input_web_answer", content: "允许" });
+    expect(projected.activeLabel).toBe("正在继续执行");
+  });
+
+  it("projects manual compaction as one persistent command card without a user message", () => {
+    const projected = projectSession([
+      event(1, "ui.command.started", { commandId: "command-1", name: "compact" }),
+      event(2, "ui.command.completed", {
+        commandId: "command-1",
+        name: "compact",
+        status: "completed",
+        replacedMessageCount: 12,
+        replacedTokenCount: 3456,
+        replacementTokenCount: 456,
+        releasedTokenCount: 3000,
+      }),
+    ]);
+
+    expect(projected.items).toEqual([expect.objectContaining({
+      kind: "command",
+      command: "compact",
+      status: "completed",
+      replacedMessageCount: 12,
+      replacedTokenCount: 3456,
+      replacementTokenCount: 456,
+      releasedTokenCount: 3000,
+    })]);
+    expect(projected.items.some((item) => item.kind === "user")).toBe(false);
+  });
+
+  it("keeps descendant model traffic and internal completion notifications out of the root chat", () => {
+    const child = (cursor: number, type: string, payload: WebJson): WebEvent => ({
+      ...event(cursor, type, payload),
+      sourceSessionId: "session-child",
+      turnId: "run-child",
+    });
+    const projected = projectSession([
+      event(1, "turn.created", {}),
+      event(2, "input.promoted", { content: "启动子任务" }),
+      event(3, "subagent.created", {
+        subagentId: "session-child",
+        initialTurnId: "run-child",
+        parentSessionId: "session-1",
+        label: "内部子任务",
+        mode: "fork",
+        depth: 1,
+      }),
+      child(4, "turn.created", {}),
+      child(5, "input.promoted", { content: "内部子任务" }),
+      child(6, "model.request.started", {}),
+      child(7, "model.completed", { content: "内部结果", reasoningContent: "内部推理" }),
+      child(8, "host.question", { questions: [{ question: "子任务是否允许写入？", options: [{ label: "允许" }, { label: "拒绝" }] }] }),
+      child(9, "host.question.answered", { content: "允许" }),
+      event(10, "subagent.settled", { subagentId: "session-child", turnId: "run-child", state: "completed", output: "内部结果" }),
+      event(11, "input.promoted", {
+        inputId: "input_subagent_notice:session-child:run-child",
+        content: "<task-notification><result>内部结果</result></task-notification>",
+        origin: {
+          kind: "subagent_notification",
+          subagentId: "session-child",
+          childTurnId: "run-child",
+          label: "内部子任务",
+          status: "completed",
+        },
+      }),
+      event(12, "state.completed", {}),
+    ]);
+    expect(projected.items.some((item) => item.kind === "assistant" && item.content === "内部结果")).toBe(false);
+    expect(projected.items.some((item) => item.kind === "user" && item.content === "内部子任务")).toBe(false);
+    expect(projected.items).toContainEqual(expect.objectContaining({ kind: "subagent", subagentId: "session-child" }));
+    expect(projected.items).toContainEqual(expect.objectContaining({ kind: "notice", content: "子任务是否允许写入？\n可选：允许 / 拒绝" }));
+    expect(projected.items).toContainEqual(expect.objectContaining({ kind: "user", content: "允许" }));
+    expect(projected.items.some((item) => item.kind === "notice" && item.content.includes("task-notification"))).toBe(false);
+    expect(projected.subagents).toEqual([expect.objectContaining({
+      label: "内部子任务",
+      mode: "fork",
+      status: "completed",
+      output: "内部结果",
+      modelCalls: 1,
+    })]);
+  });
+});

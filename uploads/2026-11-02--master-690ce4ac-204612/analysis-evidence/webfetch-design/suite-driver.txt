@@ -1,0 +1,12 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/cases/standard-live-web-fetch-page.ts
+  permissionMode: "read-only",
+  async prepareWorkspace({ workspace }) {
+    const scenario = STANDARD_LIVE_WEB_FETCH_PAGE_SCENARIO;
+    expect(await readdir(workspace), "the isolated WebFetch workspace must start empty").toEqual([]);
+    const settingsDirectory = join(workspace, ".longcat-harness");
+    await mkdir(settingsDirectory, { recursive: true, mode: 0o700 });
+    await writeFile(join(settingsDirectory, "settings.local.json"), `${JSON.stringify({
+      permissions: { allow: scenario.permissionRules },
+    }, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  },

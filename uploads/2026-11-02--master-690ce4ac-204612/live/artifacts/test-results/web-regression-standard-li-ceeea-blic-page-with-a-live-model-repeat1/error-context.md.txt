@@ -1,0 +1,442 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> standard.live-web-fetch-page >> standard mode fetches one public page with a live model
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+Error: WebFetch did not complete within its duration budget
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: "completed"
+Received: "running"
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-Onc0Vz/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "请访问并读取 https://example.com/，…" [ref=e56] [cursor=pointer]
+        - button "请访问并读取 https://example.com/，… 的会话操作" [ref=e60] [cursor=pointer]
+    - button "归档会话" [ref=e65] [cursor=pointer]
+    - button "设置" [ref=e69] [cursor=pointer]
+  - main [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 请访问并读取 https://example.com/，…
+        - button "复制会话 ID session_8ab13a29-42b7-48ab-9d72-cf03dd970892" [ref=e79] [cursor=pointer]:
+          - generic [ref=e80]: session_8ab13a29-42b7-48ab-9d72-cf03dd970892
+      - generic [ref=e84]:
+        - button "对话" [ref=e85] [cursor=pointer]
+        - button "轨迹" [ref=e88] [cursor=pointer]
+    - generic [ref=e91]:
+      - generic [ref=e94]:
+        - generic [ref=e97]:
+          - generic [ref=e98]: 请访问并读取 https://example.com/，不要搜索，也不要访问页面中的其他链接。 请从实际页面中取得标题和正文第一句话，并保留英文原文。最后只输出下面两种字段，各占一行，不加列表符号或其他说明： title=<页面标题原文> sentence=<正文第一句话原文>
+          - generic:
+            - time: 22:46
+            - button "复制消息"
+        - generic [ref=e100]:
+          - generic [ref=e101]: 已处理 2 分钟 38 秒
+          - generic [ref=e103]:
+            - 'button "WebFetch prompt: Extract the page title (the text inside the <title> tag) and the first sentence of the b 已完成" [ref=e105] [cursor=pointer]':
+              - generic [ref=e109]:
+                - strong [ref=e110]: WebFetch
+                - generic [ref=e111]: "prompt: Extract the page title (the text inside the <title> tag) and the first sentence of the b"
+              - generic [ref=e112]: 已完成
+            - 'button "WebFetch prompt: Return the exact content of the HTML title tag and the exact first sentence of the body 已完成" [ref=e114] [cursor=pointer]':
+              - generic [ref=e118]:
+                - strong [ref=e119]: WebFetch
+                - generic [ref=e120]: "prompt: Return the exact content of the HTML title tag and the exact first sentence of the body"
+              - generic [ref=e121]: 已完成
+            - 'button "WebFetch prompt: Return the exact text inside the <title> tags and the exact first sentence of the <body> 已完成" [ref=e123] [cursor=pointer]':
+              - generic [ref=e127]:
+                - strong [ref=e128]: WebFetch
+                - generic [ref=e129]: "prompt: Return the exact text inside the <title> tags and the exact first sentence of the <body>"
+              - generic [ref=e130]: 已完成
+            - 'button "WebFetch prompt: Return the exact text inside the HTML title tag and the exact first sentence of the body 已完成" [ref=e132] [cursor=pointer]':
+              - generic [ref=e136]:
+                - strong [ref=e137]: WebFetch
+                - generic [ref=e138]: "prompt: Return the exact text inside the HTML title tag and the exact first sentence of the body"
+              - generic [ref=e139]: 已完成
+            - 'button "WebFetch prompt: Return the exact text inside the HTML title tag and the exact first sentence of the body 已完成" [ref=e141] [cursor=pointer]':
+              - generic [ref=e145]:
+                - strong [ref=e146]: WebFetch
+                - generic [ref=e147]: "prompt: Return the exact text inside the HTML title tag and the exact first sentence of the body"
+              - generic [ref=e148]: 已完成
+            - 'button "WebFetch prompt: Return the exact text inside the HTML title tag and the exact first sentence of the body 已完成" [ref=e150] [cursor=pointer]':
+              - generic [ref=e154]:
+                - strong [ref=e155]: WebFetch
+                - generic [ref=e156]: "prompt: Return the exact text inside the HTML title tag and the exact first sentence of the body"
+              - generic [ref=e157]: 已完成
+            - 'button "WebFetch prompt: Return the exact text inside the HTML title tag and the exact first sentence of the body 已完成" [ref=e159] [cursor=pointer]':
+              - generic [ref=e163]:
+                - strong [ref=e164]: WebFetch
+                - generic [ref=e165]: "prompt: Return the exact text inside the HTML title tag and the exact first sentence of the body"
+              - generic [ref=e166]: 已完成
+            - 'button "WebFetch prompt: Return the exact text inside the HTML title tag and the exact first sentence of the body 已完成" [ref=e168] [cursor=pointer]':
+              - generic [ref=e172]:
+                - strong [ref=e173]: WebFetch
+                - generic [ref=e174]: "prompt: Return the exact text inside the HTML title tag and the exact first sentence of the body"
+              - generic [ref=e175]: 已完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e177] [cursor=pointer]':
+              - generic [ref=e181]:
+                - strong [ref=e182]: WebFetch
+                - generic [ref=e183]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e184]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e186] [cursor=pointer]':
+              - generic [ref=e190]:
+                - strong [ref=e191]: WebFetch
+                - generic [ref=e192]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e193]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e195] [cursor=pointer]':
+              - generic [ref=e199]:
+                - strong [ref=e200]: WebFetch
+                - generic [ref=e201]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e202]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e204] [cursor=pointer]':
+              - generic [ref=e208]:
+                - strong [ref=e209]: WebFetch
+                - generic [ref=e210]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e211]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e213] [cursor=pointer]':
+              - generic [ref=e217]:
+                - strong [ref=e218]: WebFetch
+                - generic [ref=e219]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e220]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e222] [cursor=pointer]':
+              - generic [ref=e226]:
+                - strong [ref=e227]: WebFetch
+                - generic [ref=e228]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e229]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e231] [cursor=pointer]':
+              - generic [ref=e235]:
+                - strong [ref=e236]: WebFetch
+                - generic [ref=e237]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e238]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e240] [cursor=pointer]':
+              - generic [ref=e244]:
+                - strong [ref=e245]: WebFetch
+                - generic [ref=e246]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e247]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e249] [cursor=pointer]':
+              - generic [ref=e253]:
+                - strong [ref=e254]: WebFetch
+                - generic [ref=e255]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e256]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e258] [cursor=pointer]':
+              - generic [ref=e262]:
+                - strong [ref=e263]: WebFetch
+                - generic [ref=e264]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e265]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e267] [cursor=pointer]':
+              - generic [ref=e271]:
+                - strong [ref=e272]: WebFetch
+                - generic [ref=e273]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e274]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e276] [cursor=pointer]':
+              - generic [ref=e280]:
+                - strong [ref=e281]: WebFetch
+                - generic [ref=e282]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e283]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e285] [cursor=pointer]':
+              - generic [ref=e289]:
+                - strong [ref=e290]: WebFetch
+                - generic [ref=e291]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e292]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e294] [cursor=pointer]':
+              - generic [ref=e298]:
+                - strong [ref=e299]: WebFetch
+                - generic [ref=e300]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e301]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e303] [cursor=pointer]':
+              - generic [ref=e307]:
+                - strong [ref=e308]: WebFetch
+                - generic [ref=e309]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e310]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e312] [cursor=pointer]':
+              - generic [ref=e316]:
+                - strong [ref=e317]: WebFetch
+                - generic [ref=e318]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e319]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e321] [cursor=pointer]':
+              - generic [ref=e325]:
+                - strong [ref=e326]: WebFetch
+                - generic [ref=e327]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e328]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e330] [cursor=pointer]':
+              - generic [ref=e334]:
+                - strong [ref=e335]: WebFetch
+                - generic [ref=e336]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e337]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e339] [cursor=pointer]':
+              - generic [ref=e343]:
+                - strong [ref=e344]: WebFetch
+                - generic [ref=e345]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e346]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e348] [cursor=pointer]':
+              - generic [ref=e352]:
+                - strong [ref=e353]: WebFetch
+                - generic [ref=e354]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e355]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e357] [cursor=pointer]':
+              - generic [ref=e361]:
+                - strong [ref=e362]: WebFetch
+                - generic [ref=e363]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e364]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e366] [cursor=pointer]':
+              - generic [ref=e370]:
+                - strong [ref=e371]: WebFetch
+                - generic [ref=e372]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e373]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e375] [cursor=pointer]':
+              - generic [ref=e379]:
+                - strong [ref=e380]: WebFetch
+                - generic [ref=e381]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e382]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e384] [cursor=pointer]':
+              - generic [ref=e388]:
+                - strong [ref=e389]: WebFetch
+                - generic [ref=e390]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e391]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e393] [cursor=pointer]':
+              - generic [ref=e397]:
+                - strong [ref=e398]: WebFetch
+                - generic [ref=e399]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e400]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e402] [cursor=pointer]':
+              - generic [ref=e406]:
+                - strong [ref=e407]: WebFetch
+                - generic [ref=e408]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e409]: 未完成
+            - 'button "WebFetch url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac 未完成" [ref=e411] [cursor=pointer]':
+              - generic [ref=e415]:
+                - strong [ref=e416]: WebFetch
+                - generic [ref=e417]: "url: https://example.com/ · prompt: Return the exact text inside the HTML title tag and the exac"
+              - generic [ref=e418]: 未完成
+            - generic [ref=e419]: 正在执行下一步
+      - generic [ref=e424]:
+        - textbox "继续输入消息" [ref=e425]:
+          - /placeholder: 追加消息，任务会在当前步骤结束后处理
+        - generic [ref=e426]:
+          - generic [ref=e427]:
+            - button "添加" [ref=e429] [cursor=pointer]
+            - generic [ref=e432] [cursor=pointer]: 标准模式
+            - button "权限：只读" [disabled] [ref=e438]:
+              - generic [ref=e441]: 只读
+          - generic [ref=e444]:
+            - button "模型：LongCat-2.0" [disabled] [ref=e446] [cursor=pointer]:
+              - generic [ref=e447]: LongCat-2.0
+              - generic [ref=e448]: 思考
+            - generic "模型缓存与上下文用量" [ref=e451]:
+              - meter "最近一次模型请求缓存命中 14,848 / 15,145 输入令牌（98.0%）" [ref=e452]:
+                - generic [ref=e453]: 缓存
+                - strong [ref=e454]: 98%
+              - meter "上下文已使用 15,145 / 1,048,576 令牌（1.4%）；最近一次模型请求" [ref=e455]:
+                - generic [ref=e456]: 令牌
+                - strong [ref=e457]: 1%
+            - button "追加消息" [disabled] [ref=e458]
+            - button "停止任务" [ref=e461] [cursor=pointer]
+    - generic [ref=e464]:
+      - generic [ref=e467]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e468] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  13  | import {
+  14  |   STANDARD_LIVE_WEB_FETCH_PAGE_CASE,
+  15  |   STANDARD_LIVE_WEB_FETCH_PAGE_SCENARIO,
+  16  |   evaluationTimingBudget,
+  17  | } from "../evaluation-cases.js";
+  18  | 
+  19  | async function inspectFetchCards(
+  20  |   page: Page,
+  21  |   activity: Locator,
+  22  |   details: StandardLiveWebFetchPageAudit["toolDetails"],
+  23  | ): Promise<readonly { readonly card: string; readonly detail: string }[]> {
+  24  |   if (await activity.getAttribute("open") === null) await activity.locator(":scope > summary").click();
+  25  |   const cards = activity.locator(".tool-card");
+  26  |   await expect(cards).toHaveCount(details.length);
+  27  |   const snapshots: { card: string; detail: string }[] = [];
+  28  |   for (const [index, expected] of details.entries()) {
+  29  |     const card = cards.nth(index);
+  30  |     await expect(card.locator(".tool-copy > strong")).toHaveText(expected.name);
+  31  |     await expect(card.locator(".tool-status")).toHaveText("已完成");
+  32  |     const cardText = (await card.innerText()).replace(/\s+/gu, " ").trim();
+  33  |     await card.click();
+  34  |     const panel = page.locator(".details-panel");
+  35  |     await expect(panel).toBeVisible();
+  36  |     await expect(panel.locator(".details-head span")).toHaveText(expected.name);
+  37  |     const values = panel.locator(".details-body pre");
+  38  |     await expect(values).toHaveCount(2);
+  39  |     expect(await values.nth(0).textContent(), "WebFetch page arguments disagree with SQLite").toBe(expected.argumentsJson);
+  40  |     expect(await values.nth(1).textContent(), "WebFetch page result disagrees with SQLite").toBe(expected.renderedResult);
+  41  |     snapshots.push({ card: cardText, detail: (await panel.innerText()).replace(/\s+/gu, " ").trim() });
+  42  |     await page.getByRole("button", { name: "关闭详情", exact: true }).click();
+  43  |     await expect(panel).toHaveCount(0);
+  44  |   }
+  45  |   return snapshots;
+  46  | }
+  47  | 
+  48  | export const standardLiveWebFetchPageDriver = Object.freeze({
+  49  |   caseId: STANDARD_LIVE_WEB_FETCH_PAGE_CASE.id,
+  50  |   title: "standard mode fetches one public page with a live model",
+  51  |   timingBudgetKeys: Object.freeze(["durationMs", "refreshRecoveryMs"]),
+  52  |   permissionMode: "read-only",
+  53  |   async prepareWorkspace({ workspace }) {
+  54  |     const scenario = STANDARD_LIVE_WEB_FETCH_PAGE_SCENARIO;
+  55  |     expect(await readdir(workspace), "the isolated WebFetch workspace must start empty").toEqual([]);
+  56  |     const settingsDirectory = join(workspace, ".longcat-harness");
+  57  |     await mkdir(settingsDirectory, { recursive: true, mode: 0o700 });
+  58  |     await writeFile(join(settingsDirectory, "settings.local.json"), `${JSON.stringify({
+  59  |       permissions: { allow: scenario.permissionRules },
+  60  |     }, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  61  |   },
+  62  |   async run({ page, testInfo, environment: current }) {
+  63  |     const contract = STANDARD_LIVE_WEB_FETCH_PAGE_CASE;
+  64  |     const scenario = STANDARD_LIVE_WEB_FETCH_PAGE_SCENARIO;
+  65  |     const durationBudgetMs = evaluationTimingBudget(contract, "durationMs");
+  66  |     const refreshRecoveryBudgetMs = evaluationTimingBudget(contract, "refreshRecoveryMs");
+  67  |     testInfo.setTimeout(durationBudgetMs + refreshRecoveryBudgetMs + 30_000);
+  68  |     expect(current.model.execution).toBe("live");
+  69  | 
+  70  |     const settingsDirectory = join(current.workspace, ".longcat-harness");
+  71  |     const settingsPath = join(settingsDirectory, "settings.local.json");
+  72  |     const settingsBefore = await readFile(settingsPath);
+  73  |     const settingsHash = createHash("sha256").update(settingsBefore).digest("hex");
+  74  |     expect(await readdir(current.workspace)).toEqual([".longcat-harness"]);
+  75  |     expect(await readdir(settingsDirectory)).toEqual(["settings.local.json"]);
+  76  |     expect((await stat(settingsPath)).mode & 0o777, "the WebFetch permission fixture has unsafe permissions").toBe(0o600);
+  77  | 
+  78  |     const browserState = browserDiagnostics(page);
+  79  |     await page.goto(current.baseUrl);
+  80  |     await expect(page.getByRole("button", { name: "LongCat Harness" })).toBeVisible();
+  81  |     await expect(page.getByTestId("mode-select")).toContainText("标准模式");
+  82  |     await expect(page.getByTestId("model-select")).toContainText(current.model.name);
+  83  |     await expect(page.getByTestId("permission-select")).toContainText("只读");
+  84  |     await expect(page.getByTestId("workspace-select")).toContainText(basename(current.workspace));
+  85  | 
+  86  |     await page.getByTestId("composer-input").fill(contract.prompt);
+  87  |     const accepted = page.waitForResponse((response) => response.url() === `${current.baseUrl}/api/sessions`
+  88  |       && response.request().method() === "POST");
+  89  |     const startedAt = Date.now();
+  90  |     await page.getByTestId("send-message").click();
+  91  |     const response = await accepted;
+  92  |     expect(response.ok(), "WebFetch create-session request failed").toBe(true);
+  93  |     const session = await sessionFrom(response);
+  94  |     expect(session).toMatchObject({ status: "running", mode: "standard" });
+  95  |     await expect(page.getByTestId("stop-task")).toBeVisible();
+  96  |     await expect(page.getByTestId("permission-select")).toBeDisabled();
+  97  |     await expect(page.getByTestId("composer-input")).toHaveAttribute("placeholder", /追加消息/u);
+  98  | 
+  99  |     const finalAnswer = page.locator(".timeline-group > .assistant-message").last();
+  100 |     const unexpectedQuestion = page.getByRole("region", { name: "等待回答" });
+  101 |     const deadline = startedAt + durationBudgetMs;
+  102 |     while (Date.now() < deadline) {
+  103 |       if (await unexpectedQuestion.isVisible()) {
+  104 |         const question = (await unexpectedQuestion.innerText()).replace(/\s+/gu, " ").trim();
+  105 |         throw new Error(`WebFetch requested unexpected user input: ${question}`);
+  106 |       }
+  107 |       const observed = await sessionFrom(await fetch(`${current.baseUrl}/api/sessions/${session.id}`));
+  108 |       if (observed.status === "completed") break;
+  109 |       if (observed.status !== "running") throw new Error(`WebFetch ended with unexpected status ${observed.status}`);
+  110 |       await page.waitForTimeout(100);
+  111 |     }
+  112 |     const terminal = await sessionFrom(await fetch(`${current.baseUrl}/api/sessions/${session.id}`));
+> 113 |     expect(terminal.status, "WebFetch did not complete within its duration budget").toBe("completed");
+      |                                                                                     ^ Error: WebFetch did not complete within its duration budget
+  114 |     await expect(finalAnswer).toBeVisible();
+  115 |     const renderedAnswerBeforeRefresh = (await finalAnswer.innerText()).trim();
+  116 |     expect(renderedAnswerBeforeRefresh.replace(/\s+/gu, " "), "the page rendered the wrong WebFetch answer")
+  117 |       .toBe(scenario.finalLines.join(" "));
+  118 |     const durationMs = Date.now() - startedAt;
+  119 |     expect(durationMs, "WebFetch exceeded its duration budget").toBeLessThan(durationBudgetMs);
+  120 |     await expect(page.getByTestId("stop-task")).toHaveCount(0);
+  121 |     await expect(page.getByTestId("permission-select")).toBeEnabled();
+  122 |     await expect(page.getByRole("button", { name: "复制回答" })).toBeVisible();
+  123 |     await expect(unexpectedQuestion).toHaveCount(0);
+  124 | 
+  125 |     const audit = auditStandardLiveWebFetchPage(
+  126 |       join(current.stateDirectory, "event_log.sqlite"),
+  127 |       join(current.stateDirectory, "message.sqlite"),
+  128 |       session.id,
+  129 |       current.workspace,
+  130 |     );
+  131 |     expect(audit.fetchedUrl).toBe(scenario.url);
+  132 |     expect(audit.fetchedContentType.split(";", 1)[0]!.trim().toLowerCase()).toBe(scenario.expectedContentType);
+  133 | 
+  134 |     const completedActivity = page.locator(".timeline-group .turn-activity.completed");
+  135 |     await expect(completedActivity, "the page omitted the completed WebFetch activity").toHaveCount(1);
+  136 |     const cardsBeforeRefresh = await inspectFetchCards(page, completedActivity, audit.toolDetails);
+  137 | 
+  138 |     const refreshStartedAt = Date.now();
+  139 |     const recovered = page.waitForResponse((candidate) => candidate.url()
+  140 |       === `${current.baseUrl}/api/sessions/${encodeURIComponent(session.id)}`
+  141 |       && candidate.request().method() === "GET");
+  142 |     await page.reload({ timeout: refreshRecoveryBudgetMs });
+  143 |     const rows = page.locator(".session-tree .session-item:not(.provisional) > .session-row");
+  144 |     await expect(rows, "refresh did not restore the WebFetch Session").toHaveCount(1);
+  145 |     await rows.first().click();
+  146 |     const recoveredResponse = await recovered;
+  147 |     expect(recoveredResponse.ok(), "the WebFetch Session did not reload successfully").toBe(true);
+  148 |     expect(await sessionFrom(recoveredResponse)).toMatchObject({
+  149 |       id: session.id,
+  150 |       status: "completed",
+  151 |       mode: "standard",
+  152 |     });
+  153 |     await expect(rows.first()).toHaveClass(/active/u);
+  154 |     expect((await finalAnswer.innerText()).trim(), "the WebFetch answer changed after refresh")
+  155 |       .toBe(renderedAnswerBeforeRefresh);
+  156 |     expect(await inspectFetchCards(page, completedActivity, audit.toolDetails),
+  157 |       "the WebFetch cards or details changed after refresh").toEqual(cardsBeforeRefresh);
+  158 |     expect(await readdir(current.workspace)).toEqual([".longcat-harness"]);
+  159 |     expect(await readdir(settingsDirectory)).toEqual(["settings.local.json"]);
+  160 |     expect(createHash("sha256").update(await readFile(settingsPath)).digest("hex"),
+  161 |       "the WebFetch Case changed its permission fixture").toBe(settingsHash);
+  162 |     await expect(page.getByTestId("stop-task")).toHaveCount(0);
+  163 |     await expect(page.getByTestId("permission-select")).toBeEnabled();
+  164 |     await expect(unexpectedQuestion).toHaveCount(0);
+  165 |     const refreshRecoveryMs = Date.now() - refreshStartedAt;
+  166 |     expect(refreshRecoveryMs, "WebFetch refresh exceeded its budget").toBeLessThan(refreshRecoveryBudgetMs);
+  167 | 
+  168 |     assertNoBrowserErrors(browserState);
+  169 |     await attachJson(testInfo, contract, "timings", { durationMs, refreshRecoveryMs });
+  170 |     await attachJson(testInfo, contract, "sqlite-audit", {
+  171 |       ...audit,
+  172 |       model: current.model,
+  173 |       settingsSha256: settingsHash,
+  174 |     });
+  175 |   },
+  176 | } satisfies EvaluationCaseDriver);
+  177 | 
+```

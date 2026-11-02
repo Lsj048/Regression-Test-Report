@@ -1,0 +1,15 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/common/tools/report-findings.ts
+export function createReportFindingsTool(documents: SessionDocumentStore): ToolDefinition {
+  return defineTool(interactionToolSchemas.ReportFindings, {
+    permission: () => ({ action: "ReportFindings", resource: "*", mutates: true, permissionRequired: false }),
+    execute: async (raw, context) => {
+      const args = objectValue(raw, "ReportFindings");
+      const findings = args["findings"];
+      if (!Array.isArray(findings)) throw new ContractError("findings must be an array", "FINDINGS_INVALID");
+      await documents.update(context.sessionId, (state) => { state["findings"] = [...findings]; });
+      return { level: args["level"] ?? "medium", findings, count: findings.length };
+    },
+  });
+
+}

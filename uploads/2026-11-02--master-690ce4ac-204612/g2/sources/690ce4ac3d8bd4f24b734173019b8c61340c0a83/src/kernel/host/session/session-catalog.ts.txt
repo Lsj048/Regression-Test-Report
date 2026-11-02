@@ -1,0 +1,351 @@
+import type { PermissionMode } from "../../api/foundation/permission-mode.js";
+import { isPermissionMode } from "../../api/foundation/permission-mode.js";
+import type { JsonValue } from "../../api/foundation/json.js";
+import type { MessageStore } from "../../api/messages/types.js";
+import type { SessionStatus, TurnFailureCause, TurnOutcome, WaitingExpectation } from "../../api/state/types.js";
+import type { AgentState, DurableEvent, TurnRepository } from "../../runtime/state/types.js";
+
+export interface SessionProjectionDefaults {
+  readonly workspace: string;
+  readonly model: string;
+  readonly mode: string;
+  readonly permissionMode: PermissionMode;
+}
+
+/** Rebuildable logical-session view folded from canonical event, message and Turn-state facts. */
+export interface SessionRecord {
+  readonly id: string;
+  readonly title: string;
+  readonly workspace: string;
+  /** Stable Workspace registration identity. Missing means the Session is ungrouped. */
+  readonly workspaceId?: string;
+  readonly model: string;
+  readonly mode: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly sessionStatus: SessionStatus;
+  readonly latestTurnId?: string;
+  /** Host-internal version used to expire temporary execution faults. */
+  readonly latestTurnRevision?: number;
+  readonly latestTurnOutcome?: TurnOutcome;
+  readonly turnCount: number;
+  readonly lastEventSeq: number;
+  readonly permissionMode: PermissionMode;
+  readonly pinned: boolean;
+  readonly archived: boolean;
+  readonly forkedFromSessionId?: string;
+  readonly forkThroughSeq?: number;
+}
+
+type JsonRecord = Readonly<Record<string, JsonValue>>;
+
+const SESSION_PROJECTION_EVENT_TYPES = [
+  "session.created",
+  "session.metadata.snapshot",
+  "ui.session.created",
+  "session.updated",
+  "ui.session.updated",
+  "session.permission.changed",
+  "ui.permission.changed",
+  "session.forked",
+  "ui.session.forked",
+  "ui.session.pinned",
+  "input.promoted",
+  "turn.created",
+  "turn.completed",
+  "turn.waiting",
+  "turn.blocked",
+  "state.completed",
+  "turn.failed",
+  "state.failed",
+  "turn.interrupted",
+  "state.interrupted",
+  "ui.session.status.changed",
+  "host.execution.failed",
+] as const;
+
+function objectValue(value: JsonValue | undefined): JsonRecord | undefined {
+  return value !== null && value !== undefined && typeof value === "object" && !Array.isArray(value)
+    ? value as JsonRecord
+    : undefined;
+}
+
+function stringValue(record: JsonRecord | undefined, key: string): string | undefined {
+  const value = record?.[key];
+  return typeof value === "string" ? value : undefined;
+}
+
+function booleanValue(record: JsonRecord | undefined, key: string): boolean | undefined {
+  const value = record?.[key];
+  return typeof value === "boolean" ? value : undefined;
+}
+
+function numberValue(record: JsonRecord | undefined, key: string): number | undefined {
+  const value = record?.[key];
+  return typeof value === "number" && Number.isSafeInteger(value) ? value : undefined;
+}
+
+function titleFrom(content: string): string {
+  const line = content.trim().split(/\r?\n/u, 1)[0]!.replace(/\s+/gu, " ");
+  const points = [...line];
+  return points.length <= 28 ? line : `${points.slice(0, 28).join("")}…`;
+}
+
+function latestRootState(states: readonly AgentState[]): AgentState | undefined {
+  return states
+    .filter((state) => state.parentSessionId === undefined)
+    .toSorted((left, right) => left.enteredAt.localeCompare(right.enteredAt)
+      || left.causeEventSeq - right.causeEventSeq
+      || left.turnId.localeCompare(right.turnId, "en"))
+    .at(-1);
+}
+
+function eventTurnOutcome(event: DurableEvent): TurnOutcome | undefined {
+  const payload = objectValue(event.payload);
+  if (event.type === "turn.completed" || event.type === "state.completed") {
+    return { kind: "completed", endedAt: event.createdAt, ...(payload?.["outcome"] === undefined ? {} : { outcome: payload["outcome"] }) };
+  }
+  if (event.type === "turn.waiting") {
+    const expectations = Array.isArray(payload?.["expectations"]) ? payload["expectations"] : [];
+    return { kind: "waiting", endedAt: event.createdAt, expectations: expectations as unknown as readonly WaitingExpectation[] };
+  }
+  if (event.type === "turn.blocked") return { kind: "blocked", endedAt: event.createdAt, reason: stringValue(payload, "reason") ?? "Blocked" };
+  if (event.type === "turn.failed" || event.type === "state.failed") {
+    const error = objectValue(payload?.["error"]) ?? payload;
+    const cause = objectValue(payload?.["cause"]);
+    const code = stringValue(error, "code") ?? "TURN_FAILED";
+    return {
+      kind: "failed",
+      endedAt: event.createdAt,
+      cause: cause === undefined ? { kind: "internal_error", code } : cause as unknown as TurnFailureCause,
+      error: {
+        code,
+        message: stringValue(error, "message") ?? "Turn failed",
+        ...(error?.["details"] === undefined ? {} : { details: error["details"] }),
+      },
+    };
+  }
+  if (event.type === "turn.interrupted" || event.type === "state.interrupted") {
+    return {
+      kind: "interrupted",
+      endedAt: event.createdAt,
+      cause: { kind: "unclean_shutdown", reason: stringValue(payload, "reason") ?? "Turn interrupted" },
+    };
+  }
+  if (event.type === "ui.session.status.changed") {
+    const status = stringValue(payload, "status");
+    if (status === "completed") return { kind: "completed", endedAt: stringValue(payload, "endedAt") ?? event.createdAt };
+    if (status === "failed") {
+      return {
+        kind: "failed",
+        endedAt: event.createdAt,
+        cause: { kind: "internal_error", code: "LEGACY_WEB_SESSION_FAILED" },
+        error: { code: "LEGACY_WEB_SESSION_FAILED", message: stringValue(payload, "message") ?? "Turn failed" },
+      };
+    }
+    if (status === "interrupted") {
+      return { kind: "interrupted", endedAt: event.createdAt, cause: { kind: "unclean_shutdown", reason: "Legacy Web session interruption" } };
+    }
+  }
+  return undefined;
+}
+
+function inputKey(event: DurableEvent): string {
+  return stringValue(objectValue(event.payload), "inputId") ?? event.eventId;
+}
+
+/** Host-owned query service shared by every UI and headless transport. */
+export class SessionCatalog {
+  constructor(
+    private readonly repository: TurnRepository,
+    private readonly messageStore: MessageStore,
+    private readonly defaults: SessionProjectionDefaults,
+  ) {}
+
+  async list(): Promise<readonly SessionRecord[]> {
+    const ids = await this.repository.listSessionIds();
+    const states = await this.repository.listStates();
+    const bySession = new Map<string, AgentState[]>();
+    for (const state of states) {
+      const values = bySession.get(state.sessionId) ?? [];
+      values.push(state);
+      bySession.set(state.sessionId, values);
+    }
+    const sessions = await Promise.all(ids.map(async (id) => this.#project(id, bySession.get(id) ?? [])));
+    return Object.freeze(sessions
+      .filter((session): session is SessionRecord => session !== undefined)
+      .sort((left, right) => Number(right.pinned) - Number(left.pinned)
+        || right.updatedAt.localeCompare(left.updatedAt)
+        || left.id.localeCompare(right.id, "en")));
+  }
+
+  async get(sessionId: string): Promise<SessionRecord | undefined> {
+    return this.#project(sessionId, await this.repository.listStates(sessionId));
+  }
+
+  async #project(sessionId: string, states: readonly AgentState[]): Promise<SessionRecord | undefined> {
+    // Session lists only need small metadata/lifecycle facts. Large context, model and
+    // tool payloads are deliberately left unopened until their dedicated view asks.
+    const [events, lastEventSeq] = await Promise.all([
+      this.repository.eventsByTypes(sessionId, SESSION_PROJECTION_EVENT_TYPES),
+      this.repository.latestEventSeq(sessionId),
+    ]);
+    // A terminal event can become visible after the initial state read. Refresh
+    // once and use the committed outcome, including its cause and details.
+    // Session-scoped startup failures and legacy notifications have no Turn.
+    const statesById = new Map(states.map(state => [state.turnId, state]));
+    const settlementAfterRead = events.some(event => {
+      if (event.turnId === undefined || event.type === "ui.session.status.changed" || eventTurnOutcome(event) === undefined) return false;
+      const state = statesById.get(event.turnId);
+      return state?.turnOutcome === undefined && event.seq > (state?.causeEventSeq ?? 0);
+    });
+    if (settlementAfterRead) states = await this.repository.listStates(sessionId);
+    const rootState = latestRootState(states);
+    const explicitlyCreated = events.some((event) => event.type === "session.created"
+      || event.type === "session.metadata.snapshot"
+      || event.type === "ui.session.created"
+      || event.type === "session.forked"
+      || event.type === "ui.session.forked");
+    if (rootState === undefined && !explicitlyCreated) return undefined;
+
+    let title: string | undefined;
+    let workspace: string | undefined;
+    let workspaceId: string | undefined;
+    let model: string | undefined;
+    let mode: string | undefined;
+    let permissionMode: PermissionMode | undefined;
+    let pinned = false;
+    let archived = false;
+    let forkedFromSessionId: string | undefined;
+    let forkThroughSeq: number | undefined;
+    let declaredCreatedAt: string | undefined;
+    let fallbackTurnOutcome: { readonly seq: number; readonly outcome: TurnOutcome } | undefined;
+    let legacyTurnOutcome: TurnOutcome | undefined;
+    let hostFailure: DurableEvent | undefined;
+    const promotedInputs = new Set<string>();
+
+    const applyMetadata = (metadata: JsonRecord | undefined): void => {
+      title = stringValue(metadata, "title") ?? title;
+      workspace = stringValue(metadata, "workspace") ?? workspace;
+      if (metadata !== undefined && Object.prototype.hasOwnProperty.call(metadata, "workspaceId")) {
+        workspaceId = stringValue(metadata, "workspaceId");
+      }
+      model = stringValue(metadata, "model") ?? model;
+      mode = stringValue(metadata, "mode") ?? mode;
+      const permission = stringValue(metadata, "permissionMode");
+      if (isPermissionMode(permission)) permissionMode = permission;
+      pinned = booleanValue(metadata, "pinned") ?? pinned;
+      archived = booleanValue(metadata, "archived") ?? archived;
+      declaredCreatedAt = stringValue(metadata, "createdAt") ?? declaredCreatedAt;
+      forkedFromSessionId = stringValue(metadata, "forkedFromSessionId") ?? forkedFromSessionId;
+      forkThroughSeq = numberValue(metadata, "forkThroughSeq") ?? forkThroughSeq;
+    };
+
+    for (const event of events) {
+      const payload = objectValue(event.payload);
+      if (event.type === "session.created" || event.type === "session.metadata.snapshot" || event.type === "ui.session.created") {
+        applyMetadata(payload);
+      } else if (event.type === "session.updated" || event.type === "ui.session.updated") {
+        applyMetadata(objectValue(payload?.["to"]) ?? payload);
+      } else if (event.type === "session.permission.changed" || event.type === "ui.permission.changed") {
+        const permission = stringValue(payload, "to") ?? stringValue(payload, "permissionMode");
+        if (isPermissionMode(permission)) permissionMode = permission;
+      } else if (event.type === "session.forked" || event.type === "ui.session.forked") {
+        forkedFromSessionId = stringValue(payload, "sourceSessionId") ?? forkedFromSessionId;
+        forkThroughSeq = numberValue(payload, "throughEventSeq") ?? forkThroughSeq;
+      } else if (event.type === "ui.session.pinned") {
+        pinned = booleanValue(payload, "pinned") ?? pinned;
+      }
+      if (event.type === "input.promoted") {
+        promotedInputs.add(inputKey(event));
+        const content = stringValue(payload, "content");
+        if (title === undefined && content) title = titleFrom(content);
+      }
+      const projectedOutcome = eventTurnOutcome(event);
+      if (projectedOutcome !== undefined) {
+        if (event.type === "ui.session.status.changed") {
+          legacyTurnOutcome = projectedOutcome;
+        } else {
+          const eventTurnId = event.turnId ?? stringValue(payload, "turnId");
+          // An unfinished Turn must not inherit a failure from an earlier
+          // startup attempt, even if that attempt never created a Turn record.
+          const belongsToOtherTurn = eventTurnId !== rootState?.turnId
+            && ((rootState !== undefined && rootState.turnState.kind !== "settled")
+              || states.some((state) => state.turnId === eventTurnId));
+          // A recorded Turn owns its result even if settlement has not been
+          // saved. An event alone must not manufacture a terminal outcome.
+          const resultOwnedByState = rootState !== undefined
+            && (eventTurnId === rootState.turnId || (eventTurnId === undefined && rootState.turnOutcome !== undefined));
+          if (!belongsToOtherTurn && !resultOwnedByState && (rootState === undefined || event.seq >= rootState.causeEventSeq)) {
+            fallbackTurnOutcome = { seq: event.seq, outcome: projectedOutcome };
+          }
+        }
+      }
+      if (event.type === "host.execution.failed") {
+        const failureRevision = numberValue(payload, "sessionTurnRevision");
+        // Skip expired faults before selecting the latest one, so a late old
+        // audit write cannot hide a newer fault from the current execution.
+        if (failureRevision === undefined || rootState === undefined || rootState.revision <= failureRevision) hostFailure = event;
+      }
+    }
+
+    const firstEvent = events[0];
+    const latestMessage = this.messageStore.latestMessage === undefined
+      ? (await this.messageStore.messages(sessionId)).at(-1)
+      : await this.messageStore.latestMessage(sessionId);
+    const stateCauseSeq = rootState?.causeEventSeq ?? 0;
+    const fallbackOverridesState = fallbackTurnOutcome !== undefined && fallbackTurnOutcome.seq > stateCauseSeq;
+    // A startup failure without a Turn may be newer than the saved result.
+    // UI notifications never override durable Turn facts.
+    const latestTurnOutcome = fallbackOverridesState && fallbackTurnOutcome !== undefined
+      ? fallbackTurnOutcome.outcome
+      : rootState?.turnOutcome ?? fallbackTurnOutcome?.outcome ?? (rootState === undefined ? legacyTurnOutcome : undefined);
+    const pendingInputCount = await this.repository.pendingInputCount(sessionId);
+    const failurePayload = objectValue(hostFailure?.payload);
+    const failureTurnId = stringValue(failurePayload, "turnId");
+    // New records identify the session Turn even when execution resumed a child
+    // or startup failed before a Turn existed. Keep older startup records readable.
+    const failureMatchesTurn = failurePayload !== undefined && Object.prototype.hasOwnProperty.call(failurePayload, "sessionTurnId")
+      ? failurePayload["sessionTurnId"] === (rootState?.turnId ?? null)
+      : failureTurnId === rootState?.turnId || !states.some(state => state.turnId === failureTurnId);
+    const sessionStatus: SessionStatus = hostFailure !== undefined && hostFailure.seq > stateCauseSeq && failureMatchesTurn
+      ? { kind: "system_error", error: { code: stringValue(failurePayload, "code") ?? "HOST_TURN_DRIVER_FAILED", message: stringValue(failurePayload, "message") ?? "Host execution failed", recoverable: false, occurredAt: stringValue(failurePayload, "occurredAt") ?? hostFailure.createdAt } }
+      : rootState !== undefined && rootState.turnState.kind !== "settled"
+      ? { kind: rootState.kind === "paused" && rootState.suspensionReasons.some((reason) => (reason.kind === "approval" || reason.kind === "human_input")) ? "waiting" : "active" }
+      : pendingInputCount > 0
+        ? { kind: "queued" }
+        : latestTurnOutcome?.kind === "waiting"
+          ? { kind: "waiting" }
+          : rootState?.sessionStatus ?? { kind: "idle" };
+    const createdAt = declaredCreatedAt ?? firstEvent?.createdAt ?? rootState?.enteredAt ?? new Date(0).toISOString();
+    const updatedAt = latestMessage?.createdAt ?? createdAt;
+    let inheritedTurnCount = 0;
+    if (forkedFromSessionId !== undefined && forkThroughSeq !== undefined) {
+      const throughSeq = forkThroughSeq;
+      inheritedTurnCount = (await this.repository.eventsByTypes(forkedFromSessionId, ["input.promoted"]))
+        .filter((event) => event.seq <= throughSeq)
+        .reduce((keys, event) => keys.add(inputKey(event)), new Set<string>()).size;
+    }
+    const turnCount = Math.max(inheritedTurnCount + promotedInputs.size, inheritedTurnCount + states.length);
+
+    return Object.freeze({
+      id: sessionId,
+      title: title ?? sessionId,
+      workspace: workspace ?? this.defaults.workspace,
+      ...(workspaceId === undefined ? {} : { workspaceId }),
+      model: model ?? this.defaults.model,
+      mode: mode ?? this.defaults.mode,
+      createdAt,
+      updatedAt,
+      sessionStatus,
+      ...(rootState === undefined ? {} : { latestTurnId: rootState.turnId, latestTurnRevision: rootState.revision }),
+      ...(latestTurnOutcome === undefined ? {} : { latestTurnOutcome }),
+      turnCount,
+      lastEventSeq: Math.max(lastEventSeq, rootState?.causeEventSeq ?? 0),
+      permissionMode: permissionMode ?? this.defaults.permissionMode,
+      pinned,
+      archived,
+      ...(forkedFromSessionId === undefined || forkThroughSeq === undefined ? {} : { forkedFromSessionId, forkThroughSeq }),
+    });
+  }
+}

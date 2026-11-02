@@ -1,0 +1,242 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> assistant.live-monitor-stop >> stop a continuous release broadcast after consuming its first real message
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+AssertionError: missing real monitor launch or active stop
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-yha0LG/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "请通过WebSocket连接发布事件广播 ws://12… 刚刚" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]: 请通过WebSocket连接发布事件广播 ws://12…
+          - time [ref=e59]: 刚刚
+        - button "请通过WebSocket连接发布事件广播 ws://12… 的会话操作" [ref=e60] [cursor=pointer]
+    - button "归档会话" [ref=e65] [cursor=pointer]
+    - button "设置" [ref=e69] [cursor=pointer]
+  - main [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 请通过WebSocket连接发布事件广播 ws://12…
+        - button "复制会话 ID session_53424089-44e7-45bf-9ce4-e12525c8a239" [ref=e78] [cursor=pointer]:
+          - generic [ref=e79]: session_53424089-44e7-45bf-9ce4-e12525c8a239
+      - generic [ref=e83]:
+        - button "对话" [ref=e84] [cursor=pointer]
+        - button "轨迹" [ref=e87] [cursor=pointer]
+    - generic [ref=e90]:
+      - generic [ref=e93]:
+        - generic [ref=e96]:
+          - generic [ref=e97]: 请通过WebSocket连接发布事件广播 ws://127.0.0.1:56278/release-events 持续监听；这是连接地址，不是终端命令。不能靠计时到期停止监听；如果设置了安全期限，必须在到期前主动停止。确认收到第一条发布消息后立即主动停止这个监听，再核对它确实已经停止，并告诉我收到的消息。广播不会自行结束，不要一直等待广播结束；只查看当前已收到的输出即可。不运行终端命令、不访问文件、不使用网页抓取、不委派。
+          - generic:
+            - time: 23:42
+            - button "复制消息"
+        - group [ref=e99]:
+          - generic "用时 43 秒" [ref=e100] [cursor=pointer]
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - paragraph [ref=e106]: 监听已确认停止。以下是结果汇总：
+            - separator [ref=e107]
+            - paragraph [ref=e108]:
+              - strong [ref=e109]: WebSocket 连接地址：
+              - code [ref=e110]: ws://127.0.0.1:56278/release-events
+            - paragraph [ref=e111]:
+              - strong [ref=e112]: 收到的第一条消息：
+            - blockquote [ref=e113]:
+              - paragraph [ref=e114]: 发布广播已连接，当前发布窗口可用
+            - paragraph [ref=e115]:
+              - strong [ref=e116]: 监听状态：
+              - text: 已停止（
+              - code [ref=e117]: "Status: stopped"
+              - text: ）
+            - separator [ref=e118]
+            - paragraph [ref=e119]:
+              - text: 监听在收到第一条消息后已主动停止，经两次确认任务状态均为
+              - code [ref=e120]: stopped
+              - text: ，不再有后续输出。
+          - generic [ref=e121]:
+            - button "复制回答" [ref=e122] [cursor=pointer]
+            - button "赞" [ref=e126] [cursor=pointer]
+            - button "踩" [ref=e129] [cursor=pointer]
+            - button "从此回答分叉会话" [ref=e132] [cursor=pointer]
+      - generic [ref=e140]:
+        - textbox "继续输入消息" [ref=e141]
+        - generic [ref=e142]:
+          - generic [ref=e143]:
+            - button "添加" [ref=e145] [cursor=pointer]
+            - generic [ref=e148] [cursor=pointer]: 个人助理
+            - button "权限：工作区写入" [ref=e154] [cursor=pointer]:
+              - generic [ref=e157]: 工作区写入
+          - generic [ref=e160]:
+            - button "模型：LongCat-2.0" [ref=e162] [cursor=pointer]:
+              - generic [ref=e163]: LongCat-2.0
+              - generic [ref=e164]: 思考
+            - generic "模型缓存与上下文用量" [ref=e167]:
+              - meter "最近一次模型请求缓存命中 11,392 / 11,910 输入令牌（95.7%）" [ref=e168]:
+                - generic [ref=e169]: 缓存
+                - strong [ref=e170]: 96%
+              - meter "上下文已使用 11,910 / 1,048,576 令牌（1.1%）；最近一次模型请求" [ref=e171]:
+                - generic [ref=e172]: 令牌
+                - strong [ref=e173]: 1%
+            - button "发送消息" [disabled] [ref=e174]
+    - generic [ref=e177]:
+      - generic [ref=e180]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e181] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  1   | import assert from "node:assert/strict";
+  2   | import { join } from "node:path";
+  3   | import { LIVE_MONITOR_STOP_CASE as contract, MONITOR_READY_LINE, monitorStopPrompt } from "../live-monitor-stop-scenario.js";
+  4   | import { commonAudit, assertNoFailures, finishAudit, jsonObject, payload, mainModelRounds, messageContent } from "../sqlite-audit.js";
+  5   | import { auditLiveBusinessEvidence } from "./live-business-evidence.js";
+  6   | 
+  7   | export function assertMonitorStopped(value: Record<string, unknown>, taskId: string): void {
+  8   |   assert.equal(value["task_id"], taskId); assert.equal(value["status"], "stopped");
+  9   |   assert.ok(String(value["output"]).includes(MONITOR_READY_LINE));
+  10  | }
+  11  | export function monitorTaskTarget(name: string, args: Readonly<Record<string, unknown>>): string {
+  12  |   assert.ok(name === "TaskStop" || name === "TaskOutput");
+  13  |   // TaskStop's real schema retains shell_id as an alias; task_id has precedence.
+  14  |   const id = args["task_id"] ?? (name === "TaskStop" ? args["shell_id"] : undefined);
+  15  |   assert.ok(typeof id === "string" && id.length > 0, "missing actual monitor task target");
+  16  |   return id;
+  17  | }
+  18  | export function assertMonitorStopReceipt(value: Record<string, unknown>, taskId: string): void {
+  19  |   assert.equal(value["task_id"], taskId); assert.equal(value["task_type"], "monitor");
+  20  |   assert.equal(value["message"], `Stopped monitor task ${taskId}`);
+  21  | }
+  22  | export function assertMonitorEmptyCommandRejected(args: Record<string, unknown>, result: Record<string, unknown>, url: string): void {
+  23  |   assert.equal(args["command"], ""); assert.equal(jsonObject(args["ws"], "WebSocket source")["url"], url);
+  24  |   assert.equal(result["name"], "Monitor"); assert.equal(result["status"], "failed");
+  25  |   assert.equal(result["errorCode"], "MONITOR_SOURCE_INVALID"); assert.equal(result["isError"], true);
+  26  |   assert.equal(result["canonicalValue"], undefined);
+  27  | }
+  28  | export function assertActiveMonitorStop(launchedAt: number, stoppedAt: number, timeoutMs: number): void {
+  29  |   assert.ok(Number.isFinite(launchedAt) && Number.isFinite(stoppedAt) && stoppedAt >= launchedAt);
+  30  |   assert.ok(Number.isSafeInteger(timeoutMs) && timeoutMs >= 0, "invalid effective monitor deadline");
+  31  |   assert.ok(timeoutMs === 0 || stoppedAt < launchedAt + timeoutMs, "monitor stopped at or after its automatic deadline");
+  32  | }
+  33  | 
+  34  | export function assertMonitorStopRefreshPreserved<T extends { readonly eventCount: number }>(before: T, after: T): void {
+  35  |   // Both inputs must come from the complete audit. Host terminal housekeeping
+  36  |   // may append events; that diagnostic count is not the monitoring result.
+  37  |   const { eventCount: beforeCount, ...beforeFacts } = before;
+  38  |   const { eventCount: afterCount, ...afterFacts } = after;
+  39  |   assert.ok(Number.isSafeInteger(beforeCount) && Number.isSafeInteger(afterCount)
+  40  |     && beforeCount >= 0 && afterCount >= beforeCount, "monitor refresh lost durable events");
+  41  |   assert.deepEqual(afterFacts, beforeFacts, "monitor business or execution evidence changed after refresh");
+  42  | }
+  43  | export function auditLiveMonitorStop(stateDirectory: string, sessionId: string, url: string) {
+  44  |   const path = join(stateDirectory, "event_log.sqlite"), data = commonAudit(path, join(stateDirectory, "message.sqlite"), sessionId);
+  45  |   try {
+  46  |     // process.ts rejects this combination before creating a task, output file or socket.
+  47  |     // Do not count it as a connection; still audit its full lifecycle and error consumption.
+  48  |     const rejected = data.results.filter(r => r.name === "Monitor" && r.payload["errorCode"] === "MONITOR_SOURCE_INVALID");
+  49  |     for (const result of rejected) {
+  50  |       const call = data.calls.find(c => c.callId === result.callId)!;
+  51  |       assertMonitorEmptyCommandRejected(jsonObject(call.payload["arguments"], "rejected source"), result.payload, url);
+  52  |     }
+  53  |     const rejectedIds = new Set(rejected.map(r => r.callId));
+  54  |     const forbidden = assertNoFailures(path, data.events, data.results.filter(r => !rejectedIds.has(r.callId)));
+  55  |     const proof = auditLiveBusinessEvidence(data, path, sessionId, monitorStopPrompt(url));
+  56  |     assert.ok(data.calls.every(call => contract.requiredTools.includes(call.name)));
+  57  |     const launches = data.calls.filter(c => c.name === "Monitor" && !rejectedIds.has(c.callId)), stops = data.calls.filter(c => c.name === "TaskStop");
+> 58  |     assert.ok(launches.length > 0 && stops.length > 0, "missing real monitor launch or active stop");
+      |            ^ AssertionError: missing real monitor launch or active stop
+  59  |     const eventTime = (seq: number) => Date.parse(String(data.database.prepare("SELECT created_at FROM event_log WHERE seq=?").get(seq)!["created_at"]));
+  60  |     const dispatchedAt = (callId: string) => eventTime(data.events.find(e => e.type === "tool.dispatch.started" && payload(path, e)["callId"] === callId)!.seq);
+  61  |     const plans = mainModelRounds(path, data.events, sessionId, proof.turnId).plans;
+  62  |     const taskIds = new Set<string>();
+  63  |     const monitors = launches.map(launch => {
+  64  |       const args = jsonObject(launch.payload["arguments"], "monitor args");
+  65  |       assert.equal(jsonObject(args["ws"], "WebSocket source")["url"], url); assert.equal(args["command"], undefined);
+  66  |       const launchResult = data.results.find(r => r.callId === launch.callId)!;
+  67  |       const value = jsonObject(launchResult.payload["canonicalValue"], "monitor result");
+  68  |       const taskId = value["taskId"]; assert.equal(typeof taskId, "string");
+  69  |       assert.ok(!taskIds.has(taskId as string), "two launches claimed the same monitor task"); taskIds.add(taskId as string);
+  70  |       const matchingStops = stops.filter(stop => monitorTaskTarget(stop.name, jsonObject(stop.payload["arguments"], "stop args")) === taskId);
+  71  |       assert.ok(matchingStops.length > 0, "a launched monitor was never actively stopped");
+  72  |       const stop = matchingStops[0]!, stopResult = data.results.find(r => r.callId === stop.callId)!;
+  73  |       for (const call of matchingStops) assertMonitorStopReceipt(jsonObject(data.results.find(r => r.callId === call.callId)!.payload["canonicalValue"], "stop result"), taskId as string);
+  74  |       const timeoutMs = value["timeoutMs"];
+  75  |       assert.equal(timeoutMs, args["persistent"] === true ? 0 : Math.min(3_600_000, Math.max(1, Number(args["timeout_ms"] ?? 300_000))));
+  76  |       const stopWindow = { startedAt: dispatchedAt(stop.callId), completedAt: eventTime(stopResult.seq) };
+  77  |       assertActiveMonitorStop(dispatchedAt(launch.callId), stopWindow.completedAt, timeoutMs as number);
+  78  |       const outputs = data.calls.filter(c => c.name === "TaskOutput" && monitorTaskTarget(c.name, jsonObject(c.payload["arguments"], "output args")) === taskId).map(call => {
+  79  |         const result = data.results.find(r => r.callId === call.callId)!;
+  80  |         return { call, result, value: jsonObject(result.payload["canonicalValue"], "task output") };
+  81  |       });
+  82  |       const ready = outputs.filter(o => o.result.seq < stop.seq && o.value["status"] === "running" && String(o.value["output"]).includes(MONITOR_READY_LINE));
+  83  |       const consumedBeforeStop = plans.some(p => p.event.seq < stop.seq && ready.some(o => o.result.seq < p.event.seq && Array.isArray(p.plan["messages"]) && p.plan["messages"].some(raw => { const m = jsonObject(raw, "request"); return m["toolCallId"] === o.call.callId && messageContent(m["content"]) === messageContent(o.result.payload["content"]); })));
+  84  |       for (const output of outputs.filter(o => o.call.seq > stopResult.seq)) assertMonitorStopped(output.value, taskId as string);
+  85  |       const updates = data.events.filter(e => e.type === "service.call.started" && payload(path, e)["componentId"] === "Monitor" && jsonObject(payload(path, e)["attributes"], "update")["callId"] === launch.callId);
+  86  |       assert.equal(updates.length, 1, "the source sends exactly one real message per connection");
+  87  |       const update = payload(path, updates[0]!), attributes = jsonObject(update["attributes"], "execution update");
+  88  |       assert.deepEqual(attributes["request"], { kind: "diagnostic", message: args["description"], detail: { taskId, line: MONITOR_READY_LINE } });
+  89  |       const accepted = data.events.filter(e => e.type === "service.call.completed" && payload(path, e)["serviceCallId"] === update["serviceCallId"]);
+  90  |       assert.equal(accepted.length, 1); assert.ok(updates[0]!.seq < accepted[0]!.seq);
+  91  |       assert.deepEqual(jsonObject(payload(path, accepted[0]!)["attributes"], "accepted update")["result"], { accepted: true });
+  92  |       return { taskId: taskId as string, launchWindow: { startedAt: dispatchedAt(launch.callId), completedAt: eventTime(launchResult.seq) }, stopWindow, consumedBeforeStop };
+  93  |     });
+  94  |     for (const call of data.calls.filter(c => ["TaskOutput", "TaskStop"].includes(c.name)))
+  95  |       assert.ok(taskIds.has(monitorTaskTarget(call.name, jsonObject(call.payload["arguments"], "task args"))), "a task operation targeted an unrelated monitor");
+  96  |     assert.ok(monitors.some(monitor => monitor.consumedBeforeStop), "stop preceded actual model consumption of the running monitor's real message");
+  97  |     assert.equal(data.events.filter(e => e.type === "service.call.started" && payload(path, e)["componentId"] === "Monitor").length, monitors.length);
+  98  |     assert.ok(proof.finalAnswer.includes(MONITOR_READY_LINE));
+  99  |     return { ...finishAudit(data, path, sessionId, forbidden, contract), ...proof,
+  100 |       toolDetails: proof.toolDetails.map(detail => ({ ...detail, failed: rejectedIds.has(detail.callId) })),
+  101 |       recoveredSourceValidationCalls: [...rejectedIds], monitors };
+  102 |   } finally { data.database.close(); data.messages.close(); }
+  103 | }
+  104 | 
+  105 | export function assertMonitorSourceClosures(
+  106 |   monitors: readonly { readonly launchWindow: { readonly startedAt: number; readonly completedAt: number }; readonly stopWindow: { readonly startedAt: number; readonly completedAt: number } }[],
+  107 |   connections: readonly { readonly openedAt: number; readonly closedAt?: number }[],
+  108 |   openSockets: number,
+  109 | ): void {
+  110 |   assert.ok(monitors.length > 0); assert.equal(connections.length, monitors.length); assert.equal(openSockets, 0);
+  111 |   // Monitor returns its task before the WebSocket handshake finishes. Match the
+  112 |   // source opening during the task lifetime, and closure during its actual stop.
+  113 |   const match = (index: number, used: ReadonlySet<number>): boolean => index === connections.length || monitors.some((monitor, slot) => {
+  114 |     const source = connections[index]!;
+  115 |     return !used.has(slot) && source.openedAt >= monitor.launchWindow.startedAt && source.openedAt <= monitor.stopWindow.startedAt
+  116 |       && source.closedAt !== undefined && source.closedAt >= monitor.stopWindow.startedAt && source.closedAt <= monitor.stopWindow.completedAt
+  117 |       && match(index + 1, new Set([...used, slot]));
+  118 |   });
+  119 |   assert.ok(match(0, new Set()), "a source connection did not close during its actual TaskStop");
+  120 | }
+  121 | 
+```

@@ -1,0 +1,63 @@
+import type { JsonValue } from "../../kernel/api/foundation/json.js";
+import type {
+  ContextEffectForPoint,
+  ContextPoint,
+  ContextPolicy,
+  ContextSnapshot,
+  PolicyInputEnvelope,
+  PolicyResult,
+} from "../../kernel/api/policy/types.js";
+import { createDescriptor } from "../../kernel/api/policy/descriptor.js";
+
+function entryTool(config: Readonly<JsonValue>): string {
+  if (config === null || typeof config !== "object" || Array.isArray(config)) return "RunCode";
+  const value = (config as Readonly<Record<string, JsonValue>>)["entryTool"];
+  return typeof value === "string" && value.length > 0 ? value : "RunCode";
+}
+
+export class ProgrammaticToolSurfacePolicy implements ContextPolicy<"assemble"> {
+  readonly descriptor = createDescriptor({
+    apiVersion: "policy.longcat/v1",
+    id: "builtin.programmatic_tool_surface",
+    version: "1.0.0",
+    configSchema: {
+      type: "object",
+      properties: { entryTool: { type: "string", minLength: 1 } },
+      required: ["entryTool"],
+      additionalProperties: false,
+    },
+    implementedInterfaces: ["context/v1"],
+    points: ["assemble"],
+    claims: [{ kind: "key_prefix", resource: "context.system.section", prefix: "ptc" }],
+    deterministic: true,
+  });
+
+  async decideContext(input: PolicyInputEnvelope<ContextPoint, ContextSnapshot>): Promise<PolicyResult<ContextEffectForPoint<"assemble">>> {
+    if (input.point !== "assemble") return { decision: "abstain", proposals: [] };
+    const entry = entryTool(input.config);
+    const callable = input.snapshot.availableTools.filter((tool) => tool.name !== entry);
+    const contracts = callable.map((tool) => [
+      `## ${tool.name}`,
+      tool.description,
+      `Input schema: ${JSON.stringify(tool.parameters)}`,
+    ].join("\n")).join("\n\n");
+    return {
+      decision: "propose",
+      proposals: [
+        { kind: "allow_tools", names: [entry] },
+        {
+          kind: "upsert_system_section",
+          key: "ptc.callable_tools",
+          order: 101,
+          mode: "replace_key",
+          content: [
+            "# Programmatic Tool Calling",
+            `${entry} is the only Tool you may call directly. The following Tools are callable only from JavaScript through await tools.call(name, arguments).`,
+            "The callable Tool contracts for this model request are listed below. Call known Tools directly with await tools.call(name, arguments); use await tools.list() only when you need to verify the live authorized catalog. Tool calls return result envelopes; check status and isError before using value or content.",
+            contracts || "No nested Tools are currently callable.",
+          ].join("\n\n"),
+        },
+      ],
+    };
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "kind": "captured-sse-content-verification",
+  "scope": "Complete, lossless, unredacted captured SSE bytes are hashed and reassembled; content exactly equals durable auxiliary result. This does not reconstruct request messages.",
+  "sourceDiagnostic": "live/artifacts/test-results/web-regression-standard-li-ac643-ation-and-recalls-its-facts-repeat3/failure-diagnostics.json",
+  "sourceDiagnosticSha256": "b3803c67f42216baf54cf57514d850bc912320a94ecde04334558c60e9fbeed4",
+  "responses": [
+    {
+      "seq": 44,
+      "proxyRequestId": "2",
+      "httpStatus": 200,
+      "wireBytes": 105627,
+      "wireSha256": "bbf7bcfe019a71dc731b3f65bfaa5c27df104d3f8d2d1c94d139cfb2fc86516a",
+      "contentSha256": "dcd55559fc3d2df679df7fb8566dfec53a18d800282f292b8ad213f1b207e41a",
+      "wireReconstructionMatchesDurable": true,
+      "normalModelVerification": false,
+      "normalVerificationLimitation": "Control-marker pollution causes the proxy to expose wireTextEvidence, not a normal verified model response."
+    },
+    {
+      "seq": 48,
+      "proxyRequestId": "3",
+      "httpStatus": 200,
+      "wireBytes": 64605,
+      "wireSha256": "adf677bdf411c91be945843b7951c2ee193eaca1315e9e90243e1e9edf623fdd",
+      "contentSha256": "9cf06bbee653f0bab4695cfbb2d187c1f739e28161c402c810f50289ce1b3aca",
+      "wireReconstructionMatchesDurable": true,
+      "normalModelVerification": false,
+      "normalVerificationLimitation": "Control-marker pollution causes the proxy to expose wireTextEvidence, not a normal verified model response."
+    }
+  ],
+  "diagnosticScriptSha256": "2b9be5a069f6437a43c62f120d46560f7d4929062e27b525b4533c027d560467",
+  "diagnosticInputSha256": "7de386da5df7f040286ce90335dfc1174fe3fec28c32c3899f50c67e2db2ae8a"
+}

@@ -1,0 +1,45 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/compaction/compaction-policy.ts
+  }
+  const sourceMarkers = controlMarkerCounts(sourceMaterial);
+  for (const [marker, count] of controlMarkerCounts(content)) {
+    if (count > (sourceMarkers.get(marker) ?? 0)) {
+      return "the candidate contains a provider control marker not grounded in source history";
+    }
+  }
+  for (const line of content.split(/\r?\n/u)) {
+    const heading = /^\s*(#{1,6}\s*)?([1-9])\s*(?:[.)]|[、．。])\s*(\S.*?)\s*$/u.exec(line);
+    if (heading === null) continue;
+    const number = Number(heading[2]);
+    const { title } = splitSummaryHeading(heading[3]!);
+    if ((heading[1] !== undefined || number === 9) && !SUMMARY_SECTION_SPECS[number - 1]!.titlePattern.test(title)) {
+      return `section ${number} has a heading that does not match its required semantic meaning`;
+    }
+  }
+  const sections = parseSummarySections(content);
+  if (sections.length === 0) return "the candidate has no numbered continuation-summary sections";
+  const lines = content.split(/\r?\n/u);
+  const firstSemanticHeading = lines.findIndex((line) => {
+    const heading = /^\s*(?:#{1,6}\s*)?([1-9])\s*(?:[.)]|[\u3001\uff0e\u3002])\s*(\S.*?)\s*$/u.exec(line);
+    if (heading === null) return false;
+    const { title } = splitSummaryHeading(heading[2]!);
+    return SUMMARY_SECTION_SPECS[Number(heading[1]) - 1]!.titlePattern.test(title);
+  });
+  if (firstSemanticHeading > 0 && lines.slice(0, firstSemanticHeading).some(isRepairMetaPreamble)) {
+    return "the candidate contains repair narration before its first semantic section";
+  }
+  const numbers = sections.map((section) => section.number);
+  if (new Set(numbers).size !== numbers.length || numbers.some((number, index) => index > 0 && number <= numbers[index - 1]!)) {
+    return "the candidate has duplicate or out-of-order continuation-summary section numbers";
+  }
+  for (const section of sections) {
+    if (!hasSubstantiveSummaryBody(section.body)) {
+      return `section ${section.number} has no substantive summary content`;
+    }
+  }
+  for (const number of [1, 2]) {
+    if (!numbers.includes(number)) return `the candidate is missing required semantic section ${number}`;
+  }
+  if (numbers.at(-1) !== 9) {
+    return "the candidate does not reach the required final semantic section 9";
+  }

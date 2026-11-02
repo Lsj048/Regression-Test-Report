@@ -1,0 +1,42 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/assistant-maintenance.ts
+    } else {
+      assert.deepEqual(calls, [], "memory task used unrelated tools");
+      assertMemoryMutation(kind as "memory-update" | "memory-delete", checkpoints, sessionIds);
+      for (const [stage, turn] of turnEvidence.entries()) {
+        const events = data.events.filter(e => e.session_id === turn.sessionId);
+        const captures = events.filter(e => e.type === "service.call.completed" && componentId(eventPath, e) === "memory.long_term");
+        const models = events.filter(e => e.type === "model.completed");
+        assert.equal(captures.length, models.length, "missing capture after model answer");
+        for (const [index, capture] of captures.entries()) {
+          const done = payload(eventPath, capture), attrs = jsonObject(done["attributes"], "capture attributes");
+          const starts = events.filter(e => e.type === "service.call.started" && payload(eventPath, e)["serviceCallId"] === done["serviceCallId"]);
+          assert.equal(starts.length, 1);
+          const started = payload(eventPath, starts[0]!);
+          const startedAttrs = jsonObject(started["attributes"], "capture start attributes");
+          assert.equal(jsonObject(startedAttrs["request"], "capture request")["purpose"], "long_term_memory_capture");
+          assert.equal(started["evaluationId"], done["evaluationId"]);
+          for (const field of ["requestHash", "policyStateRevision", "serviceOrdinal", "callerKind", "serviceId", "serviceVersion"]) assert.deepEqual(startedAttrs[field], attrs[field]);
+          assert.ok(models[index]!.seq < starts[0]!.seq && starts[0]!.seq < capture.seq);
+          assert.equal(attrs["policyPoint"], "after_model_without_actions");
+          assert.equal(attrs["packageId"], "@longcat/policy-long-term-memory");
+          assert.equal(jsonObject(attrs["result"], "capture result")["finishReason"], "stop");
+          assert.ok(checkpoints[stage]!.captures.some(c => c.outcomeId === payload(eventPath, models[index]!)["outcomeId"] && c.sourceSessionId === turn.sessionId && c.sourceTurnId === turn.turnId));
+        }
+        for (const { plan } of turn.plans) {
+          const recalled = objects(plan["messages"]).filter(m => messageContent(m["content"]).startsWith("<long_term_memory>"));
+          if (stage === 1) assert.ok(recalled.some(m => messageContent(m["content"]).includes(scenario.oldValue)), "change did not see saved record");
+          if (stage === 2) {
+            assert.ok(!JSON.stringify(plan["messages"]).includes(scenario.oldValue), "deleted/replaced preference leaked to new session");
+            if (kind === "memory-update") assert.ok(recalled.some(m => messageContent(m["content"]).includes(checkpoints[1]!.activeMemories[0]!.text)), "recall did not consume updated record");
+            else assert.deepEqual(recalled, []);
+            for (const prompt of prompts.slice(0, 2)) assert.ok(!JSON.stringify(plan["messages"]).includes(JSON.stringify(prompt).slice(1, -1)), "old conversation leaked into recall");
+          }
+        }
+      }
+      assert.ok(turnEvidence[2]!.finalAnswer.includes(scenario.marker));
+      assert.ok(!turnEvidence[2]!.finalAnswer.includes(scenario.oldValue));
+      assert.deepEqual(readdirSync(workspace), [], "memory workflow changed workspace");
+    }
+    return { ...finishAudit(data, eventPath, sessionIds[0]!, forbidden, contract), toolDetails,
+      sessionEvidence: turnEvidence.map(({ sessionId, turnId, prompt, finalAnswer }) => ({ sessionId, turnId, prompt, finalAnswer })),

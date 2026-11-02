@@ -1,0 +1,54 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/standard-live-context-compaction.ts
+      && contextPolicyAttributes(eventLogPath, event, "compaction model service start")["serviceId"] === "longcat.core.model-completion");
+    const modelServiceCompletes = rootEvents.filter((event) => event.turn_id === secondTurnId
+      && event.type === "service.call.completed"
+      && componentId(eventLogPath, event) === "builtin.compaction"
+      && contextPolicyAttributes(eventLogPath, event, "compaction model service completion")["serviceId"] === "longcat.core.model-completion");
+    assert.ok(modelServiceStarts.length > 0, "the second Turn did not call the compaction model service");
+    assert.equal(modelServiceCompletes.length, modelServiceStarts.length,
+      "one or more compaction model service calls did not complete");
+    assert.deepEqual(
+      rootEvents.filter((event) => event.turn_id === firstTurnId
+        && (event.type === "service.call.started" || event.type === "service.call.completed")
+        && componentId(eventLogPath, event) === "builtin.compaction"
+        && contextPolicyAttributes(eventLogPath, event, "first-Turn compaction service event")["serviceId"] === "longcat.core.model-completion"),
+      [],
+      "the first Turn unexpectedly summarized before it had older history",
+    );
+    const completedById = new Map(modelServiceCompletes.map((event) => {
+      const id = payload(eventLogPath, event)["serviceCallId"];
+      assert.equal(typeof id, "string", `compaction service completion #${event.seq} has no serviceCallId`);
+      return [id as string, event] as const;
+    }));
+    for (const start of modelServiceStarts) {
+      const startPayload = payload(eventLogPath, start);
+      const id = startPayload["serviceCallId"];
+      assert.equal(typeof id, "string", `compaction service start #${start.seq} has no serviceCallId`);
+      const request = jsonObject(contextPolicyAttributes(eventLogPath, start, "compaction model service start")["request"],
+        "compaction model service request");
+      assert.equal(request["purpose"], "context_compaction", "the compaction Policy used the model service for the wrong purpose");
+      const completed = completedById.get(id as string);
+      assert.ok(completed, `compaction model service call ${String(id)} has no matching completion`);
+      assert.ok(start.seq < completed.seq, `compaction model service call ${String(id)} completed before it started`);
+    }
+
+    const compactionProposals = rootEvents.filter((event) => event.turn_id === secondTurnId
+      && event.type === "policy.proposed" && componentId(eventLogPath, event) === "builtin.compaction");
+    assert.equal(compactionProposals.length, 1, "the second Turn must persist one compaction Policy proposal");
+    const proposalEvent = compactionProposals[0]!;
+    const proposal = selectedContextProposal(eventLogPath, proposalEvent, "compaction");
+    const selectedSummary = assertCompactionServiceAttribution(
+      eventLogPath,
+      modelServiceStarts,
+      modelServiceCompletes,
+      proposalEvent,
+      "context-pressure compaction",
+      scenario.prompts.establish,
+    );
+    const finalSummaryService = selectedSummary.completion;
+    const summaryContent = selectedSummary.content;
+    assertCompactionReleaseFacts(summaryContent, scenario.facts, "the continuation summary");
+    assert.equal(proposal.effect["kind"], "replace_range", "the compaction Policy selected the wrong effect kind");
+    assert.equal(proposal.effect["reasonCode"], "context_pressure", "the compaction Policy was not triggered by context pressure");
+    assert.ok(finalSummaryService.seq < proposalEvent.seq, "the compaction Policy proposed replacement before its summary completed");

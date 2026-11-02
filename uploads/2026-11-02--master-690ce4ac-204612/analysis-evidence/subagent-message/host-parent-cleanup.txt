@@ -1,0 +1,10 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/kernel/host/session/session-manager.ts
+    } finally {
+      if (active.turnId === turnId) {
+        delete active.interrupt;
+        delete active.continueChildInput;
+        active.pendingApproval?.reject(new Error("当前工具会话已结束"));
+        delete active.pendingApproval;
+      }
+    }

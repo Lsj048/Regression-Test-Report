@@ -1,0 +1,40 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/cases/assistant-maintenance.ts
+      const durationMs = Date.now() - started;
+      const normalized = (text: string) => text.replace(/\s+/gu, " ").trim();
+      const checkPage = async (stage: number) => {
+        const source = audit.sessionEvidence[stage]!.finalAnswer;
+        const html = renderToStaticMarkup(createElement(ReactMarkdown, { children: source, remarkPlugins: [remarkGfm] }));
+        const expected = normalized(await page.evaluate(x => new DOMParser().parseFromString(x, "text/html").body.textContent ?? "", html));
+        await expect.poll(async () => normalized(await page.locator(".timeline-group > .assistant-message").last().locator(":scope > .markdown").textContent() ?? "")).toBe(expected);
+        if (audit.toolDetails.length) {
+          const activity = page.locator(".turn-activity.completed");
+          await expect(activity.first()).toBeVisible();
+          for (const group of await activity.all()) if (await group.getAttribute("open") === null) await group.locator(":scope > summary").click();
+          const cards = activity.locator(".tool-card"); await expect(cards).toHaveCount(audit.toolDetails.length);
+          await expect(cards.locator(".tool-status")).toHaveText(audit.toolDetails.map(detail => detail.approved ? "已回答" : "已完成"));
+          if (kind === "project-delete") await expect(cards.locator(".tool-state.succeeded")).toHaveCount(audit.toolDetails.length);
+          for (const [i, detail] of audit.toolDetails.entries()) {
+            await cards.nth(i).click(); const values = page.locator(".details-panel .details-body pre");
+            await expect(values).toHaveCount(2); await expect(values.nth(0)).toHaveText(detail.argumentsJson); await expect(values.nth(1)).toHaveText(detail.renderedResult);
+          }
+        }
+      };
+      await checkPage(sessionIds.length - 1);
+      const refreshStart = Date.now(); await page.reload({ timeout: refreshBudget });
+      const rows = page.locator(".session-item:not(.provisional) > .session-row"); await expect(rows).toHaveCount(sessionIds.length);
+      // Select existing sessions through their visible user task titles, not an API mutation.
+      for (const [stage, evidence] of audit.sessionEvidence.entries()) {
+        const row = rows.filter({ hasText: evidence.prompt.slice(0, 16) }); await expect(row).toHaveCount(1);
+        const loaded = page.waitForResponse(r => r.url() === `${env.baseUrl}/api/sessions/${evidence.sessionId}` && r.request().method() === "GET");
+        await row.click(); expect((await loaded).ok()).toBe(true); await checkPage(stage);
+      }
+      if ("documents" in scenario) assertProjectFiles(env.workspace, scenario.documents, kind === "project-delete" ? scenarios["project-delete"].target : undefined);
+      const refreshRecoveryMs = Date.now() - refreshStart;
+      expect(durationMs).toBeLessThan(budget); expect(refreshRecoveryMs).toBeLessThan(refreshBudget);
+      assertNoBrowserErrors(browser);
+      await attachJson(testInfo, contract, "timings", { durationMs, refreshRecoveryMs });
+      await attachJson(testInfo, contract, "sqlite-audit", { ...audit, model: env.model });
+    },
+  };
+}

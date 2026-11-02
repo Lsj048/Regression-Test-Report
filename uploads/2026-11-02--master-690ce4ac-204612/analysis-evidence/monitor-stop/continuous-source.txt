@@ -1,0 +1,13 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/cases/live-monitor-stop.ts
+    const server = createServer((_q, r) => r.writeHead(404).end());
+    server.on("upgrade", (request, socket) => {
+      paths.push(request.url ?? ""); const key = request.headers["sec-websocket-key"];
+      if (request.url !== "/release-events" || typeof key !== "string") { socket.destroy(); return; }
+      connections++; const source = { openedAt: Date.now() } as { openedAt: number; closedAt?: number }; sourceConnections.push(source); sockets.add(socket); socket.on("error", () => undefined); socket.once("close", () => sockets.delete(socket));
+      const accept = createHash("sha1").update(`${key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`).digest("base64");
+      socket.write(`HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ${accept}\r\n\r\n`);
+      const body = Buffer.from(MONITOR_READY_LINE); expect(body.length).toBeLessThan(126);
+      socket.write(Buffer.concat([Buffer.from([0x81, body.length]), body])); sent++;
+      // The source never closes spontaneously. Only a client's Close frame ends it.
+      socket.on("data", chunk => { if ((chunk[0]! & 0x0f) === 8) { if (source.closedAt !== undefined) return; clientCloses++; source.closedAt = Date.now(); closedAt.push(source.closedAt); socket.end(Buffer.from([0x88, 0x00])); } });

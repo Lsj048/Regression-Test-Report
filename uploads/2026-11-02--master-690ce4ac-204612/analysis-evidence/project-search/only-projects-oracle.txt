@@ -1,0 +1,10 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/assistant-maintenance.ts
+      const finalPlan = rounds.plans.find(x => x.plan["planId"] === request["planId"])!;
+      return { sessionId: id, turnId, prompt: prompts[stage]!, finalAnswer, finalSeq: final.seq, plans: rounds.plans, messages, finalPlan };
+    });
+    const calls = data.calls;
+    if ("documents" in scenario) assert.ok(calls.every(c => c.name === "Projects"), "task left project management and accessed workspace tools");
+    else assert.deepEqual(calls, [], "memory task used unrelated tools despite the user scope");
+    assert.equal(new Set(calls.map(c => c.callId)).size, calls.length);
+    assert.deepEqual(data.results.map(r => r.callId).sort(), calls.map(c => c.callId).sort());

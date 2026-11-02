@@ -1,0 +1,39 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/evaluation-cases.ts
+export const STANDARD_LIVE_WEB_FETCH_PAGE_SCENARIO = Object.freeze({
+  url: "https://example.com/",
+  host: "example.com",
+  permissionRules: Object.freeze(["WebFetch(example.com)"] as const),
+  expectedContentType: "text/html",
+  expectedPageFragments: Object.freeze([
+    "Example Domain",
+    "This domain is for use in documentation examples without needing permission.",
+  ] as const),
+  finalLines: Object.freeze([
+    "title=Example Domain",
+    "sentence=This domain is for use in documentation examples without needing permission.",
+  ] as const),
+  prompt: [
+    "请访问并读取 https://example.com/，不要搜索，也不要访问页面中的其他链接。",
+    "请从实际页面中取得标题和正文第一句话，并保留英文原文。最后只输出下面两种字段，各占一行，不加列表符号或其他说明：",
+    "title=<页面标题原文>",
+    "sentence=<正文第一句话原文>",
+  ].join("\n"),
+} as const);
+
+export const STANDARD_LIVE_WEB_FETCH_PAGE_CASE = Object.freeze({
+  contractVersion: EVALUATION_CONTRACT_SCHEMA_VERSION,
+  id: "standard.live-web-fetch-page",
+  mode: "standard",
+  planModeExpectation: "inactive",
+  modelExecution: "live",
+  artifactFiles: Object.freeze({
+    sqliteAudit: "standard-live-web-fetch-page-sqlite-audit.json",
+    timings: "standard-live-web-fetch-page-timings.json",
+    serviceLog: "isolated-service.log",
+  }),
+  prompt: STANDARD_LIVE_WEB_FETCH_PAGE_SCENARIO.prompt,
+  finalMarker: STANDARD_LIVE_WEB_FETCH_PAGE_SCENARIO.finalLines.join("\n"),
+  timingBudgetsMs: Object.freeze({ durationMs: 150_000, refreshRecoveryMs: 10_000 }),
+  requiredTools: Object.freeze(["WebFetch"]),
+  requiredPolicyEvidence: Object.freeze([

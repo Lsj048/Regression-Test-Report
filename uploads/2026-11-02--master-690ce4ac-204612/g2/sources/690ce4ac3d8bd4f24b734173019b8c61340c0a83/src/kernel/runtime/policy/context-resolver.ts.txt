@@ -1,0 +1,401 @@
+import { ResolutionError } from "../../api/foundation/errors.js";
+import { deepFreeze, hashJson, type JsonValue } from "../../api/foundation/json.js";
+import { newId } from "../../api/foundation/id.js";
+import type { ChatMessage, ContentBlock, ToolSchema } from "../../api/model/types.js";
+import type { DurableMessage, TokenMeasurement } from "../../api/messages/types.js";
+import { appendMessageContent, applyContentAppend, messageRangeHash } from "../../api/messages/surface.js";
+import type { ContextEffect, ContextSnapshot, RuntimeContextReference } from "../../api/policy/types.js";
+import { resolveRuntimeContextProjection } from "./runtime-context-projection.js";
+import type { PolicyBinding } from "./binding.js";
+import type { AppliedEffect, PolicyProposalRecord, PolicyResolutionRecord } from "../../api/policy/resolution.js";
+
+export interface ResolvedContextPlan {
+  readonly sections: readonly { readonly key: string; readonly order: number; readonly content: string; readonly componentId: string }[];
+  readonly runtimeContextRefs: Readonly<Record<string, RuntimeContextReference>>;
+  readonly messageSelection: { readonly maxMessages?: number; readonly preserveRecentTokens?: number };
+  readonly surfaceMessages: readonly DurableMessage[];
+  readonly surfaceReplacements: readonly ResolvedSurfaceReplacement[];
+  readonly surfaceOperations: readonly ResolvedSurfaceOperation[];
+  readonly visibleTools: readonly ToolSchema[];
+  readonly inputBudgetCeiling?: number;
+  readonly actionResultProjections: Readonly<Record<string, readonly ContentBlock[]>>;
+  readonly rejection?: Extract<ContextEffect, { kind: "reject_context" }>;
+  readonly appliedEffects: readonly AppliedEffect<ContextEffect>[];
+  readonly resolution: PolicyResolutionRecord;
+}
+
+export interface ResolvedSurfaceReplacement {
+  readonly kind: "replace";
+  readonly operationId: string;
+  readonly proposalId: string;
+  readonly effectId: string;
+  readonly componentId: string;
+  readonly startMessageId: string;
+  readonly endMessageId: string;
+  readonly sourceMessageIds: readonly string[];
+  readonly replacementMessage: DurableMessage;
+  readonly reasonCode: string;
+}
+
+export interface ResolvedContentAppend {
+  readonly kind: "append_content";
+  readonly operationId: string;
+  readonly proposalId: string;
+  readonly componentId: string;
+  readonly additionMessage: DurableMessage;
+}
+
+export type ResolvedSurfaceOperation = ResolvedSurfaceReplacement | ResolvedContentAppend;
+function selectMessages(
+  messages: readonly DurableMessage[],
+  maxMessages?: number,
+  preserveRecentTokens?: number,
+): readonly DurableMessage[] {
+  const byCount = maxMessages === undefined || messages.length <= maxMessages ? [...messages] : messages.slice(-maxMessages);
+  if (preserveRecentTokens === undefined) return Object.freeze(byCount);
+  const selected: DurableMessage[] = [];
+  let tokens = 0;
+  for (const message of byCount.toReversed()) {
+    const estimate = message.messageTokenCount;
+    if (selected.length > 0 && tokens + estimate > preserveRecentTokens) break;
+    selected.push(message);
+    tokens += estimate;
+  }
+  return Object.freeze(selected.reverse());
+}
+
+function replacementLineages(
+  messages: readonly DurableMessage[],
+  replacements: readonly ResolvedSurfaceReplacement[],
+): ReadonlyMap<string, ReadonlySet<string>> {
+  const surface: string[] = [];
+  const lineages = new Map<string, ReadonlySet<string>>();
+  for (const message of [...messages].sort((left, right) => left.seq - right.seq)) {
+    if (message.placement.kind === "append") {
+      surface.push(message.messageId);
+      lineages.set(message.messageId, new Set([message.messageId]));
+      continue;
+    }
+    // A content append revises one existing surface node without changing its
+    // logical identity or replacement lineage.
+    if (message.placement.kind === "append_content") continue;
+    const start = surface.indexOf(message.placement.range.startMessageId);
+    const end = surface.indexOf(message.placement.range.endMessageId);
+    if (start < 0 || end < start) continue;
+    const sourceIds = surface.slice(start, end + 1);
+    const lineage = new Set(sourceIds.flatMap((id) => [...(lineages.get(id) ?? new Set([id]))]));
+    lineages.set(message.messageId, lineage);
+    surface.splice(start, end - start + 1, message.messageId);
+  }
+  for (const replacement of replacements) {
+    const lineage = new Set(replacement.sourceMessageIds.flatMap((id) => [...(lineages.get(id) ?? new Set([id]))]));
+    lineages.set(replacement.replacementMessage.messageId, lineage);
+  }
+  return lineages;
+}
+
+function resolveMessageOverlayTarget(
+  snapshot: ContextSnapshot,
+  plan: ResolvedContextPlan,
+): DurableMessage | undefined {
+  const surface = plan.surfaceMessages;
+  if (snapshot.triggerInputId === undefined) return undefined;
+  const input = snapshot.messages.find((record) =>
+    record.sourceKind === "input"
+    && record.sourceId === snapshot.triggerInputId
+    && record.message.role === "user");
+  if (input === undefined) return undefined;
+  const direct = surface.find((record) => record.messageId === input.messageId);
+  if (direct !== undefined) return direct;
+  const lineages = replacementLineages(snapshot.messages, plan.surfaceReplacements);
+  return surface.find((record) => record.message.role === "user" && lineages.get(record.messageId)?.has(input.messageId));
+}
+
+function estimatedMeasurement(model: string, content: readonly ContentBlock[]): TokenMeasurement {
+  return Object.freeze({
+    model,
+    tokenizer: "json-char/4-v1",
+    contentHash: hashJson(content as unknown as JsonValue),
+    tokenCount: Math.ceil(JSON.stringify(content).length / 4),
+    accuracy: "estimated",
+    method: "heuristic",
+  });
+}
+
+function appendRuntimeContext(
+  message: Extract<ChatMessage, { readonly role: "user" }>,
+  content: readonly ContentBlock[],
+): Extract<ChatMessage, { readonly role: "user" }> {
+  if (!content.some((block) => block.type !== "text" || block.text.length > 0)) return message;
+  const first = content[0]!;
+  const separated: readonly ContentBlock[] = first.type === "text"
+    ? [{ ...first, text: `\n\n${first.text}` }, ...content.slice(1)]
+    : [{ type: "text", text: "\n\n" }, ...content];
+  const appended = appendMessageContent(message, separated);
+  if (appended.role !== "user") {
+    throw new ResolutionError("Message overlay changed the target role", "CONTEXT_MESSAGE_OVERLAY_TARGET_INVALID");
+  }
+  return appended;
+}
+
+/** Project one resolved stage plan onto the original context sources for the next stage. */
+export function materializeContextSnapshot(base: ContextSnapshot, plan: ResolvedContextPlan): ContextSnapshot {
+  const baseSystem = plan.surfaceMessages.findLast((message) => message.message.role === "system")?.message;
+  const systemContent = [
+    ...(baseSystem?.role === "system" ? [baseSystem.content] : []),
+    ...plan.sections.map((section) => section.content),
+  ].filter((content) => content.trim().length > 0).join("\n\n");
+  const systemMessages: readonly ChatMessage[] = systemContent.length === 0 ? [] : [{ role: "system", content: systemContent }];
+  const surfaceConversation = plan.surfaceMessages.filter((message) => message.message.role !== "system");
+  const selectedConversation = [...selectMessages(
+    surfaceConversation,
+    plan.messageSelection.maxMessages,
+    plan.messageSelection.preserveRecentTokens,
+  )];
+  const runtimeContexts = Object.values(plan.runtimeContextRefs).map((reference) => ({ ...reference, projection: resolveRuntimeContextProjection(reference) }));
+  const overlayContexts = runtimeContexts.filter((reference) => reference.projection.kind === "message_overlay");
+  const overlayTarget = overlayContexts.length === 0 ? undefined : resolveMessageOverlayTarget(base, plan);
+  if (overlayTarget !== undefined && !selectedConversation.some((record) => record.messageId === overlayTarget.messageId)) {
+    const selectedIds = new Set(selectedConversation.map((record) => record.messageId));
+    selectedIds.add(overlayTarget.messageId);
+    selectedConversation.splice(0, selectedConversation.length, ...surfaceConversation.filter((record) => selectedIds.has(record.messageId)));
+  }
+  const conversation = selectedConversation.map((record) => record.message);
+  if (overlayContexts.length > 0) {
+    if (base.triggerInputId === undefined) {
+      throw new ResolutionError("Message overlay targeting turn_input requires a trigger input", "CONTEXT_MESSAGE_OVERLAY_TARGET_MISSING");
+    }
+    if (overlayTarget === undefined) {
+      throw new ResolutionError(`Message overlay cannot resolve trigger input ${base.triggerInputId}`, "CONTEXT_MESSAGE_OVERLAY_TARGET_MISSING");
+    }
+    const targetIndex = selectedConversation.findIndex((record) => record.messageId === overlayTarget.messageId);
+    if (targetIndex < 0) throw new ResolutionError("Message overlay target is not visible", "CONTEXT_MESSAGE_OVERLAY_TARGET_MISSING");
+    const target = conversation[targetIndex];
+    if (target?.role !== "user") throw new ResolutionError("Message overlay target must be a user message", "CONTEXT_MESSAGE_OVERLAY_TARGET_INVALID");
+    const decorated = overlayContexts.reduce((message, reference) => appendRuntimeContext(message, reference.content), target);
+    conversation[targetIndex] = decorated;
+  }
+  const beforeMessages: readonly ChatMessage[] = runtimeContexts.filter((reference) =>
+    reference.projection.kind === "standalone_message" && reference.projection.position === "before_history").map((reference) => ({
+    role: "user",
+    content: reference.content,
+  }));
+  const afterMessages: readonly ChatMessage[] = runtimeContexts.filter((reference) =>
+    reference.projection.kind === "standalone_message" && reference.projection.position === "after_history").map((reference) => ({
+    role: "user",
+    content: reference.content,
+  }));
+  return deepFreeze({
+    ...base,
+    surfaceMessages: plan.surfaceMessages,
+    visibleMessages: [...systemMessages, ...beforeMessages, ...conversation, ...afterMessages],
+    // Keep discoverable sources for later Policies; only selected refs render above.
+    runtimeContextRefs: { ...base.runtimeContextRefs, ...plan.runtimeContextRefs },
+    availableTools: plan.visibleTools,
+    ...(base.availableToolPromptSections === undefined ? {} : {
+      availableToolPromptSections: base.availableToolPromptSections.filter((section) =>
+        plan.visibleTools.some((tool) => tool.name === section.toolName)),
+    }),
+  });
+}
+
+function hasExclusiveClaim(binding: PolicyBinding, componentId: string, resource: string): boolean {
+  return binding.componentById.get(componentId)?.component.descriptor.claims.some((claim) =>
+    (claim.kind === "exclusive" && claim.resource === resource)
+    || (claim.kind === "key_prefix" && resource.startsWith(`${claim.resource}/${claim.prefix}`))) ?? false;
+}
+
+export function resolveContext(args: {
+  readonly binding: PolicyBinding;
+  readonly proposals: readonly PolicyProposalRecord<ContextEffect>[];
+  readonly snapshot: ContextSnapshot;
+  readonly availableTools: readonly ToolSchema[];
+  readonly model?: string;
+}): ResolvedContextPlan {
+  const sections = new Map<string, { key: string; order: number; content: string; componentId: string }>();
+  const runtimeContexts = new Map<string, RuntimeContextReference>();
+  const allowSets: Set<string>[] = [];
+  const deny = new Set<string>();
+  const projections = new Map<string, { readonly content: readonly ContentBlock[]; readonly componentId: string; readonly chainIndex: number }>();
+  const rejections: Extract<ContextEffect, { kind: "reject_context" }>[] = [];
+  const messageSelection: { maxMessages?: number; preserveRecentTokens?: number } = {};
+  const surfaceMessages: DurableMessage[] = [...args.snapshot.surfaceMessages];
+  const surfaceReplacements: ResolvedSurfaceReplacement[] = [];
+  const surfaceOperations: ResolvedSurfaceOperation[] = [];
+  let budget: number | undefined;
+  const applied: AppliedEffect<ContextEffect>[] = [];
+  const rejected: { proposalId: string; reason: string }[] = [];
+
+  for (const proposal of args.proposals) {
+    if (proposal.shadow) {
+      rejected.push({ proposalId: proposal.proposalId, reason: "shadow_mode" });
+      continue;
+    }
+    const effect = proposal.effect;
+    const appliedEffectId = newId("effect");
+    switch (effect.kind) {
+      case "upsert_system_section": {
+        const resource = `context.system.section/${effect.key}`;
+        if (!hasExclusiveClaim(args.binding, proposal.componentId, resource)) {
+          throw new ResolutionError(`${proposal.componentId} does not own ${resource}`, "POLICY_CLAIM_VIOLATION");
+        }
+        const existing = sections.get(effect.key);
+        if (existing && existing.componentId !== proposal.componentId) throw new ResolutionError(`System section ${effect.key} has multiple owners`, "CONTEXT_SECTION_CONFLICT");
+        sections.set(effect.key, { key: effect.key, order: effect.order, content: effect.content, componentId: proposal.componentId });
+        break;
+      }
+      case "upsert_runtime_context": {
+        const resource = `context.runtime/${effect.key}`;
+        if (!hasExclusiveClaim(args.binding, proposal.componentId, resource)) {
+          throw new ResolutionError(`${proposal.componentId} does not own ${resource}`, "POLICY_CLAIM_VIOLATION");
+        }
+        const existing = runtimeContexts.get(effect.key);
+        if (existing && existing.ownerPolicyId !== proposal.componentId) throw new ResolutionError(`Runtime context ${effect.key} has multiple owners`, "CONTEXT_SOURCE_CONFLICT");
+        runtimeContexts.set(effect.key, Object.freeze({
+          key: effect.key,
+          ownerPolicyId: proposal.componentId,
+          ref: effect.ref,
+          content: effect.content,
+          tokenMeasurement: effect.tokenMeasurement ?? estimatedMeasurement(args.model ?? "unknown", effect.content),
+          ...(effect.placement === undefined ? {} : { placement: effect.placement }),
+          projection: resolveRuntimeContextProjection(effect),
+        }));
+        break;
+      }
+      case "select_messages":
+        if (effect.maxMessages !== undefined) messageSelection.maxMessages = Math.min(messageSelection.maxMessages ?? Number.MAX_SAFE_INTEGER, effect.maxMessages);
+        if (effect.preserveRecentTokens !== undefined) messageSelection.preserveRecentTokens = Math.min(messageSelection.preserveRecentTokens ?? Number.MAX_SAFE_INTEGER, effect.preserveRecentTokens);
+        break;
+      case "replace_range": {
+        const start = surfaceMessages.findIndex((message) => message.messageId === effect.startMessageId);
+        const end = surfaceMessages.findIndex((message) => message.messageId === effect.endMessageId);
+        if (start < 0 || end < start) {
+          throw new ResolutionError(`${proposal.componentId} proposed a stale or reversed message range`, "CONTEXT_REPLACE_RANGE_STALE");
+        }
+        const source = surfaceMessages.slice(start, end + 1);
+        const anchor = source[0]!;
+        const operationId = `message:replace:${proposal.proposalId}`;
+        const messageId = `message:policy:${proposal.proposalId}`;
+        const expectedRangeHash = messageRangeHash(source);
+        const replacement: DurableMessage = Object.freeze({
+          seq: 0,
+          eventId: operationId,
+          messageId,
+          sessionId: anchor.sessionId,
+          ...(anchor.producingTurnId === undefined ? {} : { producingTurnId: anchor.producingTurnId }),
+          step: anchor.step,
+          message: effect.message,
+          sourceKind: "policy",
+          sourceId: proposal.proposalId,
+          messageHash: hashJson(effect.message as unknown as JsonValue),
+          messageTokenCount: Math.max(1, Math.ceil(JSON.stringify(effect.message).length / 4)),
+          placement: {
+            kind: "replace" as const,
+            range: { startMessageId: effect.startMessageId, endMessageId: effect.endMessageId },
+            expectedRangeHash,
+            reasonCode: effect.reasonCode,
+            policyId: proposal.componentId,
+            effectId: appliedEffectId,
+          },
+          createdAt: anchor.createdAt,
+        });
+        surfaceMessages.splice(start, end - start + 1, replacement);
+        const operation: ResolvedSurfaceReplacement = Object.freeze({
+          kind: "replace",
+          operationId,
+          proposalId: proposal.proposalId,
+          effectId: appliedEffectId,
+          componentId: proposal.componentId,
+          startMessageId: effect.startMessageId,
+          endMessageId: effect.endMessageId,
+          sourceMessageIds: source.map((message) => message.messageId),
+          replacementMessage: replacement,
+          reasonCode: effect.reasonCode,
+        });
+        surfaceReplacements.push(operation);
+        surfaceOperations.push(operation);
+        break;
+      }
+      case "append_content": {
+        const index = surfaceMessages.findIndex((message) => message.messageId === effect.messageId);
+        if (index < 0) throw new ResolutionError("Content append target is not visible", "CONTEXT_APPEND_CONTENT_STALE");
+        const target = surfaceMessages[index]!;
+        const message = appendMessageContent(target.message, effect.content);
+        const operationId = `message:append_content:${proposal.proposalId}`;
+        const addition: DurableMessage = {
+          seq: 0, eventId: operationId, messageId: `message:policy:${proposal.proposalId}`,
+          sessionId: target.sessionId, ...(target.producingTurnId === undefined ? {} : { producingTurnId: target.producingTurnId }),
+          step: target.step, sourceKind: "policy", sourceId: proposal.proposalId, message,
+          messageHash: hashJson(message as unknown as JsonValue), messageTokenCount: Math.max(1, Math.ceil(JSON.stringify(message).length / 4)),
+          placement: { kind: "append_content", targetMessageId: target.messageId, expectedMessageHash: target.messageHash,
+            content: effect.content, reasonCode: effect.reasonCode, policyId: proposal.componentId, effectId: appliedEffectId },
+          createdAt: target.createdAt,
+        };
+        surfaceMessages[index] = applyContentAppend(target, addition);
+        surfaceOperations.push({ kind: "append_content", operationId, proposalId: proposal.proposalId,
+          componentId: proposal.componentId, additionMessage: addition });
+        break;
+      }
+      case "allow_tools": allowSets.push(new Set(effect.names)); break;
+      case "deny_tools": effect.names.forEach((name) => deny.add(name)); break;
+      case "set_input_budget_ceiling": budget = Math.min(budget ?? Number.MAX_SAFE_INTEGER, effect.tokens); break;
+      case "project_action_result": {
+        const existing = projections.get(effect.callId);
+        const chainIndex = args.binding.contextProjectorOrder.indexOf(proposal.componentId);
+        if (existing && (chainIndex < 0 || chainIndex < existing.chainIndex)) {
+          throw new ResolutionError(`Action result ${effect.callId} has projections outside the declared projector chain`, "ACTION_RESULT_PROJECTION_CONFLICT");
+        }
+        projections.set(effect.callId, { content: effect.content, componentId: proposal.componentId, chainIndex });
+        break;
+      }
+      case "reject_context": rejections.push(effect); break;
+    }
+    applied.push({
+      appliedEffectId,
+      proposalId: proposal.proposalId,
+      componentId: proposal.componentId,
+      effect,
+    });
+  }
+
+  let visibleNames = new Set(args.availableTools.map((tool) => tool.name));
+  for (const allow of allowSets) visibleNames = new Set([...visibleNames].filter((name) => allow.has(name)));
+  for (const denied of deny) visibleNames.delete(denied);
+
+  const orderedSections = [...sections.values()].sort((left, right) => left.order - right.order || left.key.localeCompare(right.key, "en"));
+  const runtimeObject = Object.fromEntries([...runtimeContexts.entries()].sort(([left], [right]) => left.localeCompare(right, "en")));
+  const projectionObject = Object.fromEntries([...projections.entries()].sort(([left], [right]) => left.localeCompare(right, "en")).map(([callId, value]) => [callId, value.content]));
+  const rejection = rejections.find((item) => !item.recoverable) ?? rejections[0];
+  const appliedEffectIds = applied.map((effect) => effect.appliedEffectId);
+  const resolutionId = newId("resolution");
+  const output: JsonValue = {
+    sectionKeys: orderedSections.map((section) => section.key),
+    runtimeContextKeys: Object.keys(runtimeObject),
+    visibleToolNames: [...visibleNames].sort(),
+    inputBudgetCeiling: budget ?? null,
+    messageRangesReplaced: surfaceReplacements.length,
+    messageContentsAppended: surfaceOperations.length - surfaceReplacements.length,
+    rejection: rejection?.code ?? null,
+  };
+  return deepFreeze({
+    sections: orderedSections,
+    runtimeContextRefs: runtimeObject,
+    messageSelection,
+    surfaceMessages: Object.freeze(surfaceMessages),
+    surfaceReplacements: Object.freeze(surfaceReplacements),
+    surfaceOperations: Object.freeze(surfaceOperations),
+    visibleTools: args.availableTools.filter((tool) => visibleNames.has(tool.name)),
+    ...(budget === undefined ? {} : { inputBudgetCeiling: budget }),
+    actionResultProjections: projectionObject,
+    ...(rejection ? { rejection } : {}),
+    appliedEffects: applied,
+    resolution: {
+      resolutionId,
+      algebra: "context.merge/v1",
+      inputProposalIds: args.proposals.map((proposal) => proposal.proposalId),
+      appliedEffectIds,
+      rejected,
+      output: { ...output, outputHash: hashJson(output) },
+    },
+  });
+}

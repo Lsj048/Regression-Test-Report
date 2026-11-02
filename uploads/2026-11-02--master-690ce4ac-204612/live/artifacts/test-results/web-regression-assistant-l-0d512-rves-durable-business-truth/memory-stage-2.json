@@ -1,0 +1,60 @@
+{
+  "activeMemories": [
+    {
+      "id": "e494b6f1-b565-4118-8b91-8a395718fb7d",
+      "namespace": "personal-assistant",
+      "key": "work.weekly_report.title",
+      "value": "白鹭周报",
+      "text": "用户的工作周报固定标题为\"白鹭周报\"。",
+      "sourceSessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+      "sourceTurnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c"
+    }
+  ],
+  "history": [
+    {
+      "memoryId": "e494b6f1-b565-4118-8b91-8a395718fb7d",
+      "key": "work.weekly_report.title",
+      "event": "ADD",
+      "oldText": null,
+      "newText": "用户的工作周报固定标题为\"海棠周报\"。",
+      "evidence": "请长期记住:我的工作周报固定标题为海棠周报。",
+      "sourceSessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+      "sourceTurnId": "turn_96648318-8f11-4f19-ad45-653853fa210a"
+    },
+    {
+      "memoryId": "e494b6f1-b565-4118-8b91-8a395718fb7d",
+      "key": "work.weekly_report.title",
+      "event": "UPDATE",
+      "oldText": "用户的工作周报固定标题为\"海棠周报\"。",
+      "newText": "用户的工作周报固定标题为\"白鹭周报\"。",
+      "evidence": "把我的工作周报固定标题改为白鹭周报,替换旧标题并长期记住。",
+      "sourceSessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+      "sourceTurnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c"
+    }
+  ],
+  "captures": [
+    {
+      "outcomeId": "outcome_cfc12784-b3fd-4374-99d4-d3a3b5611e8c",
+      "namespace": "personal-assistant",
+      "sourceSessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+      "sourceTurnId": "turn_96648318-8f11-4f19-ad45-653853fa210a"
+    },
+    {
+      "outcomeId": "outcome_3a275572-84bf-4676-ac9e-d07e38fc969a",
+      "namespace": "personal-assistant",
+      "sourceSessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+      "sourceTurnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c"
+    }
+  ],
+  "captureCalls": [
+    {
+      "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+      "serviceCallId": "service_39829aef-3286-49a6-9adc-16cf4bc0b576",
+      "status": "completed",
+      "finishReason": "stop",
+      "outcomeId": "outcome_3bd46795-9207-45ed-8fe0-156acf04ab62",
+      "content": "白鹭周报",
+      "error": null
+    }
+  ]
+}

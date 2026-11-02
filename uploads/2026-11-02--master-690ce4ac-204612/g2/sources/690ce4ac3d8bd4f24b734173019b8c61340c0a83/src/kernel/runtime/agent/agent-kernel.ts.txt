@@ -1,0 +1,1653 @@
+import type { HumanInputCheckpoint } from "../../api/service/human-input.js";
+import type { Clock } from "../../api/foundation/clock.js";
+import { ContractError, ProviderError, StateConflictError, ToolExecutionSuspended, errorMessage } from "../../api/foundation/errors.js";
+import { asJsonObject, deepFreeze, hashJson, type JsonObject, type JsonValue } from "../../api/foundation/json.js";
+import { newId } from "../../api/foundation/id.js";
+import type { ChatMessage, ContentBlock, ModelOutcome, ModelProvider, ModelRequestPlan, ModelTokenCounter } from "../../api/model/types.js";
+import type { DurableMessage, MessageStore, RuntimeMessageInput } from "../../api/messages/types.js";
+import type { TraceSink } from "../events/trace.js";
+import type { LlmErrorSnapshot, StateCandidate, StateDirectiveForPoint, StatePoint, StateSnapshot, StateSnapshotBase, StateDirective } from "../../api/policy/types.js";
+import type { TurnAbortCause } from "../../api/state/types.js";
+import type { ToolApprovalRequest, ToolApprovalResponse } from "../../api/tool/permission.js";
+import type { ToolBatchResult, ToolExecutionResult } from "../../api/tool/types.js";
+import type { DynamicToolRegistry } from "../services/dynamic-tool-service.js";
+import type { TurnBindingSnapshot } from "../../api/turn-binding.js";
+import type { ResolvedActionPlan } from "../policy/action-resolver.js";
+import type { PolicyRuntime } from "../policy/runtime.js";
+import { createInitialState, isTerminalState } from "../state/machine.js";
+import type { AgentState, EventInput, InputRecord, TurnRepository } from "../state/types.js";
+import { ToolRuntime } from "../tool/runtime.js";
+import {
+  contentToText,
+  policyPublicStateEvents,
+  mergePolicyState,
+  modelErrorCategory,
+  parseCandidate,
+  policyAgent,
+  toJson,
+  toJsonObject,
+  transitionFor,
+} from "./helpers.js";
+import { ActionBatchRecovery } from "./action-recovery.js";
+import { ContextCoordinator, type ContextMaintenanceResult } from "./context-coordinator.js";
+import { MessageCommitter } from "./message-committer.js";
+import { SessionExecution } from "./session-execution.js";
+import type { AgentKernelConfig, PendingTurnHandle, QueueInputRequest, TurnHandle, StartTurnInput } from "./types.js";
+
+export type { AgentKernelConfig, AgentKernelModelConfig, PendingTurnHandle, TurnHandle, StartTurnInput } from "./types.js";
+
+function pendingUserQuestion(batch: JsonValue | undefined): { readonly requestId: string; readonly prompt?: string } | undefined {
+  if (batch === undefined || batch === null || typeof batch !== "object" || Array.isArray(batch)) return undefined;
+  const results = (batch as JsonObject)["results"];
+  if (!Array.isArray(results)) return undefined;
+  for (const item of results) {
+    if (item === null || typeof item !== "object" || Array.isArray(item)) continue;
+    const canonical = (item as JsonObject)["canonicalValue"];
+    if (canonical === null || typeof canonical !== "object" || Array.isArray(canonical)) continue;
+    const value = canonical as JsonObject;
+    if (value["status"] !== "waiting_for_user" || typeof value["requestId"] !== "string") continue;
+    const questions = value["questions"];
+    return {
+      requestId: value["requestId"],
+      ...(Array.isArray(questions) ? { prompt: JSON.stringify(questions) } : {}),
+    };
+  }
+  return undefined;
+}
+
+export class AgentKernel {
+  readonly #restrictionReleases = new Map<string, () => void>();
+  readonly #freshModelAttempts = new Set<string>();
+  readonly #messageCommitter: MessageCommitter;
+  readonly #actionRecovery: ActionBatchRecovery;
+  readonly #context: ContextCoordinator;
+  #runtimeMessageTail: Promise<void> = Promise.resolve();
+
+  constructor(
+    private readonly repository: TurnRepository,
+    private readonly messageStore: MessageStore,
+    private readonly policies: PolicyRuntime,
+    private readonly provider: ModelProvider,
+    private readonly tools: ToolRuntime,
+    private readonly sessions: SessionExecution,
+    private readonly trace: TraceSink,
+    private readonly clock: Clock,
+    private readonly config: AgentKernelConfig,
+    private readonly turnBinding: (scope?: string) => TurnBindingSnapshot,
+    tokenCounter: ModelTokenCounter,
+    private readonly dynamicTools?: DynamicToolRegistry,
+  ) {
+    this.#messageCommitter = new MessageCommitter(repository, messageStore, tokenCounter, config.model);
+    this.#actionRecovery = new ActionBatchRecovery(repository, this.#messageCommitter);
+    this.#context = new ContextCoordinator(messageStore, this.#messageCommitter, repository, policies, tools, trace, config, tokenCounter, (state, events, transition) => this.#commit(state, events, transition));
+    if (config.model.contextWindowTokens !== undefined && (!Number.isSafeInteger(config.model.contextWindowTokens) || config.model.contextWindowTokens < 1)) {
+      throw new ContractError("model.contextWindowTokens must be a positive safe integer", "MODEL_CONTEXT_WINDOW_INVALID");
+    }
+    if (config.model.inputModalities !== undefined) {
+      const modalities = config.model.inputModalities;
+      if (modalities.length === 0 || !modalities.includes("text") || new Set(modalities).size !== modalities.length || modalities.some((item) => item !== "text" && item !== "image")) {
+        throw new ContractError("model.inputModalities must contain text and may contain image without duplicates", "MODEL_INPUT_MODALITIES_INVALID");
+      }
+    }
+  }
+
+  async startTurn(input: StartTurnInput): Promise<TurnHandle> {
+    const sessionId = input.sessionId ?? newId("session");
+    const turnId = input.turnId ?? newId("turn");
+    const inputId = input.inputId ?? newId("input");
+    const { completion } = await this.#createTurn({
+      sessionId,
+      turnId,
+      ...(input.rootTurnId === undefined ? {} : { rootTurnId: input.rootTurnId }),
+      ...(input.parentTurnId === undefined ? {} : { parentTurnId: input.parentTurnId }),
+      ...(input.causedByCallId === undefined ? {} : { causedByCallId: input.causedByCallId }),
+      ...(input.initialHistory === undefined ? {} : { initialHistory: input.initialHistory }),
+      ...(input.initialPolicyState === undefined ? {} : { initialPolicyState: input.initialPolicyState }),
+      ...(input.delegationDepth === undefined ? {} : { delegationDepth: input.delegationDepth }),
+      ...(input.parentSessionId === undefined ? {} : { parentSessionId: input.parentSessionId }),
+      ...(input.metadata === undefined ? {} : { metadata: input.metadata }),
+      ...(input.toolRestriction === undefined ? {} : { toolRestriction: input.toolRestriction }),
+      admit: {
+        inputId,
+        content: input.content,
+        ...(input.origin === undefined ? {} : { origin: input.origin }),
+        ...(input.rootTurnId === undefined ? {} : { rootTurnId: input.rootTurnId }),
+        ...(input.parentTurnId === undefined ? {} : { parentTurnId: input.parentTurnId }),
+        ...(input.causedByCallId === undefined ? {} : { causedByCallId: input.causedByCallId }),
+      },
+    });
+    return Object.freeze({ sessionId, turnId, inputId, completion });
+  }
+
+  /** Start one durable automatic successor only while its source is still current and idle. */
+  async advanceTurn(sourceTurnId: string, advanceSignal?: AbortSignal): Promise<TurnHandle | undefined> {
+    const source = await this.repository.loadState(sourceTurnId);
+    const request = source.phaseData["advanceTurn"] as Extract<StateDirective, { kind: "advance_turn" }> | undefined;
+    if (source.turnOutcome?.kind !== "completed" || request?.kind !== "advance_turn" || !request.content?.trim()) return undefined;
+    const sessionId = source.sessionId;
+    const turnId = `turn:advance:${hashJson({ sourceTurnId }).slice(0, 32)}`;
+    const inputId = `input:advance:${hashJson({ sourceTurnId }).slice(0, 32)}`;
+    let initialized = false;
+    let resolveStart!: (handle: TurnHandle | undefined) => void;
+    let rejectStart!: (error: unknown) => void;
+    const started = new Promise<TurnHandle | undefined>((resolve, reject) => { resolveStart = resolve; rejectStart = reject; });
+    const worker = this.sessions.execute(sessionId, "policy_advance", async ({ signal }) => {
+      const states = await this.repository.listStates(sessionId);
+      if (advanceSignal?.aborted || states.at(-1)?.turnId !== sourceTurnId || source.bindingChecksum !== this.turnBinding(sessionId).checksum
+        || (await this.repository.turnEvents(sourceTurnId)).some(event => event.type === "turn.advance.cancelled")) {
+        resolveStart(undefined); return;
+      }
+      const pending = await this.repository.pendingInputs(sessionId);
+      if (advanceSignal?.aborted || pending.some(item => item.inputId !== inputId)) {
+        await this.repository.cancelInput(sessionId, inputId);
+        resolveStart(undefined); return;
+      }
+      if (!pending.length) await this.repository.admitInput({
+        sessionId, inputId, role: "user", content: request.content,
+        origin: { kind: "policy_advance" },
+        rootTurnId: source.rootTurnId, parentTurnId: sourceTurnId, admittedAt: this.clock.now().toISOString(),
+      });
+      try {
+        await this.#initializeTurn({ sessionId, turnId, expectedInputId: inputId }, () => { initialized = true; });
+      } catch (error) {
+        await this.repository.cancelInput(sessionId, inputId);
+        if (error instanceof ContractError && ["INPUT_NOT_NEXT", "INPUT_NOT_PENDING", "TURN_ADVANCE_SUPERSEDED", "TURN_ALREADY_ACTIVE", "TURN_EXISTS"].includes(error.code)) {
+          if (!(await this.repository.turnEvents(sourceTurnId)).some(event => event.type === "turn.advance.cancelled")) await this.repository.appendEvents(sourceTurnId, [{ type: "turn.advance.cancelled", payload: { reason: "superseded_before_claim" } }]);
+          resolveStart(undefined); return;
+        }
+        throw error;
+      }
+      resolveStart(Object.freeze({ sessionId, turnId, inputId, completion }));
+      await this.#drain(turnId, advanceSignal ? AbortSignal.any([signal, advanceSignal]) : signal);
+    });
+    const completion = worker.then(() => initialized ? this.repository.loadState(turnId) : source);
+    void completion.catch(rejectStart);
+    return started;
+  }
+
+  /** Admit a Session input without attaching it to the currently active Turn. */
+  async queueInput(input: QueueInputRequest): Promise<InputRecord> {
+    return this.repository.admitInput({
+      inputId: input.inputId ?? newId("input"),
+      sessionId: input.sessionId,
+      role: "user",
+      content: input.content,
+      ...(input.origin === undefined ? {} : { origin: input.origin }),
+      ...(input.rootTurnId === undefined ? {} : { rootTurnId: input.rootTurnId }),
+      ...(input.parentTurnId === undefined ? {} : { parentTurnId: input.parentTurnId }),
+      ...(input.causedByCallId === undefined ? {} : { causedByCallId: input.causedByCallId }),
+      admittedAt: this.clock.now().toISOString(),
+    });
+  }
+
+  /** Execute one configured ContextPolicy as idle Host maintenance, outside the Agent turn loop. */
+  async runContextMaintenance(input: {
+    readonly sessionId: string;
+    readonly componentId: string;
+    readonly maintenance: { readonly kind: "manual_compaction" };
+    readonly signal?: AbortSignal;
+  }): Promise<ContextMaintenanceResult> {
+    const states = await this.repository.listStates(input.sessionId);
+    const state = states.at(-1);
+    if (state === undefined) throw new ContractError(`Session ${input.sessionId} has no run state`, "CONTEXT_MAINTENANCE_SESSION_EMPTY");
+    if (!isTerminalState(state.kind)) throw new ContractError("The Agent is still running", "CONTEXT_MAINTENANCE_BUSY");
+    return this.#context.maintain(
+      state,
+      input.componentId,
+      input.maintenance,
+      input.signal ?? new AbortController().signal,
+    );
+  }
+
+  /**
+   * Persist one asynchronous Host fact through the same event/message outbox used by the main loop.
+   * Source names and metadata remain opaque to the Kernel.
+   */
+  submitRuntimeMessage(input: RuntimeMessageInput): Promise<DurableMessage> {
+    const operation = this.#runtimeMessageTail.then(() => this.#submitRuntimeMessage(input));
+    this.#runtimeMessageTail = operation.then(() => undefined, () => undefined);
+    return operation;
+  }
+
+  async #submitRuntimeMessage(input: RuntimeMessageInput): Promise<DurableMessage> {
+    if (!/^[a-z][a-z0-9_.-]{0,99}$/u.test(input.source)) {
+      throw new ContractError("Runtime message source must be a stable lowercase identifier", "RUNTIME_MESSAGE_SOURCE_INVALID");
+    }
+    if (input.sourceId.length < 1 || input.sourceId.length > 500) {
+      throw new ContractError("Runtime message sourceId must contain 1-500 characters", "RUNTIME_MESSAGE_SOURCE_ID_INVALID");
+    }
+    const state = await this.repository.loadState(input.turnId);
+    if (state.sessionId !== input.sessionId) {
+      throw new ContractError(`Turn ${input.turnId} does not belong to session ${input.sessionId}`, "RUNTIME_MESSAGE_SESSION_MISMATCH");
+    }
+    const events = await this.repository.turnEvents(input.turnId);
+    let sourceEvent = events.find((event) => {
+      if (event.type !== "runtime.message.received" || event.payload === null || typeof event.payload !== "object" || Array.isArray(event.payload)) return false;
+      const payload = event.payload as JsonObject;
+      return payload["source"] === input.source && payload["sourceId"] === input.sourceId;
+    });
+    if (sourceEvent === undefined) {
+      [sourceEvent] = await this.repository.appendEvents(input.turnId, [{
+        type: "runtime.message.received",
+        payload: {
+          source: input.source,
+          sourceId: input.sourceId,
+          message: input.message as unknown as JsonValue,
+          ...(input.metadata === undefined ? {} : { metadata: input.metadata }),
+        },
+      }]);
+    }
+    const identity = `${input.source}:${input.sourceId}`;
+    return this.#messageCommitter.write({
+      messageId: `message:runtime:${hashJson({ sessionId: input.sessionId, source: input.source, sourceId: input.sourceId })}`,
+      sessionId: input.sessionId,
+      producingTurnId: input.turnId,
+      step: state.step,
+      message: input.message,
+      sourceKind: "runtime",
+      sourceId: identity,
+      sourceEventSeq: sourceEvent!.seq,
+    }, sourceEvent!);
+  }
+
+  /** Start a new Turn that consumes one explicitly selected queued input. */
+  async startPendingTurn(input: Omit<StartTurnInput, "content"> & { readonly inputId: string }): Promise<PendingTurnHandle> {
+    const sessionId = input.sessionId ?? newId("session");
+    if (await this.repository.pendingInputCount(sessionId) === 0) {
+      throw new ContractError(`Session ${sessionId} has no pending input`, "INPUT_NOT_PENDING");
+    }
+    const turnId = input.turnId ?? newId("turn");
+    const { completion } = await this.#createTurn({
+      sessionId,
+      turnId,
+      ...(input.rootTurnId === undefined ? {} : { rootTurnId: input.rootTurnId }),
+      ...(input.parentTurnId === undefined ? {} : { parentTurnId: input.parentTurnId }),
+      ...(input.causedByCallId === undefined ? {} : { causedByCallId: input.causedByCallId }),
+      ...(input.initialHistory === undefined ? {} : { initialHistory: input.initialHistory }),
+      ...(input.initialPolicyState === undefined ? {} : { initialPolicyState: input.initialPolicyState }),
+      ...(input.delegationDepth === undefined ? {} : { delegationDepth: input.delegationDepth }),
+      ...(input.parentSessionId === undefined ? {} : { parentSessionId: input.parentSessionId }),
+      ...(input.metadata === undefined ? {} : { metadata: input.metadata }),
+      ...(input.toolRestriction === undefined ? {} : { toolRestriction: input.toolRestriction }),
+      expectedInputId: input.inputId,
+    });
+    return Object.freeze({ sessionId, turnId, inputId: input.inputId, completion });
+  }
+
+  async #createTurn(input: {
+    readonly sessionId: string;
+    readonly turnId: string;
+    readonly rootTurnId?: string;
+    readonly parentTurnId?: string;
+    readonly causedByCallId?: string;
+    readonly initialHistory?: readonly ChatMessage[];
+    readonly initialPolicyState?: Readonly<Record<string, JsonValue>>;
+    readonly delegationDepth?: number;
+    readonly parentSessionId?: string;
+    readonly metadata?: JsonObject;
+    readonly toolRestriction?: { readonly allow?: readonly string[]; readonly deny?: readonly string[] };
+    readonly expectedInputId?: string;
+    readonly admit?: {
+      readonly inputId: string;
+      readonly content: string;
+      readonly origin?: import("../../api/messages/types.js").MessageOrigin;
+      readonly rootTurnId?: string;
+      readonly parentTurnId?: string;
+      readonly causedByCallId?: string;
+    };
+  }): Promise<{ readonly completion: Promise<AgentState> }> {
+    const { sessionId, turnId } = input;
+    if (input.admit !== undefined) {
+      if (input.admit.origin === undefined || input.admit.origin.kind === "user") {
+        for (const pending of await this.repository.pendingInputs(sessionId)) {
+          if (pending.origin?.kind === "policy_advance") await this.repository.cancelInput(sessionId, pending.inputId);
+        }
+      }
+      await this.repository.admitInput({
+        inputId: input.admit.inputId,
+        sessionId,
+        role: "user",
+        content: input.admit.content,
+        ...(input.admit.origin === undefined ? {} : { origin: input.admit.origin }),
+        ...(input.admit.rootTurnId === undefined ? {} : { rootTurnId: input.admit.rootTurnId }),
+        ...(input.admit.parentTurnId === undefined ? {} : { parentTurnId: input.admit.parentTurnId }),
+        ...(input.admit.causedByCallId === undefined ? {} : { causedByCallId: input.admit.causedByCallId }),
+        admittedAt: this.clock.now().toISOString(),
+      });
+    }
+    let resolveInitialized!: () => void;
+    let rejectInitialized!: (error: unknown) => void;
+    const initialized = new Promise<void>((resolve, reject) => {
+      resolveInitialized = resolve;
+      rejectInitialized = reject;
+    });
+    const execution = this.sessions.execute(sessionId, "turn_started", async ({ signal }) => {
+      let turnCreated = false;
+      try {
+        const expectedInputId = input.expectedInputId ?? input.admit?.inputId;
+        await this.#initializeTurn({
+          ...input,
+          ...(expectedInputId === undefined ? {} : { expectedInputId }),
+        }, () => { turnCreated = true; });
+        resolveInitialized();
+      } catch (error) {
+        let failure: unknown = error;
+        if (turnCreated) {
+          try {
+            await this.#failInternal(turnId, error);
+          } catch (terminalizationError) {
+            failure = new AggregateError(
+              [error, terminalizationError],
+              `Turn ${turnId} initialization failed and could not be terminalized`,
+            );
+          }
+        }
+        rejectInitialized(failure);
+        throw failure;
+      }
+      await this.#drain(turnId, signal);
+    });
+    const completion = this.#stateAfterDrain(turnId, execution);
+    void completion.catch(() => undefined);
+    await initialized;
+    return { completion };
+  }
+
+  async #initializeTurn(input: {
+    readonly sessionId: string;
+    readonly turnId: string;
+    readonly rootTurnId?: string;
+    readonly parentTurnId?: string;
+    readonly causedByCallId?: string;
+    readonly initialHistory?: readonly ChatMessage[];
+    readonly initialPolicyState?: Readonly<Record<string, JsonValue>>;
+    readonly delegationDepth?: number;
+    readonly parentSessionId?: string;
+    readonly metadata?: JsonObject;
+    readonly toolRestriction?: { readonly allow?: readonly string[]; readonly deny?: readonly string[] };
+    readonly expectedInputId?: string;
+  }, onTurnCreated: () => void): Promise<void> {
+    const { sessionId, turnId } = input;
+    const candidates = (await this.repository.listStates(sessionId)).toReversed();
+    const lineagePrior = candidates.find((candidate) => candidate.turnId !== turnId && isTerminalState(candidate.kind));
+    const parentSessionId = input.parentSessionId ?? lineagePrior?.parentSessionId;
+    const delegationDepth = input.delegationDepth ?? lineagePrior?.delegationDepth;
+    await this.#restoreToolScope(sessionId, parentSessionId);
+    const releaseRestriction = input.toolRestriction === undefined
+      ? undefined
+      : this.tools.restrict(sessionId, input.toolRestriction);
+    try {
+      const binding = this.turnBinding(sessionId);
+      const prior = candidates.find((candidate) =>
+        candidate.turnId !== turnId
+        && candidate.bindingChecksum === binding.checksum
+        && isTerminalState(candidate.kind));
+      const initialPolicyState = {
+        ...(prior?.policyState ?? {}),
+        ...(input.initialPolicyState ?? {}),
+      };
+      const trigger = await this.repository.peekNextInput(sessionId);
+      if (trigger === undefined) throw new ContractError(`Session ${sessionId} has no pending input`, "INPUT_NOT_PENDING");
+      if (input.expectedInputId !== undefined && trigger.inputId !== input.expectedInputId) {
+        throw new ContractError(`Input ${input.expectedInputId} is not the next pending input for Session ${sessionId}`, "INPUT_NOT_NEXT");
+      }
+      const parentTurnId = trigger.parentTurnId ?? input.parentTurnId;
+      const causedByCallId = trigger.causedByCallId ?? input.causedByCallId;
+      const state = createInitialState({
+        sessionId,
+        turnId,
+        triggerInputId: trigger.inputId,
+        rootTurnId: trigger.rootTurnId ?? input.rootTurnId ?? turnId,
+        ...(parentTurnId === undefined ? {} : { parentTurnId }),
+        ...(causedByCallId === undefined ? {} : { causedByCallId }),
+        bindingId: binding.bindingId,
+        bindingChecksum: binding.checksum,
+        clock: this.clock,
+        ...(Object.keys(initialPolicyState).length === 0 ? {} : { policyState: initialPolicyState }),
+        ...(delegationDepth === undefined ? {} : { delegationDepth }),
+        ...(parentSessionId === undefined ? {} : { parentSessionId }),
+      });
+      await this.repository.createTurnFromInput(state);
+      onTurnCreated();
+      const existingMessages = await this.messageStore.messages(sessionId);
+      const systemMessage = this.config.systemMessage;
+      const lastSystemMessage = existingMessages.filter((record) => record.sourceKind === "system").at(-1);
+      const systemMessageValue: ChatMessage | undefined = systemMessage ? { role: "system", content: systemMessage } : undefined;
+      const systemMessageHash = systemMessageValue === undefined ? undefined : hashJson(systemMessageValue as unknown as JsonValue);
+      const seededSystemMessage = systemMessageValue !== undefined && lastSystemMessage?.messageHash !== systemMessageHash
+        ? await this.#messageCommitter.write({
+            messageId: `message:system:${turnId}`,
+            sessionId,
+            producingTurnId: turnId,
+            step: 0,
+            message: systemMessageValue,
+            sourceKind: "system",
+            sourceId: turnId,
+          })
+        : undefined;
+      const seededMessages = input.initialHistory && input.initialHistory.length > 0 && existingMessages.length === 0
+        ? await this.#messageCommitter.writeMany(input.initialHistory.map((message, index) => ({
+            messageId: `message:seed:${turnId}:${index}`,
+            sessionId,
+            producingTurnId: turnId,
+            step: 0,
+            message,
+            sourceKind: "history_seed" as const,
+            sourceId: `${turnId}:${index}`,
+          })))
+        : [];
+      const promotedInput = await this.#messageCommitter.write({
+        messageId: `message:input:${trigger.inputId}`,
+        sessionId,
+        producingTurnId: turnId,
+        step: 0,
+        message: { role: "user", content: trigger.content },
+        sourceKind: "input",
+        sourceId: trigger.inputId,
+        ...(trigger.origin === undefined ? {} : { origin: trigger.origin }),
+      });
+      await this.repository.appendEvents(turnId, [
+        {
+          type: "turn.created",
+          payload: {
+            triggerInputId: trigger.inputId,
+            rootTurnId: state.rootTurnId,
+            parentTurnId: state.parentTurnId ?? null,
+            causedByCallId: state.causedByCallId ?? null,
+            bindingId: state.bindingId,
+            bindingChecksum: state.bindingChecksum,
+            ...(prior === undefined ? {} : { policyStateInheritedFromTurnId: prior.turnId }),
+            ...(input.metadata === undefined ? {} : { metadata: input.metadata }),
+          },
+        },
+        { type: "turn.binding.committed", payload: binding as unknown as JsonValue },
+        { type: "tool.scope.bound", payload: { parentSessionId: parentSessionId ?? null, restriction: input.toolRestriction ?? null } },
+        { type: "input.promoted", payload: { inputId: trigger.inputId, content: trigger.content, admissionSeq: trigger.admissionSeq, messageId: promotedInput.messageId, messageSeq: promotedInput.seq, ...(trigger.origin === undefined ? {} : { origin: trigger.origin }) } },
+        ...(seededMessages.length > 0
+          ? [{ type: "history.seeded", payload: { messageIds: seededMessages.map((message) => message.messageId), count: seededMessages.length } }]
+          : []),
+        ...(seededSystemMessage === undefined
+          ? []
+          : [{ type: "system_message.seeded", payload: { messageId: seededSystemMessage.messageId, messageSeq: seededSystemMessage.seq, messageHash: seededSystemMessage.messageHash } }]),
+      ]);
+      await this.trace.emit({
+        kind: "policy.binding.compiled",
+        sessionId,
+        turnId,
+        attributes: {
+          bindingId: this.policies.binding.bindingId,
+          bindingChecksum: this.policies.binding.checksum,
+          turnBindingId: state.bindingId,
+          turnBindingChecksum: state.bindingChecksum,
+          source: "active_policy_binding",
+        },
+      });
+    } catch (error) {
+      releaseRestriction?.();
+      throw error;
+    }
+    if (releaseRestriction !== undefined) this.#restrictionReleases.set(turnId, releaseRestriction);
+  }
+
+  /** Project the complete model-facing transcript through one Turn. */
+  async turnHistory(turnId: string): Promise<readonly ChatMessage[]> {
+    const state = await this.repository.loadState(turnId);
+    const throughSeq = state.turnState.kind === "settled"
+      ? state.turnState.messageEndSeq
+      : await this.messageStore.latestSeq(state.sessionId);
+    return Object.freeze((await this.messageStore.surfaceMessages(state.sessionId, throughSeq)).map((record) => record.message));
+  }
+
+  /**
+   * Project only the parent's completed-turn prefix. The last promoted input is
+   * the current in-flight turn and is deliberately excluded by the fork contract.
+   */
+  async completedHistoryPrefix(turnId: string): Promise<readonly ChatMessage[]> {
+    const state = await this.repository.loadState(turnId);
+    const promoted = (await this.repository.turnEvents(turnId)).find((event) => event.type === "input.promoted");
+    const payload = promoted?.payload !== null && typeof promoted?.payload === "object" && !Array.isArray(promoted.payload)
+      ? promoted.payload as JsonObject
+      : undefined;
+    const inputMessageSeq = payload?.["messageSeq"];
+    if (typeof inputMessageSeq !== "number" || !Number.isSafeInteger(inputMessageSeq) || inputMessageSeq < 1) {
+      throw new ContractError(`Turn ${turnId} has no durable input message boundary`, "TURN_MESSAGE_BOUNDARY_MISSING");
+    }
+    const messages = await this.messageStore.surfaceMessages(state.sessionId, inputMessageSeq - 1);
+    return Object.freeze(messages
+      .filter((message) => message.producingTurnId !== turnId || message.sourceKind === "history_seed")
+      .map((message) => message.message));
+  }
+
+  async wait(turnId: string): Promise<AgentState> {
+    const state = await this.repository.loadState(turnId);
+    if (!isTerminalState(state.kind) && state.kind !== "paused") {
+      await this.#assertBinding(state);
+      await this.sessions.execute(state.sessionId, "join", ({ signal }) => this.#drain(turnId, signal));
+    }
+    const settled = await this.repository.loadState(turnId);
+    this.#releaseRestrictionIfTerminal(settled);
+    return settled;
+  }
+
+  async recover(turnId: string): Promise<AgentState> {
+    const state = await this.repository.loadState(turnId);
+    if (isTerminalState(state.kind)) {
+      this.#releaseRestrictionIfTerminal(state);
+      return state;
+    }
+    await this.#assertBinding(state);
+    if (state.kind === "paused") return state;
+    await this.repository.appendEvents(turnId, [{
+      type: "host.recovery.detected",
+      payload: {
+        checkpoint: state.kind,
+        revision: state.revision,
+        sessionStatus: toJson(state.sessionStatus),
+        turnState: toJson(state.turnState),
+        ...(state.turnOutcome === undefined ? {} : { turnOutcome: toJson(state.turnOutcome) }),
+        cursor: toJson(state.executionCursor),
+      },
+    }]);
+    await this.sessions.execute(state.sessionId, "recovery", ({ signal }) => this.#drain(turnId, signal));
+    const recovered = await this.repository.loadState(turnId);
+    this.#releaseRestrictionIfTerminal(recovered);
+    return recovered;
+  }
+
+  async resume(turnId: string): Promise<AgentState> {
+    let state = await this.repository.loadState(turnId);
+    if (state.kind !== "paused") throw new ContractError(`Turn ${turnId} is not paused`, "TURN_NOT_PAUSED");
+    await this.#assertBinding(state);
+    if (state.suspensionReasons.some(reason => reason.kind === "approval" || reason.kind === "human_input")) throw new ContractError("This suspension requires its correlated answer operation", "TURN_EXPLICIT_ANSWER_REQUIRED");
+    const resumeTo = state.phaseData["resumeTo"] === "executing_actions" ? "executing_actions" : "deciding";
+    state = await this.repository.commit({
+      turnId,
+      expectedRevision: state.revision,
+      expectedKind: "paused",
+      events: [{ type: "turn.resumed", payload: {} }],
+      transition: {
+        to: "recovering",
+        reason: "Turn resumed",
+        patch: {
+          suspensionReasons: [],
+          phaseData: resumeTo === "executing_actions"
+            ? { ...state.phaseData, resumeTo }
+            : { resumeTo, decisionPoint: "on_turn_resume" },
+        },
+      },
+    });
+    await this.sessions.execute(state.sessionId, "turn_resumed", ({ signal }) => this.#drain(turnId, signal));
+    const resumed = await this.repository.loadState(turnId);
+    this.#releaseRestrictionIfTerminal(resumed);
+    return resumed;
+  }
+
+  /** Atomically record a business request and its pre-dispatch suspension, separately from permission. */
+  async suspendForHumanInput(request: HumanInputCheckpoint): Promise<AgentState> {
+    const state = await this.repository.loadState(request.execution.turnId);
+    if (state.sessionId !== request.execution.sessionId || state.kind !== "executing_actions") throw new ContractError("Human input is not at a resumable Tool boundary", "HUMAN_INPUT_ACTION_NOT_RESUMABLE");
+    return this.repository.commit({
+      turnId: state.turnId, expectedRevision: state.revision, expectedKind: "executing_actions",
+      events: [{ type: "host.human_input.requested", payload: toJson({
+        apiVersion: "human-input-checkpoint.longcat/v1", requestId: request.requestId,
+        callId: request.execution.callId, actionId: request.execution.actionId,
+        packageId: request.packageId, toolName: request.toolName, request: request.request, requestHash: request.requestHash,
+      }) }],
+      transition: { to: "paused", reason: "Waiting for human input", patch: {
+        suspensionReasons: [...state.suspensionReasons, { kind: "human_input", waitId: request.requestId, requestId: request.requestId, actionId: request.execution.actionId, enteredAt: this.clock.now().toISOString() }],
+        phaseData: { ...state.phaseData, resumeTo: "executing_actions" },
+      } },
+    });
+  }
+
+  /** Resume only from a durable correlated business answer; does not record or grant permission. */
+  async resumeHumanInput(turnId: string, requestId: string): Promise<AgentState> {
+    const state = await this.repository.loadState(turnId);
+    if (state.kind !== "paused" || !state.suspensionReasons.some(reason => reason.kind === "human_input" && reason.requestId === requestId)) throw new ContractError("Human input request is not pending", "HUMAN_INPUT_STALE");
+    await this.#assertBinding(state);
+    const events = await this.repository.turnEventsByTypes(turnId, ["host.human_input.requested", "host.human_input.answered"]);
+    const requested = events.find(event => event.type === "host.human_input.requested" && asJsonObject(event.payload, "request")["requestId"] === requestId);
+    const answered = events.find(event => event.type === "host.human_input.answered" && asJsonObject(event.payload, "answer")["requestId"] === requestId);
+    if (!requested || !answered || asJsonObject(requested.payload, "request")["requestHash"] !== asJsonObject(answered.payload, "answer")["requestHash"]) throw new ContractError("Human input has no matching durable answer", "HUMAN_INPUT_ANSWER_REQUIRED");
+    await this.repository.commit({ turnId, expectedRevision: state.revision, expectedKind: "paused",
+      events: [{ type: "host.human_input.resumed", payload: { requestId } }],
+      transition: { to: "recovering", reason: "Human input answered", patch: {
+        suspensionReasons: state.suspensionReasons.filter(reason => reason.kind !== "human_input" || reason.requestId !== requestId),
+        phaseData: { ...state.phaseData, resumeTo: "executing_actions" },
+      } },
+    });
+    await this.sessions.execute(state.sessionId, "turn_resumed", ({ signal }) => this.#drain(turnId, signal));
+    const resumed = await this.repository.loadState(turnId);
+    this.#releaseRestrictionIfTerminal(resumed);
+    return resumed;
+  }
+
+  /** Persist that Tool dispatch is paused before asking the Host for approval. */
+  async suspendForApproval(request: ToolApprovalRequest): Promise<AgentState> {
+    for (let attempt = 0; attempt < 16; attempt += 1) {
+      const state = await this.repository.loadState(request.execution.turnId);
+      const existing = state.suspensionReasons.find((reason) => reason.kind === "approval" && reason.requestId === request.requestId);
+      if (state.kind === "paused" && existing !== undefined) return state;
+      if (state.kind !== "executing_actions") {
+        throw new ContractError(`Turn ${state.turnId} cannot request approval from ${state.kind}`, "TURN_APPROVAL_STATE_INVALID");
+      }
+      try {
+        return await this.repository.commit({
+          turnId: state.turnId,
+          expectedRevision: state.revision,
+          expectedKind: "executing_actions",
+          events: [{ type: "permission.approval.requested", payload: toJson(request) }],
+          transition: {
+            to: "paused",
+            reason: "Waiting for Tool approval",
+            patch: {
+              suspensionReasons: [...state.suspensionReasons, {
+                kind: "approval",
+                waitId: request.requestId,
+                requestId: request.requestId,
+                actionId: request.execution.actionId,
+                enteredAt: this.clock.now().toISOString(),
+              }],
+              phaseData: { ...state.phaseData, resumeTo: "executing_actions" },
+            },
+          },
+        });
+      } catch (error) {
+        if (!(error instanceof StateConflictError)) throw error;
+      }
+    }
+    throw new StateConflictError(`Unable to suspend ${request.execution.turnId} for approval`);
+  }
+
+  /** Resume the live driver after its Host approval Promise resolves. */
+  async continueAfterApproval(request: ToolApprovalRequest, response?: ToolApprovalResponse): Promise<AgentState> {
+    for (let attempt = 0; attempt < 16; attempt += 1) {
+      const state = await this.repository.loadState(request.execution.turnId);
+      if (isTerminalState(state.kind)) return state;
+      const matches = state.suspensionReasons.some((reason) => reason.kind === "approval" && reason.requestId === request.requestId);
+      if (!matches) return state;
+      if (state.kind !== "paused") throw new ContractError(`Approval ${request.requestId} is not paused`, "TURN_APPROVAL_STATE_INVALID");
+      const phaseData = { ...state.phaseData };
+      delete phaseData["resumeTo"];
+      try {
+        return await this.repository.commit({
+          turnId: state.turnId,
+          expectedRevision: state.revision,
+          expectedKind: "paused",
+          events: [{
+            type: response === undefined ? "permission.approval.cancelled" : "permission.approval.responded",
+            payload: response === undefined ? { requestId: request.requestId } : { requestId: request.requestId, response: toJson(response) },
+          }],
+          transition: {
+            to: "executing_actions",
+            reason: response === undefined ? "Tool approval interaction ended" : "Tool approval answered",
+            patch: {
+              suspensionReasons: state.suspensionReasons.filter((reason) => reason.kind !== "approval" || reason.requestId !== request.requestId),
+              phaseData,
+            },
+          },
+        });
+      } catch (error) {
+        if (!(error instanceof StateConflictError)) throw error;
+      }
+    }
+    throw new StateConflictError(`Unable to continue ${request.execution.turnId} after approval`);
+  }
+
+  /** Persist a response after Host restart and recover the same paused Turn. */
+  async resumeApproval(turnId: string, requestId: string, response: ToolApprovalResponse): Promise<AgentState> {
+    let state = await this.repository.loadState(turnId);
+    if (state.kind !== "paused" || !state.suspensionReasons.some((reason) => reason.kind === "approval" && reason.requestId === requestId)) {
+      throw new ContractError(`Turn ${turnId} is not waiting for approval ${requestId}`, "TURN_APPROVAL_NOT_PENDING");
+    }
+    await this.#assertBinding(state);
+    state = await this.repository.commit({
+      turnId,
+      expectedRevision: state.revision,
+      expectedKind: "paused",
+      events: [{ type: "permission.approval.responded", payload: { requestId, response: toJson(response), recovered: true } }],
+      transition: {
+        to: "recovering",
+        reason: "Tool approval answered after Host recovery",
+        patch: {
+          suspensionReasons: state.suspensionReasons.filter((reason) => reason.kind !== "approval" || reason.requestId !== requestId),
+          phaseData: { ...state.phaseData, resumeTo: "executing_actions" },
+        },
+      },
+    });
+    await this.sessions.execute(state.sessionId, "approval_resumed", ({ signal }) => this.#drain(turnId, signal));
+    const resumed = await this.repository.loadState(turnId);
+    this.#releaseRestrictionIfTerminal(resumed);
+    return resumed;
+  }
+
+  async interrupt(turnId: string, reason = "interrupted by host", causeKind: TurnAbortCause["kind"] = "host"): Promise<AgentState> {
+    for (let attempt = 0; attempt < 16; attempt += 1) {
+      const state = await this.repository.loadState(turnId);
+      if (isTerminalState(state.kind)) {
+        this.#releaseRestrictionIfTerminal(state);
+        return state;
+      }
+      try {
+        const interrupted = await this.repository.commit({
+          turnId,
+          expectedRevision: state.revision,
+          expectedKind: state.kind,
+          events: [{ type: "turn.interrupted", payload: { reason, cause: causeKind } }],
+          transition: {
+            to: "interrupted",
+            reason,
+            patch: {
+              sessionStatus: { kind: "idle" },
+              turnOutcome: { kind: "aborted", endedAt: this.clock.now().toISOString(), cause: { kind: causeKind, reason } },
+              suspensionReasons: [],
+              messageEndSeq: await this.#captureMessageEndSeq(state.sessionId),
+              phaseData: { reason },
+            },
+          },
+        });
+        this.sessions.interrupt(state.sessionId, reason);
+        this.#releaseRestrictionIfTerminal(interrupted);
+        return interrupted;
+      } catch (error) {
+        if (!(error instanceof StateConflictError)) throw error;
+      }
+    }
+    throw new StateConflictError(`Unable to interrupt ${turnId} after repeated CAS conflicts`);
+  }
+
+  async #drain(turnId: string, signal: AbortSignal): Promise<void> {
+    while (!signal.aborted) {
+      try {
+        const state = await this.repository.loadState(turnId);
+        if (isTerminalState(state.kind) || state.kind === "paused") return;
+        switch (state.kind) {
+          case "created": await this.#created(state); break;
+          case "binding": await this.#binding(state); break;
+          case "recovering": await this.#recovering(state); break;
+          case "materializing_context": await this.#context.materialize(state, signal); break;
+          case "invoking_model": await this.#invokeModel(state, signal); break;
+          case "resolving_model_error": await this.#context.resolveModelError(state, signal); break;
+          case "backing_off": await this.#backoff(state, signal); break;
+          case "planning_actions": await this.#planActions(state, signal); break;
+          case "executing_actions": await this.#executeActions(state, signal); break;
+          case "deciding": await this.#decide(state, signal); break;
+        }
+      } catch (error) {
+        if (error instanceof StateConflictError) continue;
+        await this.#failInternal(turnId, error);
+        return;
+      }
+    }
+  }
+
+  async #stateAfterDrain(turnId: string, drain: Promise<void>): Promise<AgentState> {
+    await drain;
+    const state = await this.repository.loadState(turnId);
+    this.#releaseRestrictionIfTerminal(state);
+    return state;
+  }
+
+  #releaseRestrictionIfTerminal(state: AgentState): void {
+    if (!isTerminalState(state.kind)) return;
+    const release = this.#restrictionReleases.get(state.turnId);
+    if (release === undefined) return;
+    this.#restrictionReleases.delete(state.turnId);
+    release();
+  }
+
+  async #created(state: AgentState): Promise<void> {
+    await this.#commit(state, [{ type: "binding.started", payload: { bindingChecksum: state.bindingChecksum } }], {
+      to: "binding",
+      reason: "bind immutable policy composition",
+      patch: { phaseData: {} },
+    });
+  }
+
+  async #restoreToolScope(sessionId: string, parentSessionId?: string, visited = new Set<string>()): Promise<void> {
+    if (visited.has(sessionId)) throw new ContractError("Persisted Tool scope cycle", "TOOL_SCOPE_CYCLE");
+    visited.add(sessionId);
+    const latest = (await this.repository.listStates(sessionId)).at(-1);
+    const parent = parentSessionId ?? latest?.parentSessionId;
+    if (parent !== undefined) await this.#restoreToolScope(parent, undefined, visited);
+    this.tools.bindScope(sessionId, parent);
+    await this.dynamicTools?.restore(sessionId);
+    if (latest !== undefined && !isTerminalState(latest.kind) && !this.#restrictionReleases.has(latest.turnId)) {
+      const event = (await this.repository.turnEventsByTypes(latest.turnId, ["tool.scope.bound"])).at(-1);
+      const restriction = event === undefined ? undefined : asJsonObject(event.payload, "tool scope")["restriction"];
+      if (restriction !== undefined && restriction !== null) {
+        this.#restrictionReleases.set(latest.turnId, this.tools.restrict(sessionId, restriction as { readonly allow?: readonly string[]; readonly deny?: readonly string[] }));
+      }
+    }
+  }
+
+  async #assertBinding(state: AgentState): Promise<void> {
+    await this.#restoreToolScope(state.sessionId, state.parentSessionId);
+    const binding = this.turnBinding(state.sessionId);
+    if (state.bindingId === binding.bindingId && state.bindingChecksum === binding.checksum) return;
+    const event = (await this.repository.turnEventsByTypes(state.turnId, ["turn.binding.committed"])).at(-1);
+    const historical = event?.payload as unknown as TurnBindingSnapshot | undefined;
+    if (historical?.apiVersion === "turn-binding.longcat/v1" && historical.bindingId === state.bindingId
+      && historical.checksum === state.bindingChecksum && hashJson(historical.material) === historical.checksum) {
+      const expected = asJsonObject(historical.material, "historical binding");
+      const current = asJsonObject(binding.material, "current binding");
+      // Only validated durable dynamic registrations may extend or shadow the initial Tool view.
+      // Static tools, factories, services, permissions and every other binding field stay exact.
+      if (Array.isArray(expected["tools"]) && Array.isArray(current["tools"])) {
+        const byName = new Map(expected["tools"].map(item => {
+          const contract = asJsonObject(asJsonObject(item, "tool binding")["contract"], "tool contract");
+          return [String(contract["name"]), item] as const;
+        }));
+        for (const item of this.dynamicTools?.visibleMaterial(state.sessionId) ?? []) {
+          const contract = asJsonObject(asJsonObject(item, "dynamic binding")["contract"], "dynamic contract");
+          byName.set(String(contract["name"]), item);
+        }
+        const tools = [...byName].sort(([a], [b]) => a.localeCompare(b, "en")).map(([, item]) => item);
+        if (hashJson({ ...expected, tools }) === hashJson(current)) return;
+      }
+    }
+    throw new ContractError("Turn binding does not match the active Harness composition", "BINDING_DRIFT");
+  }
+
+  async #binding(state: AgentState): Promise<void> {
+    await this.#assertBinding(state);
+    await this.#commit(state, [{ type: "binding.completed", payload: { bindingId: state.bindingId, checksum: state.bindingChecksum } }], {
+      to: "materializing_context",
+      reason: "binding validated",
+      patch: { phaseData: {} },
+    });
+  }
+
+  async #recovering(state: AgentState): Promise<void> {
+    const target = state.phaseData["resumeTo"];
+    if (target !== "deciding" && target !== "executing_actions") throw new ContractError(`Unsupported recovery target: ${String(target)}`, "RECOVERY_TARGET_INVALID");
+    await this.#commit(state, [{ type: "turn.recovered", payload: { target } }], {
+      to: target,
+      reason: "recovered at safe boundary",
+      patch: { phaseData: target === "deciding" ? { ...state.phaseData, decisionPoint: state.phaseData["decisionPoint"] ?? "on_turn_resume" } : { ...state.phaseData } },
+    });
+  }
+
+  async #invokeModel(state: AgentState, signal: AbortSignal): Promise<void> {
+    const plan = state.phaseData["modelRequestPlan"] as unknown as ModelRequestPlan;
+    const attemptKey = this.#modelAttemptKey(state.turnId, plan.planId, state.modelAttempt);
+    if (!this.#freshModelAttempts.delete(attemptKey)) {
+      await this.#commit(state, [
+        { type: "model.interrupted", payload: { code: "UNRESOLVED_MODEL_ATTEMPT", cause: "process_crash", planId: plan.planId, requestHash: plan.requestHash, attempt: state.modelAttempt } },
+        { type: "turn.interrupted", payload: { cause: "process_crash", code: "UNRESOLVED_MODEL_ATTEMPT" } },
+      ], {
+        to: "interrupted",
+        reason: "The model checkpoint has no in-process invocation owner",
+        patch: {
+          sessionStatus: { kind: "idle" },
+          turnOutcome: { kind: "interrupted", endedAt: this.clock.now().toISOString(), cause: { kind: "process_crash", reason: "A model attempt was left unresolved across Host recovery." } },
+          suspensionReasons: [],
+          phaseData: { error: { code: "UNRESOLVED_MODEL_ATTEMPT", message: "The model checkpoint has no in-process invocation owner" } },
+        },
+      });
+      return;
+    }
+    try {
+      const outcome = await this.provider.invoke(plan, {
+        signal,
+        onEvent: async (event) => {
+          await this.config.onModelStream?.({ sessionId: state.sessionId, turnId: state.turnId, planId: plan.planId, event });
+        },
+      });
+      await this.#commit(state, [{ type: "model.completed", payload: {
+        ...toJsonObject(outcome),
+        request: { planId: plan.planId, requestHash: plan.requestHash, attempt: state.modelAttempt },
+      } }], {
+        to: "planning_actions",
+        reason: "model outcome committed",
+        patch: { phaseData: { modelOutcome: toJson(outcome), modelRequestPlan: toJson(plan) } },
+      });
+    } catch (error) {
+      const providerError = error instanceof ProviderError ? error : new ProviderError(errorMessage(error), "PROVIDER_FAILED", false);
+      const llmError: LlmErrorSnapshot = {
+        code: providerError.code,
+        message: providerError.message,
+        attempt: state.modelAttempt,
+        recoverable: providerError.recoverable,
+        outputCommitted: providerError.outputCommitted,
+        requestHash: plan.requestHash,
+        category: modelErrorCategory(providerError),
+        ...(providerError.retryAfterMs === undefined ? {} : { retryAfterMs: providerError.retryAfterMs }),
+      };
+      await this.#commit(state, [{ type: "model.failed", payload: { ...toJsonObject(llmError), planId: plan.planId } }], {
+        to: "resolving_model_error",
+        reason: "Context Policy receives first refusal on the model error",
+        patch: { phaseData: { llmError: toJson(llmError), failedRequestPlan: toJson(plan) } },
+      });
+    }
+  }
+
+  async #backoff(state: AgentState, signal: AbortSignal): Promise<void> {
+    const delayMs = state.phaseData["delayMs"];
+    if (typeof delayMs !== "number" || !Number.isFinite(delayMs) || delayMs <= 0) throw new ContractError("backing_off requires a positive delayMs", "STATE_INVARIANT_FAILED");
+    const deadline = Date.parse(state.enteredAt) + delayMs;
+    const remaining = Math.max(0, deadline - this.clock.now().getTime());
+    await this.trace.emit({ kind: "state.transition.requested", sessionId: state.sessionId, turnId: state.turnId, attributes: { from: "backing_off", to: "materializing_context", delayMs, remainingMs: remaining } });
+    if (remaining > 0) {
+      await new Promise<void>((resolveDelay, rejectDelay) => {
+        let timer: ReturnType<typeof setTimeout>;
+        const cleanup = (): void => {
+          clearTimeout(timer);
+          signal.removeEventListener("abort", abort);
+        };
+        const finish = (): void => {
+          cleanup();
+          resolveDelay();
+        };
+        const abort = (): void => {
+          cleanup();
+          rejectDelay(signal.reason ?? new ContractError("Backoff interrupted", "SESSION_INTERRUPTED"));
+        };
+        timer = setTimeout(finish, remaining);
+        signal.addEventListener("abort", abort, { once: true });
+        if (signal.aborted) abort();
+      });
+    }
+    const next = await this.#commit(state, [{ type: "model.retry_delay.completed", payload: { delayMs, retryClass: state.phaseData["retryClass"] ?? "provider" } }], {
+      to: "materializing_context",
+      reason: "model retry backoff elapsed",
+      patch: { phaseData: { retryClass: state.phaseData["retryClass"] ?? "provider" }, suspensionReasons: [] },
+    });
+    await this.trace.emit({ kind: "state.transition.committed", sessionId: state.sessionId, turnId: state.turnId, attributes: { from: state.kind, to: next.kind, revision: next.revision } });
+  }
+
+  async #planActions(state: AgentState, signal: AbortSignal): Promise<void> {
+    const outcome = state.phaseData["modelOutcome"] as unknown as ModelOutcome;
+    const requestPlan = state.phaseData["modelRequestPlan"] as unknown as ModelRequestPlan;
+    await this.#messageCommitter.ensureAssistant(state, outcome);
+    const candidates = parseCandidate(outcome).map(candidate => {
+      const definition = this.tools.get(candidate.name, state.sessionId);
+      return { ...candidate, ...(definition?.origin === undefined ? {} : { origin: definition.origin }),
+        constraintProtocols: (definition?.constraintEnforcers ?? []).map(({ protocol }) => ({ id: protocol.id, version: protocol.version })),
+      };
+    });
+    const toolConcurrency = Object.fromEntries(candidates.map((candidate) => [
+      candidate.name,
+      this.tools.concurrency(candidate.name, candidate.parsedArguments ?? {}, state.sessionId),
+    ]));
+    const evaluated = await this.policies.evaluateAction({
+      point: "interpret_actions",
+      agent: policyAgent(state),
+      snapshot: {
+        modelOutcome: outcome,
+        candidates,
+        visibleToolNames: requestPlan.tools.map((tool) => tool.name),
+        toolConcurrency,
+      },
+      signal,
+    });
+    const hasActions = evaluated.plan.actions.length > 0;
+    const rejectedResults = await this.#commitRejectedCandidates(state, candidates, evaluated.plan, hasActions);
+    await this.trace.emit({
+      kind: "action.plan.committed",
+      sessionId: state.sessionId,
+      turnId: state.turnId,
+      attributes: { planId: evaluated.plan.planId, actionCount: evaluated.plan.actions.length, rejectedCount: rejectedResults.length },
+    });
+    const rejectedBatch: ToolBatchResult | undefined = rejectedResults.length === 0 ? undefined : deepFreeze({
+      batchId: `rejected:${evaluated.plan.planId}`,
+      results: rejectedResults,
+      startedCount: 0,
+      syntheticCount: rejectedResults.length,
+    });
+    await this.#commit(state, [
+      ...policyPublicStateEvents(evaluated.publicStateUpdates),
+      { type: "action.plan.committed", payload: toJson(evaluated.plan) },
+      ...(hasActions || rejectedBatch === undefined ? [] : [{ type: "action.batch.settled", payload: toJson(rejectedBatch) }]),
+    ], {
+      to: hasActions ? "executing_actions" : "deciding",
+      reason: hasActions ? "action plan committed" : rejectedBatch === undefined ? "model produced no executable actions" : "all model actions were rejected with tool responses",
+      patch: {
+        policyState: mergePolicyState(state, evaluated.privateStateUpdates),
+        phaseData: hasActions
+          ? {
+              actionPlan: toJson(evaluated.plan),
+              modelOutcome: toJson(outcome),
+              modelRequestPlan: toJson(requestPlan),
+              ...(rejectedBatch === undefined ? {} : { rejectedActionResults: toJson(rejectedResults) }),
+            }
+          : rejectedBatch === undefined
+            ? { decisionPoint: "after_model_without_actions", modelOutcome: toJson(outcome) }
+            : { decisionPoint: "after_actions", actionBatch: toJson(rejectedBatch) },
+      },
+    });
+  }
+
+  async #commitRejectedCandidates(
+    state: AgentState,
+    candidates: ReturnType<typeof parseCandidate>,
+    plan: ResolvedActionPlan,
+    deferMessages = false,
+  ): Promise<readonly ToolExecutionResult[]> {
+    const results: ToolExecutionResult[] = [];
+    const events = await this.repository.turnEvents(state.turnId);
+    for (let ordinal = 0; ordinal < candidates.length; ordinal += 1) {
+      const candidate = candidates[ordinal]!;
+      const rejection = plan.rejectedCandidates[candidate.candidateId];
+      if (rejection === undefined) continue;
+      if (!Array.isArray(rejection.modelResult)) {
+        throw new ContractError(`Rejected candidate ${candidate.candidateId} has no model-facing content`, "ACTION_REJECTION_RESULT_INVALID");
+      }
+      const content = rejection.modelResult as unknown as readonly ContentBlock[];
+      const result: ToolExecutionResult = deepFreeze({
+        execution: {
+          sessionId: state.sessionId,
+          turnId: state.turnId,
+          actionId: `rejected:${candidate.candidateId}`,
+          callId: candidate.callId,
+          name: candidate.name,
+          arguments: candidate.parsedArguments ?? { rawText: candidate.rawArguments },
+          ordinal,
+        },
+        status: "denied",
+        isError: true,
+        content,
+        canonicalValue: { rejected: true, code: rejection.code },
+        errorCode: rejection.code,
+        errorMessage: contentToText(content),
+      });
+      let sourceEvent = events.find((event) => {
+        if (event.type !== "tool.result" || event.payload === null || typeof event.payload !== "object" || Array.isArray(event.payload)) return false;
+        const payload = event.payload as JsonObject;
+        return payload["syntheticKind"] === "action_rejection" && payload["callId"] === candidate.callId;
+      });
+      if (sourceEvent === undefined) {
+        [sourceEvent] = await this.repository.appendEvents(state.turnId, [{
+          type: "tool.result",
+          payload: {
+            callId: candidate.callId,
+            actionPlanId: plan.planId,
+            candidateId: candidate.candidateId,
+            name: candidate.name,
+            ordinal,
+            status: "denied",
+            isError: true,
+            content: content as unknown as JsonValue,
+            canonicalValue: result.canonicalValue!,
+            errorCode: rejection.code,
+            syntheticKind: "action_rejection",
+          },
+        }]);
+      }
+      if (!deferMessages) await this.#messageCommitter.ensureTool(state, result, sourceEvent!);
+      await this.trace.emit({
+        kind: "action.rejected",
+        sessionId: state.sessionId,
+        turnId: state.turnId,
+        attributes: {
+          planId: plan.planId,
+          candidateId: candidate.candidateId,
+          callId: candidate.callId,
+          name: candidate.name,
+          code: rejection.code,
+        },
+      });
+      results.push(result);
+    }
+    return Object.freeze(results);
+  }
+
+  #mergeRejectedResults(batch: ToolBatchResult, value: JsonValue | undefined): ToolBatchResult {
+    if (!Array.isArray(value) || value.length === 0) return batch;
+    const rejected = value as unknown as readonly ToolExecutionResult[];
+    return deepFreeze({
+      ...batch,
+      results: [...batch.results, ...rejected].sort((left, right) => left.execution.ordinal - right.execution.ordinal),
+      syntheticCount: batch.syntheticCount + rejected.length,
+    });
+  }
+
+  async #ensureOrderedToolMessages(
+    state: AgentState,
+    actionPlanId: string,
+    results: readonly ToolExecutionResult[],
+  ): Promise<void> {
+    const events = await this.repository.turnEvents(state.turnId);
+    for (const result of [...results].sort((left, right) => left.execution.ordinal - right.execution.ordinal)) {
+      const sourceEvent = events.find((event) => {
+        if (event.type !== "tool.result" || event.payload === null || typeof event.payload !== "object" || Array.isArray(event.payload)) return false;
+        const payload = event.payload as JsonObject;
+        return payload["actionPlanId"] === actionPlanId && payload["callId"] === result.execution.callId;
+      });
+      if (sourceEvent === undefined) {
+        throw new ContractError(`Missing tool.result event for ${result.execution.callId}`, "TOOL_MESSAGE_SOURCE_MISSING");
+      }
+      await this.#messageCommitter.ensureTool(state, result, sourceEvent);
+    }
+  }
+
+  async #executeActions(state: AgentState, signal: AbortSignal): Promise<void> {
+    const plan = state.phaseData["actionPlan"] as unknown as ResolvedActionPlan;
+    const rejectedResults = Array.isArray(state.phaseData["rejectedActionResults"])
+      ? state.phaseData["rejectedActionResults"] as unknown as readonly ToolExecutionResult[]
+      : [];
+    const recovered = await this.#actionRecovery.recover(state, plan, rejectedResults);
+    if (recovered.kind === "complete") {
+      const batch = this.#mergeRejectedResults(recovered.batch, state.phaseData["rejectedActionResults"]);
+      await this.#commit(state, [{ type: "action.batch.recovered", payload: toJson(batch) }], {
+        to: "deciding",
+        reason: "recovered a fully settled action batch",
+        patch: { phaseData: { decisionPoint: "after_actions", actionBatch: toJson(batch) } },
+      });
+      return;
+    }
+    if (recovered.kind === "unsafe") {
+      await this.#commit(state, [
+        { type: "action.recovery.blocked", payload: { code: "UNRESOLVED_TOOL_EFFECT", actionPlanId: plan.planId } },
+        { type: "turn.interrupted", payload: { cause: "process_crash", code: "UNRESOLVED_TOOL_EFFECT" } },
+      ], {
+        to: "interrupted",
+        reason: "A previously started tool batch is only partially settled",
+        patch: {
+          sessionStatus: { kind: "idle" },
+          turnOutcome: { kind: "interrupted", endedAt: this.clock.now().toISOString(), cause: { kind: "process_crash", reason: "A tool batch was left partially settled across Host recovery." } },
+          suspensionReasons: [],
+          phaseData: { error: { code: "UNRESOLVED_TOOL_EFFECT", message: "A previously started tool batch is only partially settled" } },
+        },
+      });
+      return;
+    }
+    const completedResults = recovered.kind === "resume" ? recovered.completedResults : [];
+    const pendingActionIds = new Set(recovered.kind === "resume"
+      ? recovered.pendingActionIds
+      : plan.actions.map((action) => action.actionId));
+    const executionPlan: ResolvedActionPlan = recovered.kind === "resume"
+      ? deepFreeze({
+          ...plan,
+          actions: plan.actions.filter((action) => pendingActionIds.has(action.actionId)),
+          dependencies: plan.dependencies.filter((dependency) => pendingActionIds.has(dependency.before) && pendingActionIds.has(dependency.after)),
+          executionGroups: plan.executionGroups.flatMap((group) => {
+            const actionIds = group.actionIds.filter((actionId) => pendingActionIds.has(actionId));
+            return actionIds.length === 0 ? [] : [{ ...group, actionIds }];
+          }),
+        })
+      : plan;
+    const privateStateUpdates: Record<string, JsonValue> = {};
+    const publicStateUpdates: Record<string, JsonValue> = {};
+    const deferToolMessages = rejectedResults.length > 0 || recovered.kind === "resume";
+    const executedBatch = await this.tools.executeBatch({
+      sessionId: state.sessionId,
+      turnId: state.turnId,
+      plan: executionPlan,
+      policyState: state.policyState,
+      signal,
+      hooks: {
+        beforeDispatch: async (execution) => {
+          const prior = (await this.repository.turnEventsByTypes(state.turnId, ["tool.call"])).some((event) => event.payload !== null
+            && typeof event.payload === "object" && !Array.isArray(event.payload)
+            && (event.payload as JsonObject)["actionPlanId"] === plan.planId
+            && (event.payload as JsonObject)["actionId"] === execution.actionId);
+          if (!prior) await this.repository.appendEvents(state.turnId, [{ type: "tool.call", payload: { ...toJsonObject(execution), actionPlanId: plan.planId } }]);
+        },
+        beforeExecute: async (execution) => {
+          const prior = (await this.repository.turnEventsByTypes(state.turnId, ["tool.dispatch.started"])).some((event) => event.payload !== null
+            && typeof event.payload === "object" && !Array.isArray(event.payload)
+            && (event.payload as JsonObject)["actionPlanId"] === plan.planId
+            && (event.payload as JsonObject)["actionId"] === execution.actionId);
+          if (!prior) await this.repository.appendEvents(state.turnId, [{ type: "tool.dispatch.started", payload: { ...toJsonObject(execution), actionPlanId: plan.planId } }]);
+        },
+        recordRawResult: async (result) => {
+          await this.repository.appendEvents(state.turnId, [{
+            type: "tool.raw_result",
+            payload: {
+              ...(result.execution.origin === undefined ? {} : { origin: result.execution.origin as unknown as JsonValue }),
+              callId: result.execution.callId,
+              actionId: result.execution.actionId,
+              actionPlanId: plan.planId,
+              name: result.execution.name,
+              arguments: result.execution.arguments,
+              ordinal: result.execution.ordinal,
+              status: result.status,
+              isError: result.isError,
+              content: result.content as unknown as JsonValue,
+              ...(result.canonicalValue === undefined ? {} : { canonicalValue: result.canonicalValue }),
+              ...(result.presentationMeta === undefined ? {} : { presentationMeta: result.presentationMeta }),
+              ...(result.errorCode === undefined ? {} : { errorCode: result.errorCode }),
+              ...(result.errorMessage === undefined ? {} : { errorMessage: result.errorMessage }),
+            },
+          }]);
+        },
+        projectResult: async (result) => {
+          // Approval may have advanced the revision while the tool was running.
+          // Projection and its checkpoint must use the current committed state.
+          state = await this.repository.loadState(state.turnId);
+          if (isTerminalState(state.kind)) return result;
+          const baseSnapshot = await this.#context.snapshot(state);
+          const context = await this.policies.evaluateContext({
+            point: "project_action_result",
+            agent: { ...policyAgent(state), policyState: { ...state.policyState, ...privateStateUpdates } },
+            snapshot: {
+              ...baseSnapshot,
+              actionResult: {
+                ...(result.execution.origin === undefined ? {} : { origin: result.execution.origin }),
+                callId: result.execution.callId,
+                name: result.execution.name,
+                content: result.content,
+                byteLength: Buffer.byteLength(contentToText(result.content), "utf8"),
+                isError: result.isError,
+                metadata: {
+                  arguments: result.execution.arguments,
+                  status: result.status,
+                  rawContent: result.content as unknown as JsonValue,
+                  canonicalValue: result.canonicalValue ?? null,
+                  presentationMeta: result.presentationMeta ?? null,
+                  errorCode: result.errorCode ?? null,
+                  errorMessage: result.errorMessage ?? null,
+                },
+              },
+            },
+            signal,
+          });
+          Object.assign(privateStateUpdates, context.privateStateUpdates);
+          Object.assign(publicStateUpdates, context.publicStateUpdates);
+          const content = context.plan.actionResultProjections[result.execution.callId] ?? result.content;
+          return content === result.content ? result : deepFreeze({ ...result, content });
+        },
+        commitResult: async (result) => {
+          const resultInput: EventInput = {
+            type: "tool.result",
+            payload: {
+              ...(result.execution.origin === undefined ? {} : { origin: result.execution.origin as unknown as JsonValue }),
+              callId: result.execution.callId,
+              actionId: result.execution.actionId,
+              actionPlanId: plan.planId,
+              name: result.execution.name,
+              ordinal: result.execution.ordinal,
+              status: result.status,
+              isError: result.isError,
+              content: result.content as unknown as JsonValue,
+              ...(result.canonicalValue === undefined ? {} : { canonicalValue: result.canonicalValue }),
+              ...(result.presentationMeta === undefined ? {} : { presentationMeta: result.presentationMeta }),
+              ...(result.errorCode === undefined ? {} : { errorCode: result.errorCode }),
+              ...(result.errorMessage === undefined ? {} : { errorMessage: result.errorMessage }),
+            },
+          };
+          if (state.kind === "executing_actions") {
+            // The projection and the state that produced it are one durable
+            // result. A later batch-barrier conflict must not retain only text.
+            state = await this.#commit(state, [resultInput, ...policyPublicStateEvents(publicStateUpdates)], {
+              to: "executing_actions", reason: "tool result and policy state committed",
+              patch: { policyState: mergePolicyState(state, privateStateUpdates), phaseData: state.phaseData },
+            });
+          } else {
+            // Cancellation is already authoritative; retain the tool fact
+            // without reviving the turn or applying a stale Policy proposal.
+            await this.repository.appendEvents(state.turnId, [resultInput]);
+          }
+          for (const id of Object.keys(privateStateUpdates)) delete privateStateUpdates[id];
+          for (const id of Object.keys(publicStateUpdates)) delete publicStateUpdates[id];
+          const resultEvent = (await this.repository.turnEventsByTypes(state.turnId, ["tool.result"])).findLast(event => {
+            const payload = event.payload as JsonObject;
+            return payload["actionPlanId"] === plan.planId && payload["actionId"] === result.execution.actionId;
+          });
+          if (resultEvent === undefined) throw new ContractError("Committed tool result is missing", "TOOL_MESSAGE_SOURCE_MISSING");
+          if (!deferToolMessages) await this.#messageCommitter.ensureTool(state, result, resultEvent!);
+        },
+        onActionStarted: async (action) => {
+          await this.trace.emit({ kind: "action.started", sessionId: state.sessionId, turnId: state.turnId, attributes: { actionId: action.actionId } });
+        },
+        onActionSettled: async (result) => {
+          await this.trace.emit({ kind: "action.settled", sessionId: state.sessionId, turnId: state.turnId, attributes: { actionId: result.execution.actionId, status: result.status } });
+        },
+      },
+    });
+    // A recovered executor may have settled this Turn while an old approval callback was waiting.
+    if (isTerminalState(state.kind)) return;
+    const resumedBatch: ToolBatchResult = completedResults.length === 0
+      ? executedBatch
+      : deepFreeze({
+          ...executedBatch,
+          results: plan.actions.map((action) => [...completedResults, ...executedBatch.results]
+            .find((result) => result.execution.actionId === action.actionId))
+            .filter((result): result is ToolExecutionResult => result !== undefined),
+          startedCount: completedResults.filter((result) => result.errorCode !== "TOOL_NOT_STARTED").length + executedBatch.startedCount,
+          syntheticCount: completedResults.filter((result) => result.errorCode === "TOOL_NOT_STARTED").length + executedBatch.syntheticCount,
+        });
+    const batch = this.#mergeRejectedResults(resumedBatch, state.phaseData["rejectedActionResults"]);
+    if (deferToolMessages) await this.#ensureOrderedToolMessages(state, plan.planId, batch.results);
+    await this.#commit(state, [...policyPublicStateEvents(publicStateUpdates), { type: "action.batch.settled", payload: toJson(batch) }], {
+      to: "deciding",
+      reason: "action settlement barrier reached",
+      patch: {
+        policyState: mergePolicyState(state, privateStateUpdates),
+        phaseData: { decisionPoint: "after_actions", actionBatch: toJson(batch) },
+      },
+    });
+  }
+
+  async #decide(state: AgentState, signal: AbortSignal): Promise<void> {
+    const point = state.phaseData["decisionPoint"] as StatePoint | undefined;
+    if (!point) throw new ContractError("deciding state is missing decisionPoint", "STATE_INVARIANT_FAILED");
+    const modelOutcome = state.phaseData["modelOutcome"] as unknown as ModelOutcome | undefined;
+    const actionBatch = state.phaseData["actionBatch"];
+    const question = point === "after_actions" ? pendingUserQuestion(actionBatch) : undefined;
+    if (question !== undefined) {
+      await this.#applyStateDecision(state, {
+        kind: "wait_for_input",
+        mode: "replace",
+        expectations: [{
+          kind: "user_input",
+          waitId: question.requestId,
+          requestId: question.requestId,
+          enteredAt: this.clock.now().toISOString(),
+          ...(question.prompt === undefined ? {} : { prompt: question.prompt }),
+        }],
+      }, {});
+      return;
+    }
+    const hostDefault = this.#hostDefaultDirective(point, state, modelOutcome);
+    const base = await this.#stateSnapshotBase(state, point, hostDefault);
+    const snapshot = this.#pointSnapshot(point, base, state, modelOutcome, actionBatch);
+    const decision = await this.policies.evaluateState({
+      point,
+      agent: policyAgent(state),
+      snapshot,
+      signal,
+    });
+    await this.#applyStateDecision(state, decision.directive, decision.privateStateUpdates, policyPublicStateEvents(decision.publicStateUpdates), this.#stateAttribution(decision));
+  }
+
+  async #stateSnapshotBase<P extends StatePoint>(
+    state: AgentState,
+    point: P,
+    hostDefaultDirective: StateDirectiveForPoint<P>,
+  ): Promise<StateSnapshotBase<P>> {
+    const hostDefault: StateCandidate<StateDirectiveForPoint<P>> = {
+      candidateId: `host-default:${state.turnId}:${state.revision}:${point}`,
+      source: { kind: "host_default" },
+      directive: hostDefaultDirective,
+      reason: { code: `host_default.${point}`, message: `AgentKernel default for ${point}.` },
+    };
+    return {
+      session: {
+        sessionId: state.sessionId,
+        status: state.sessionStatus,
+        pendingInputCount: await this.repository.pendingInputCount(state.sessionId),
+      },
+      turn: {
+        turnId: state.turnId,
+        state: state.turnState,
+        ...(state.turnOutcome === undefined ? {} : { outcome: state.turnOutcome }),
+        step: state.step,
+        modelAttempt: state.modelAttempt,
+        suspensionReasons: state.suspensionReasons,
+      },
+      hostDefault,
+      currentTurnMessages: Object.freeze((await this.messageStore.surfaceMessages(state.sessionId))
+        .filter((message) => message.producingTurnId === state.turnId)
+        .map((message) => message.message)),
+      latestEventSeq: (await this.repository.turnEvents(state.turnId)).at(-1)?.seq ?? state.causeEventSeq,
+    } as StateSnapshotBase<P>;
+  }
+
+  #hostDefaultDirective<P extends StatePoint>(point: P, state: AgentState, modelOutcome?: ModelOutcome): StateDirectiveForPoint<P> {
+    switch (point) {
+      case "after_model_without_actions": return {
+        kind: "complete_turn",
+        outcome: { reason: "assistant_stop", content: modelOutcome?.content ?? [] },
+      } as unknown as StateDirectiveForPoint<P>;
+      case "after_actions": return { kind: "continue_turn" } as StateDirectiveForPoint<P>;
+      case "on_turn_resume": return { kind: "continue_turn" } as StateDirectiveForPoint<P>;
+      case "on_llm_error": {
+        const llmError = state.phaseData["llmError"] as unknown as LlmErrorSnapshot;
+        return { kind: "fail_turn", cause: { kind: "llm_error", category: llmError.category, recoverable: llmError.recoverable }, error: { code: llmError.code, message: llmError.message } } as StateDirectiveForPoint<P>;
+      }
+    }
+  }
+
+  #pointSnapshot(
+    point: StatePoint,
+    base: StateSnapshotBase,
+    state: AgentState,
+    modelOutcome: ModelOutcome | undefined,
+    actionBatch: JsonValue | undefined,
+  ): StateSnapshot {
+    switch (point) {
+      case "after_model_without_actions": {
+        if (!modelOutcome) throw new ContractError("after_model_without_actions requires modelOutcome", "STATE_INVARIANT_FAILED");
+        return { ...base, modelOutcome } as StateSnapshot<"after_model_without_actions">;
+      }
+      case "after_actions": {
+        if (actionBatch === undefined) throw new ContractError("after_actions requires actionBatch", "STATE_INVARIANT_FAILED");
+        return { ...base, actionBatch } as StateSnapshot<"after_actions">;
+      }
+      case "on_turn_resume": return {
+        ...base,
+        resumeCause: { kind: "manual_resume" },
+        checkpoint: state.phaseData,
+      } as StateSnapshot<"on_turn_resume">;
+      case "on_llm_error": return {
+        ...base,
+        llmError: state.phaseData["llmError"] as unknown as LlmErrorSnapshot,
+        contextRepair: state.phaseData["contextRepair"] as unknown as StateSnapshot<"on_llm_error">["contextRepair"],
+      } as StateSnapshot<"on_llm_error">;
+    }
+  }
+
+  #stateAttribution(decision: Awaited<ReturnType<PolicyRuntime["evaluateState"]>>): {
+    readonly resolutionId: string;
+    readonly contributions: readonly {
+      readonly componentId: string;
+      readonly proposalId: string;
+      readonly appliedEffectId: string;
+      readonly parentTraceId: string;
+    }[];
+  } | undefined {
+    if (decision.appliedEffects.length === 0) return undefined;
+    return {
+      resolutionId: decision.resolutionId,
+      contributions: decision.appliedEffects.map((effect) => ({
+        componentId: effect.proposal.componentId,
+        proposalId: effect.proposal.proposalId,
+        appliedEffectId: effect.appliedEffectId,
+        parentTraceId: effect.appliedEffectTraceId,
+      })),
+    };
+  }
+
+  async #applyStateDecision(
+    state: AgentState,
+    request: StateDirective,
+    privateStateUpdates: Readonly<Record<string, JsonValue>>,
+    precedingEvents: readonly EventInput[] = [],
+    attribution?: {
+      readonly resolutionId: string;
+      readonly contributions: readonly { readonly componentId: string; readonly proposalId: string; readonly appliedEffectId: string; readonly parentTraceId: string }[];
+    },
+  ): Promise<void> {
+    const settlesTurn = request.kind === "complete_turn" || request.kind === "advance_turn" || request.kind === "wait_for_input" || request.kind === "block_turn" || request.kind === "fail_turn";
+    const target = transitionFor(request);
+    const retryBackoff = request.kind === "retry_model" && request.delayMs !== undefined && request.delayMs > 0
+      ? (() => {
+          const enteredAt = this.clock.now();
+          return [{
+            kind: "retry_backoff" as const,
+            waitId: `retry:${state.turnId}:${state.modelAttempt + 1}`,
+            enteredAt: enteredAt.toISOString(),
+            attempt: state.modelAttempt + 1,
+            retryClass: request.retryClass,
+            resumeAt: new Date(enteredAt.getTime() + request.delayMs).toISOString(),
+          }];
+        })()
+      : undefined;
+    const soleContribution = attribution?.contributions.length === 1 ? attribution.contributions[0] : undefined;
+    await this.trace.emit({
+      kind: "state.transition.requested",
+      sessionId: state.sessionId,
+      turnId: state.turnId,
+      ...(attribution === undefined ? {} : {
+        resolutionId: attribution.resolutionId,
+        ...(soleContribution === undefined ? {} : {
+          componentId: soleContribution.componentId,
+          proposalId: soleContribution.proposalId,
+          appliedEffectId: soleContribution.appliedEffectId,
+        }),
+        parentIds: attribution.contributions.map((item) => item.parentTraceId),
+      }),
+      attributes: {
+        from: state.kind,
+        to: target.to,
+        requestKind: request.kind,
+        ...(attribution === undefined ? {} : { contributions: attribution.contributions as unknown as JsonValue }),
+      },
+    });
+    const next = await this.#commit(state, [
+      ...precedingEvents,
+      ...(settlesTurn ? [{
+        type: request.kind === "wait_for_input" ? "turn.waiting"
+          : request.kind === "block_turn" ? "turn.blocked"
+            : request.kind === "fail_turn" ? "turn.failed"
+              : "turn.completed",
+        payload: request.kind === "complete_turn" && request.outcome !== undefined ? { outcome: request.outcome } : toJson(request),
+      }] : []),
+      { type: "state.transition.requested", payload: toJson(request) },
+    ], {
+      to: target.to,
+      reason: target.reason,
+      patch: {
+        ...(request.kind === "retry_model" ? { modelAttempt: state.modelAttempt + 1 } : {}),
+        ...(request.kind === "continue_turn" ? { step: state.step + 1, modelAttempt: 0 } : {}),
+        ...(request.kind === "suspend_turn" ? {
+          suspensionReasons: request.mode === "replace"
+            ? request.reasons
+            : [...new Map([...state.suspensionReasons, ...request.reasons].map((reason) => [reason.waitId, reason])).values()],
+        } : {}),
+        ...(retryBackoff === undefined && request.kind !== "suspend_turn" ? { suspensionReasons: [] } : {}),
+        ...(retryBackoff === undefined ? {} : { suspensionReasons: retryBackoff }),
+        policyState: mergePolicyState(state, privateStateUpdates),
+        phaseData: target.phaseData,
+      },
+    });
+    await this.trace.emit({ kind: "state.transition.committed", sessionId: state.sessionId, turnId: state.turnId, attributes: { from: state.kind, to: next.kind, revision: next.revision } });
+  }
+
+  async #commit(state: AgentState, events: readonly EventInput[], transition: Parameters<TurnRepository["commit"]>[0]["transition"]): Promise<AgentState> {
+    const settlesTurn = isTerminalState(transition.to);
+    const durableTransition = settlesTurn
+      ? {
+          ...transition,
+          patch: {
+            ...transition.patch,
+            messageEndSeq: await this.#captureMessageEndSeq(state.sessionId),
+          },
+        }
+      : transition;
+    const committed = await this.repository.commit({
+      turnId: state.turnId,
+      expectedRevision: state.revision,
+      expectedKind: state.kind,
+      events,
+      transition: durableTransition,
+    });
+    if (committed.kind === "invoking_model") {
+      const plan = committed.phaseData["modelRequestPlan"] as unknown as ModelRequestPlan;
+      this.#freshModelAttempts.add(this.#modelAttemptKey(committed.turnId, plan.planId, committed.modelAttempt));
+    }
+    return committed;
+  }
+
+  /** Serialize the immutable Turn boundary with asynchronous runtime-message submission. */
+  #captureMessageEndSeq(sessionId: string): Promise<number> {
+    const capture = this.#runtimeMessageTail.then(() => this.messageStore.latestSeq(sessionId));
+    this.#runtimeMessageTail = capture.then(() => undefined, () => undefined);
+    return capture;
+  }
+
+  #modelAttemptKey(turnId: string, planId: string, attempt: number): string {
+    return `${turnId}:${planId}:${attempt}`;
+  }
+
+  async #settleFailedCalls(state: AgentState, causeCode: string): Promise<void> {
+    const events = await this.repository.turnEvents(state.turnId);
+    // An internal failure can occur after the model outcome or its tool results were saved.
+    const event = events.findLast(item => item.type === "model.completed");
+    if (event !== undefined) {
+      const checkpoint = events.findLast(item => item.seq < event.seq && item.type === "state.committed");
+      const step = (checkpoint?.payload as JsonObject | undefined)?.["step"];
+      if (typeof step !== "number" || !Number.isSafeInteger(step) || step < 0) {
+        throw new ContractError("Model outcome has no recorded step", "MODEL_MESSAGE_SOURCE_MISSING");
+      }
+      // The last result may belong to the preceding step, whose messages are already saved.
+      const messageState = { ...state, step };
+      const outcome = event.payload as unknown as ModelOutcome;
+      if (state.kind === "planning_actions") await this.#messageCommitter.ensureAssistant(messageState, outcome);
+      for (const [ordinal, call] of (outcome.toolCalls ?? []).entries()) {
+        const matching = (item: typeof event) => item.seq > event.seq && item.type === "tool.result" && (item.payload as JsonObject)["callId"] === call.id;
+        const saved = events.find(matching);
+        if (saved !== undefined) {
+          // A previous attempt may have committed the result but not its message.
+          const payload = saved.payload as unknown as ToolExecutionResult;
+          await this.#messageCommitter.ensureTool(messageState, { ...payload, execution: saved.payload as unknown as ToolExecutionResult["execution"] }, saved);
+          continue;
+        }
+        const dispatched = events.find(item => item.seq > event.seq && item.type === "tool.dispatch.started" && (item.payload as JsonObject)["callId"] === call.id);
+        let args: JsonValue;
+        try { args = JSON.parse(call.arguments) as JsonValue; } catch { args = { rawText: call.arguments }; }
+        const result: ToolExecutionResult = {
+          execution: dispatched === undefined
+            ? { sessionId: state.sessionId, turnId: state.turnId, actionId: `terminated:${call.id}`, callId: call.id, name: call.name, arguments: args, ordinal }
+            : (dispatched.payload as unknown as ToolExecutionResult["execution"]),
+          status: "cancelled", isError: true,
+          errorCode: dispatched ? "TOOL_EXECUTION_INTERRUPTED" : "TOOL_NOT_STARTED",
+          content: [{ type: "text", text: dispatched
+            ? "The turn failed. This execution's external result is unknown; do not repeat it automatically."
+            : "The turn failed before this tool was executed." }],
+        };
+        const [source] = await this.repository.appendEvents(state.turnId, [{ type: "tool.result", payload: {
+          ...toJsonObject(result.execution), status: result.status, isError: true, errorCode: result.errorCode!,
+          content: result.content as unknown as JsonValue, syntheticKind: "turn_termination", causeCode,
+        } }]);
+        await this.#messageCommitter.ensureTool(messageState, result, source!);
+      }
+    }
+  }
+
+  async #failInternal(turnId: string, error: unknown): Promise<void> {
+    const message = errorMessage(error);
+    const code = error instanceof ContractError ? error.code : "AGENT_KERNEL_FAILED";
+    const failures: unknown[] = [error];
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      try {
+        const state = await this.repository.loadState(turnId);
+        if (isTerminalState(state.kind)) {
+          if (state.kind === "interrupted") return;
+          // Preserve the committed result, but report an error after that commit to the Host.
+          throw error;
+        }
+        if (error instanceof ToolExecutionSuspended && state.kind === "paused"
+          && state.suspensionReasons.some(reason => (reason.kind === "approval" || reason.kind === "human_input") && reason.requestId === error.requestId)) return;
+        await this.#settleFailedCalls(state, code);
+        await this.repository.commit({
+          turnId,
+          expectedRevision: state.revision,
+          expectedKind: state.kind,
+          events: [{ type: "turn.failed", payload: { code, message } }],
+          transition: {
+            to: "failed",
+            reason: message,
+            patch: {
+              sessionStatus: {
+                kind: "system_error",
+                error: { code, message, recoverable: false, occurredAt: this.clock.now().toISOString() },
+              },
+              messageEndSeq: await this.#captureMessageEndSeq(state.sessionId),
+              phaseData: { cause: { kind: "internal_error", code }, error: { code, message } },
+            },
+          },
+        });
+        return;
+      } catch (commitError) {
+        if (commitError === error) throw error;
+        failures.push(commitError);
+        // Retry version conflicts only; report other settlement errors to the Host.
+        if (!(commitError instanceof StateConflictError)) break;
+      }
+    }
+    throw new AggregateError(failures, `Turn ${turnId} failed (${code}: ${message}) and failure settlement could not complete`);
+  }
+}

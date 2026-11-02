@@ -1,0 +1,69 @@
+import type { Root, RootContent } from "mdast";
+import type {} from "remark-math";
+
+const ENVIRONMENT_START = /^\\begin\{([a-zA-Z]+\*?)\}/u;
+
+/** Repair model-produced multiline environments, but never scan Markdown code as math. */
+export function remarkMultilineMath(this: { parse(value: string): unknown }) {
+  const parse = this.parse.bind(this);
+  return (tree: Root, file: { value: unknown }): void => {
+    let source = String(file.value);
+    // A malformed block may have swallowed later Markdown (including code fences).
+    // Reparse after closing it before considering the newly exposed nodes. Each pass
+    // separates an attached boundary; already standalone boundaries are never edited.
+    while (true) {
+      const insertions = new Map<number, string>();
+      const visit = (node: Root | RootContent): void => {
+        if (node.type === "math" && node.position) {
+          const start = node.position.start.offset;
+          const end = node.position.end.offset;
+          if (start === undefined || end === undefined) return;
+          const raw = source.slice(start, end);
+          const opening = /^(\${2,})([^\r\n]*)(?:\r\n|\n|\r)/u.exec(raw);
+          const environment = ENVIRONMENT_START.exec(node.meta?.trim() || node.value.trimStart());
+          if (!opening || !environment) return;
+          const prefix = source.slice(source.lastIndexOf("\n", start - 1) + 1, start);
+          // Preserve indentation/blockquote containers; do not invent list markers.
+          if (!/^[\t >]*$/u.test(prefix)) return;
+          const newline = raw.includes("\r\n") ? "\r\n" : "\n";
+          if (ENVIRONMENT_START.test(opening[2]!.trim())) {
+            insertions.set(start + opening[1]!.length, newline + prefix);
+          }
+          // Commands such as \tag{4} may follow \end{aligned}. Keep that entire
+          // suffix inside the formula; only move the final dollar fence to a new line.
+          const dollars = "\\$".repeat(opening[1]!.length);
+          const closing = new RegExp(String.raw`\\end\{${environment[1]!.replace("*", "\\*")}\}[^\r\n]*?(${dollars})(?!\$)(?=[ \t]*(?:\r?\n|$))`, "u").exec(raw);
+          if (closing) {
+            const offset = start + closing.index + closing[0].length - closing[1]!.length;
+            insertions.set(offset, newline + prefix);
+          }
+        } else if ("children" in node) node.children.forEach(visit);
+      };
+      visit(tree);
+      if (insertions.size === 0) break;
+      for (const [offset, text] of [...insertions].sort(([left], [right]) => right - left)) {
+        source = source.slice(0, offset) + text + source.slice(offset);
+      }
+      // Only the renderer's temporary input changes, never the stored message.
+      file.value = source;
+      Object.assign(tree, parse(source) as Root);
+    }
+
+    const pending = (node: Root | RootContent): void => {
+      if (!("children" in node)) return;
+      node.children = node.children.map(child => {
+        if (child.type === "math" && child.position && ENVIRONMENT_START.test(child.value.trimStart())) {
+          const raw = source.slice(child.position.start.offset, child.position.end.offset);
+          const fence = /^\${2,}/u.exec(raw)?.[0];
+          const lastLine = raw.split(/\r\n|\n|\r/u).at(-1)?.replace(/^[\t >]*/u, "").trimEnd();
+          if (fence && lastLine !== fence) {
+            return { type: "paragraph" as const, children: [{ type: "text" as const, value: raw }] };
+          }
+        }
+        pending(child);
+        return child;
+      }) as typeof node.children;
+    };
+    pending(tree);
+  };
+}

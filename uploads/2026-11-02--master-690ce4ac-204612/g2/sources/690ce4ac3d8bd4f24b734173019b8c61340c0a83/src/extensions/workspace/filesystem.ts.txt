@@ -1,0 +1,407 @@
+import { workspaceToolSchemas } from "./schemas.js";
+import { spawn } from "node:child_process";
+import { randomUUID } from "node:crypto";
+import { chmod, mkdir, mkdtemp, readFile, readdir, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
+import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { ContractError } from "../../kernel/api/foundation/errors.js";
+import { sha256, type JsonValue } from "../../kernel/api/foundation/json.js";
+import { defaultHarnessStateDirectory } from "../../kernel/api/foundation/storage-path.js";
+import type { ContentBlock } from "../../kernel/api/model/types.js";
+import type { ToolDefinition, ToolPermissionTarget } from "../../kernel/api/tool/types.js";
+import { EXECUTION_UPDATE_SERVICE } from "../../kernel/api/service/core-services.js";
+import { defineTool, objectValue, optionalBoolean, optionalNumber, optionalString, stringValue } from "../common/tool-definition/definition.js";
+import type { PermissionMode } from "../../kernel/api/foundation/permission-mode.js";
+import type { ToolTurnContext } from "../../kernel/api/tool/types.js";
+import { canonicalFileTarget } from "./filesystem-paths.js";
+import { assertMutationScope, resourceMutationScopes } from "../common/execution-constraints/resource-scope.js";
+
+interface Observation { readonly digest: string; readonly size: number; readonly modifiedMs: number }
+
+export interface BuiltinFilesystemOptions {
+  readonly workspaceRoot: string;
+  readonly additionalDirectories?: readonly string[];
+  readonly artifactDirectory?: string;
+  readonly permissionMode: PermissionMode;
+  readonly artifactRoots?: readonly string[];
+}
+
+export interface BuiltinFilesystemTools {
+  readonly definitions: readonly ToolDefinition[];
+  readonly observations: ReadonlyMap<string, Observation>;
+  resolveCurrentRoot(): Promise<{ readonly path: string; readonly recoveredFrom?: string }>;
+  enterRoot(path: string): Promise<void>;
+  updateRoot(path: string, expectedCurrentRoot?: string): Promise<"updated" | "outside" | "invalid" | "stale">;
+  resetRoot(): void;
+}
+
+const IMAGE_MIME: Readonly<Record<string, "image/jpeg" | "image/png" | "image/gif" | "image/webp">> = {
+  ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".gif": "image/gif", ".webp": "image/webp",
+};
+
+function inside(root: string, path: string): boolean {
+  const value = relative(root, path);
+  return value === "" || (!value.startsWith(`..${sep}`) && value !== ".." && !isAbsolute(value));
+}
+
+function numbered(content: string, start: number): string {
+  return content.split("\n").map((line, index) => `${String(start + index).padStart(6, " ")}\t${line}`).join("\n");
+}
+
+async function native(command: string, args: readonly string[], cwd: string, signal?: AbortSignal): Promise<{ readonly code: number; readonly stdout: string; readonly stderr: string }> {
+  return new Promise((resolveRun, rejectRun) => {
+    const child = spawn(command, [...args], { cwd, stdio: ["ignore", "pipe", "pipe"], ...(signal === undefined ? {} : { signal }) });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => { stdout += chunk; });
+    child.stderr.on("data", (chunk: string) => { stderr += chunk; });
+    child.once("error", rejectRun);
+    child.once("close", (code) => resolveRun({ code: code ?? 1, stdout, stderr }));
+  });
+}
+
+async function atomicWrite(path: string, content: string, mode?: number): Promise<void> {
+  const temporary = join(dirname(path), `.${basename(path)}.${randomUUID()}.tmp`);
+  await writeFile(temporary, content, { encoding: "utf8", mode: mode ?? 0o600, flag: "wx" });
+  if (mode !== undefined) await chmod(temporary, mode);
+  await rename(temporary, path);
+}
+
+function textRender(_args: JsonValue, raw: JsonValue): readonly ContentBlock[] {
+  const value = objectValue(raw, "Read output");
+  if (value["type"] === "image") {
+    const file = objectValue(value["file"] ?? {}, "Read image");
+    const base64 = stringValue(file, "base64");
+    const mime = stringValue(file, "type");
+    return [{ type: "image_url", imageUrl: `data:${mime};base64,${base64}`, detail: "auto" }];
+  }
+  if (value["type"] === "text") {
+    const file = objectValue(value["file"] ?? {}, "Read text");
+    const content = stringValue(file, "content");
+    const start = typeof file["startLine"] === "number" ? file["startLine"] : 1;
+    const total = typeof file["totalLines"] === "number" ? file["totalLines"] : content.split("\n").length;
+    const end = start + Math.max(0, content.split("\n").length - 1);
+    const notice = file["truncatedByTokenCap"] === true ? "\n[PARTIAL view: use offset and limit to continue]" : "";
+    return [{ type: "text", text: `${numbered(content, start)}\n[lines ${start}-${end} of ${total}]${notice}` }];
+  }
+  if (value["type"] === "notebook") return [{ type: "text", text: JSON.stringify(value["file"], null, 2) }];
+  if (value["type"] === "pdf") {
+    const file = objectValue(value["file"] ?? {}, "Read PDF");
+    const images = Array.isArray(file["images"]) ? file["images"] : [];
+    return [
+      { type: "text", text: `PDF file: ${String(file["filePath"])} (${String(file["originalSize"])} bytes), rendered pages ${String(file["pages"])}.` },
+      ...images.flatMap((item): ContentBlock[] => {
+        if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+        const image = item as Readonly<Record<string, JsonValue>>;
+        return typeof image["base64"] === "string" ? [{ type: "image_url", imageUrl: `data:image/png;base64,${image["base64"]}`, detail: "high" }] : [];
+      }),
+    ];
+  }
+  return [{ type: "text", text: JSON.stringify(raw) }];
+}
+
+function boundedDiff(before: string, after: string, maximumLines = 40): string {
+  const oldLines = before.split("\n");
+  const newLines = after.split("\n");
+  let prefix = 0;
+  while (prefix < oldLines.length && prefix < newLines.length && oldLines[prefix] === newLines[prefix]) prefix += 1;
+  let suffix = 0;
+  while (suffix < oldLines.length - prefix && suffix < newLines.length - prefix
+    && oldLines[oldLines.length - 1 - suffix] === newLines[newLines.length - 1 - suffix]) suffix += 1;
+  const oldChanged = oldLines.slice(prefix, oldLines.length - suffix);
+  const newChanged = newLines.slice(prefix, newLines.length - suffix);
+  const available = Math.max(2, maximumLines - 3);
+  const oldLimit = Math.max(1, Math.floor(available / 2));
+  const newLimit = Math.max(1, available - oldLimit);
+  const oldShown = oldChanged.slice(0, oldLimit);
+  const newShown = newChanged.slice(0, newLimit);
+  const omitted = oldChanged.length - oldShown.length + newChanged.length - newShown.length;
+  return [
+    `@@ line ${prefix + 1} @@`,
+    ...oldShown.map((line) => `-${line}`),
+    ...newShown.map((line) => `+${line}`),
+    ...(omitted > 0 ? [`... ${omitted} changed lines omitted ...`] : []),
+  ].join("\n");
+}
+
+function editRender(_args: JsonValue, raw: JsonValue): readonly ContentBlock[] {
+  const value = objectValue(raw, "Edit output");
+  const path = stringValue(value, "filePath");
+  const count = typeof value["matchCount"] === "number" ? value["matchCount"] : 1;
+  return [{ type: "text", text: `Updated ${path} successfully (${count} replacement${count === 1 ? "" : "s"}).\n${boundedDiff(stringValue(value, "oldString"), stringValue(value, "newString"), 24)}` }];
+}
+
+function writeRender(_args: JsonValue, raw: JsonValue): readonly ContentBlock[] {
+  const value = objectValue(raw, "Write output");
+  const path = stringValue(value, "filePath");
+  return [{ type: "text", text: `${value["type"] === "create" ? "Created" : "Updated"} ${path} successfully.` }];
+}
+
+function notebookRender(_args: JsonValue, raw: JsonValue): readonly ContentBlock[] {
+  const value = objectValue(raw, "NotebookEdit output");
+  const mode = stringValue(value, "edit_mode");
+  const action = mode === "insert" ? "Inserted" : mode === "delete" ? "Deleted" : "Updated";
+  const summary = `${action} cell ${stringValue(value, "cell_id")} in ${stringValue(value, "notebook_path")}.`;
+  return [{ type: "text", text: mode === "delete" ? summary : `${summary}\n${stringValue(value, "new_source")}` }];
+}
+
+export async function createBuiltinFilesystemTools(options: BuiltinFilesystemOptions): Promise<BuiltinFilesystemTools> {
+  const root = await realpath(resolve(options.workspaceRoot));
+  const additional = await Promise.all((options.additionalDirectories ?? []).map((path) => realpath(resolve(path))));
+  const pdfTemporaryRoot = resolve(options.artifactDirectory ?? join(defaultHarnessStateDirectory(), "tmp"), "pdf");
+  const roots = [root, ...additional];
+  const aliases = [options.workspaceRoot, ...(options.additionalDirectories ?? [])].map((path, index) => ({ input: resolve(path), canonical: roots[index]! }));
+  const observations = new Map<string, Observation>();
+  let cwd = root;
+  let cwdBoundary = root;
+
+  const directory = async (path: string): Promise<string | undefined> => {
+    try {
+      const candidate = await realpath(resolve(path));
+      return (await stat(candidate)).isDirectory() ? candidate : undefined;
+    } catch (error) {
+      const code = error && typeof error === "object" && "code" in error ? String((error as { readonly code?: unknown }).code) : undefined;
+      if (code === "ENOENT" || code === "ENOTDIR") return undefined;
+      throw error;
+    }
+  };
+
+  const resolveCurrentRoot = async (): Promise<{ readonly path: string; readonly recoveredFrom?: string }> => {
+    const boundary = await directory(cwdBoundary);
+    if (boundary === undefined) {
+      throw new ContractError("The active workspace directory no longer exists", "WORKSPACE_ROOT_UNAVAILABLE");
+    }
+    cwdBoundary = boundary;
+    const current = await directory(cwd);
+    if (current !== undefined && inside(boundary, current)) {
+      cwd = current;
+      return { path: current };
+    }
+    const recoveredFrom = cwd;
+    cwd = boundary;
+    return { path: boundary, recoveredFrom };
+  };
+
+  const isTrusted = (path: string): boolean => roots.some((candidate) => inside(candidate, path)) || inside(cwd, path);
+  const lexical = (input: string): string => {
+    // Use the same stable workspace base as search and LSP. A shell cd or
+    // worktree switch must not retarget a relative path while approval waits.
+    const absolute = resolve(root, input);
+    const alias = aliases.find((candidate) => inside(candidate.input, absolute));
+    return alias === undefined ? absolute : resolve(alias.canonical, relative(alias.input, absolute));
+  };
+  const existing = async (input: string): Promise<string> => realpath(lexical(input));
+  const target = async (input: string): Promise<{ readonly path: string; readonly exists: boolean }> => {
+    const path = lexical(input);
+    try {
+      return { path: await realpath(path), exists: true };
+    } catch (error) {
+      const code = error && typeof error === "object" && "code" in error ? (error as { readonly code?: unknown }).code : undefined;
+      if (code !== "ENOENT") throw error;
+      return { path: canonicalFileTarget(path), exists: false };
+    }
+  };
+  const assertWritable = async (action: string, path: string, context: ToolTurnContext): Promise<void> => {
+    const scopes = resourceMutationScopes(context.executionConstraints);
+    assertMutationScope(scopes, action, path);
+    const scopedArtifact = scopes.length > 0
+      && (options.artifactRoots ?? []).some((root) => inside(canonicalFileTarget(root), path));
+    if (scopedArtifact) return;
+    if (options.permissionMode === "read-only") throw new ContractError("The current permission mode is read-only", "FILE_WRITE_DENIED");
+    if (options.permissionMode !== "danger-full-access" && !isTrusted(path)) throw new ContractError("The path is outside the writable workspace", "FILE_WRITE_OUTSIDE_WORKSPACE");
+  };
+  const permission = (action: string, path: string, mutates: boolean): ToolPermissionTarget => {
+    // Permission targets must match execution's canonical paths, including
+    // alternate aliases of the workspace and symlinks that escape its boundary.
+    const canonical = canonicalFileTarget(path);
+    return { action, resource: canonical, mutates, permissionRequired: !(options.artifactRoots ?? []).some((root) => inside(canonicalFileTarget(root), canonical)) && (mutates || !isTrusted(canonical)), description: `${action} ${canonical}` };
+  };
+  const observe = async (path: string, content: Buffer | string): Promise<void> => {
+    const metadata = await stat(path);
+    observations.set(path, { digest: sha256(content), size: metadata.size, modifiedMs: metadata.mtimeMs });
+  };
+
+  const read = defineTool(workspaceToolSchemas.Read, {
+    parallel: true,
+    permission: (raw) => permission("Read", lexical(stringValue(objectValue(raw, "Read"), "file_path")), false),
+    render: textRender,
+    execute: async (raw, context) => {
+      const args = objectValue(raw, "Read");
+      const path = await existing(stringValue(args, "file_path"));
+      const metadata = await stat(path);
+      if (!metadata.isFile()) throw new ContractError("Read accepts files, not directories", "FILE_READ_NOT_FILE");
+      const extension = extname(path).toLowerCase();
+      const imageMime = IMAGE_MIME[extension];
+      if (imageMime) {
+        const data = await readFile(path);
+        if (data.byteLength > 25 * 1024 * 1024) throw new ContractError("Image exceeds the 25 MiB read limit", "FILE_READ_IMAGE_TOO_LARGE");
+        await observe(path, data);
+        return { type: "image", file: { base64: data.toString("base64"), type: imageMime, originalSize: data.byteLength } };
+      }
+      if (extension === ".pdf") {
+        const data = await readFile(path);
+        if (data.byteLength > 10 * 1024 * 1024) throw new ContractError("PDF exceeds the 10 MiB local read limit", "FILE_READ_PDF_TOO_LARGE");
+        const pages = optionalString(args, "pages");
+        if (pages && !/^\d+(?:-\d+)?$/u.test(pages)) throw new ContractError("pages must be a page or range such as 1-5", "FILE_READ_PAGES_INVALID");
+        const [from, to] = pages?.includes("-") ? pages.split("-").map(Number) : [Number(pages ?? 1), Number(pages ?? 20)];
+        if (from === undefined || to === undefined || from < 1 || to < from || to - from + 1 > 20) throw new ContractError("PDF page ranges are limited to twenty pages", "FILE_READ_PAGES_INVALID");
+        await mkdir(pdfTemporaryRoot, { recursive: true, mode: 0o700 });
+        const temporary = await mkdtemp(join(pdfTemporaryRoot, "read-"));
+        let images: JsonValue[];
+        try {
+          const prefix = join(temporary, "page");
+          // Every pdftoppm path is absolute, so its process does not need the mutable session cwd.
+          // The temporary directory is guaranteed to exist for this operation even if a workspace
+          // subdirectory was removed concurrently.
+          const rendered = await native("pdftoppm", ["-f", String(from), "-l", String(to), "-r", "120", "-png", path, prefix], temporary, context.signal);
+          if (rendered.code !== 0) throw new ContractError(rendered.stderr.trim() || "Unable to render PDF pages", "FILE_READ_PDF_RENDER_FAILED");
+          const renderedFiles = (await readdir(temporary)).filter((name) => name.endsWith(".png")).sort((left, right) => left.localeCompare(right, "en", { numeric: true }));
+          if (renderedFiles.length === 0) throw new ContractError("The requested PDF pages are outside the document", "FILE_READ_PAGES_OUT_OF_RANGE");
+          images = await Promise.all(renderedFiles.map(async (name, index) => ({ page: from + index, base64: (await readFile(join(temporary, name))).toString("base64") })));
+        } finally {
+          await rm(temporary, { recursive: true, force: true });
+        }
+        await observe(path, data);
+        return { type: "pdf", file: { filePath: path, originalSize: data.byteLength, pages: `${from}-${Math.min(to, from + images.length - 1)}`, images } };
+      }
+      const content = await readFile(path, "utf8");
+      if (content.includes("\0")) throw new ContractError("The file appears to be binary and is not a supported image, PDF, notebook, or text file", "FILE_READ_BINARY_UNSUPPORTED");
+      const lines = content.split("\n");
+      const offset = Math.max(1, Math.floor(optionalNumber(args, "offset") ?? 1));
+      const requested = Math.max(1, Math.floor(optionalNumber(args, "limit") ?? lines.length));
+      const selected: string[] = [];
+      let characters = 0;
+      let truncated = false;
+      for (const line of lines.slice(offset - 1, offset - 1 + requested)) {
+        if (selected.length > 0 && characters + line.length + 1 > 120_000) {
+          truncated = true;
+          break;
+        }
+        selected.push(line);
+        characters += line.length + 1;
+      }
+      await observe(path, content);
+      return { type: "text", file: { filePath: path, content: selected.join("\n"), numLines: selected.length, startLine: offset, totalLines: lines.length, ...(truncated ? { truncatedByTokenCap: true } : {}) } };
+    },
+  });
+
+  const edit = defineTool(workspaceToolSchemas.Edit, {
+    render: editRender,
+    permission: (raw) => permission("Edit", lexical(stringValue(objectValue(raw, "Edit"), "file_path")), true),
+    execute: async (raw, context) => {
+      const args = objectValue(raw, "Edit");
+      const path = await existing(stringValue(args, "file_path"));
+      await assertWritable("Edit", path, context);
+      if (!observations.has(path)) throw new ContractError("Read the file before editing it", "FILE_EDIT_READ_REQUIRED");
+      const oldString = stringValue(args, "old_string");
+      const newString = stringValue(args, "new_string");
+      if (oldString === newString) throw new ContractError("new_string must differ from old_string", "FILE_EDIT_IDENTICAL");
+      if (oldString.length === 0) throw new ContractError("old_string must not be empty", "FILE_EDIT_EMPTY_MATCH");
+      const content = await readFile(path, "utf8");
+      if (observations.get(path)?.digest !== sha256(content)) throw new ContractError("The file changed after it was read; read it again before editing", "FILE_EDIT_STALE_OBSERVATION");
+      const count = content.split(oldString).length - 1;
+      if (count === 0) throw new ContractError("old_string was not found", "FILE_EDIT_NO_MATCH");
+      const replaceAll = optionalBoolean(args, "replace_all") === true;
+      if (!replaceAll && count !== 1) throw new ContractError(`old_string matched ${count} times; provide more context or set replace_all`, "FILE_EDIT_AMBIGUOUS");
+      const updated = replaceAll ? content.replaceAll(oldString, newString) : content.replace(oldString, newString);
+      const metadata = await stat(path);
+      await atomicWrite(path, updated, metadata.mode);
+      await observe(path, updated);
+      if (context.services.has(EXECUTION_UPDATE_SERVICE)) await context.services.call(EXECUTION_UPDATE_SERVICE, { kind: "progress", message: `Edit: ${relative(cwd, path)}` });
+      return { filePath: path, oldString, newString, originalFile: content, updatedFile: updated, replaceAll, matchCount: replaceAll ? count : 1 };
+    },
+  });
+
+  const write = defineTool(workspaceToolSchemas.Write, {
+    render: writeRender,
+    permission: (raw) => permission("Edit", lexical(stringValue(objectValue(raw, "Write"), "file_path")), true),
+    execute: async (raw, context) => {
+      const args = objectValue(raw, "Write");
+      const selected = await target(stringValue(args, "file_path"));
+      await assertWritable("Write", selected.path, context);
+      if (selected.exists && !observations.has(selected.path)) throw new ContractError("Read the existing file before overwriting it", "FILE_WRITE_READ_REQUIRED");
+      const content = stringValue(args, "content");
+      const previous = selected.exists ? await readFile(selected.path, "utf8") : undefined;
+      if (previous !== undefined && observations.get(selected.path)?.digest !== sha256(previous)) throw new ContractError("The file changed after it was read; read it again before overwriting", "FILE_WRITE_STALE_OBSERVATION");
+      const mode = selected.exists ? (await stat(selected.path)).mode : 0o600;
+      if (await realpath(dirname(selected.path)) !== dirname(selected.path)) throw new ContractError("The parent directory changed during the write", "FILE_WRITE_PATH_CHANGED");
+      await atomicWrite(selected.path, content, mode);
+      await observe(selected.path, content);
+      if (context.services.has(EXECUTION_UPDATE_SERVICE)) await context.services.call(EXECUTION_UPDATE_SERVICE, { kind: "progress", message: `Write: ${relative(cwd, selected.path)}` });
+      return { type: selected.exists ? "update" : "create", filePath: selected.path, content, ...(previous === undefined ? {} : { originalFile: previous }) };
+    },
+  });
+
+  const notebook = defineTool(workspaceToolSchemas.NotebookEdit, {
+    render: notebookRender,
+    permission: (raw) => permission("Edit", lexical(stringValue(objectValue(raw, "NotebookEdit"), "notebook_path")), true),
+    execute: async (raw, context) => {
+      const args = objectValue(raw, "NotebookEdit");
+      const path = await existing(stringValue(args, "notebook_path"));
+      await assertWritable("NotebookEdit", path, context);
+      if (!observations.has(path)) throw new ContractError("Read the notebook before editing it", "NOTEBOOK_EDIT_READ_REQUIRED");
+      const original = await readFile(path, "utf8");
+      if (observations.get(path)?.digest !== sha256(original)) throw new ContractError("The notebook changed after it was read; read it again before editing", "NOTEBOOK_EDIT_STALE_OBSERVATION");
+      const document = JSON.parse(original) as { cells?: Array<Record<string, unknown>>; metadata?: Record<string, unknown> };
+      if (!Array.isArray(document.cells)) throw new ContractError("Notebook has no cells array", "NOTEBOOK_INVALID");
+      const mode = optionalString(args, "edit_mode") ?? "replace";
+      const requestedId = optionalString(args, "cell_id");
+      const index = requestedId === undefined ? -1 : document.cells.findIndex((cell) => cell["id"] === requestedId || cell["cell_id"] === requestedId);
+      if (index < 0 && (mode !== "insert" || requestedId !== undefined)) throw new ContractError("Notebook cell was not found", "NOTEBOOK_CELL_NOT_FOUND");
+      const oldCell = index < 0 ? undefined : document.cells[index];
+      const oldSource = Array.isArray(oldCell?.["source"]) ? (oldCell!["source"] as string[]).join("") : String(oldCell?.["source"] ?? "");
+      const newSource = stringValue(args, "new_source");
+      const cellType = optionalString(args, "cell_type") ?? (mode === "insert" ? "code" : String(oldCell?.["cell_type"] ?? "code"));
+      let cellId = requestedId ?? "";
+      if (mode === "insert") {
+        const existingIds = new Set(document.cells.flatMap((cell) => [cell["id"], cell["cell_id"]]));
+        do { cellId = randomUUID(); } while (existingIds.has(cellId));
+        const cell = { cell_type: cellType, id: cellId, metadata: {}, source: newSource.split(/(?<=\n)/u), ...(cellType === "code" ? { execution_count: null, outputs: [] } : {}) };
+        document.cells.splice(index + 1, 0, cell);
+      } else if (mode === "delete") document.cells.splice(index, 1);
+      else {
+        const cell: Record<string, unknown> = { ...oldCell, cell_type: cellType, source: newSource.split(/(?<=\n)/u) };
+        if (cellType !== oldCell?.["cell_type"]) {
+          if (cellType === "code") {
+            cell["execution_count"] = null;
+            cell["outputs"] = [];
+            delete cell["attachments"];
+          } else {
+            delete cell["execution_count"];
+            delete cell["outputs"];
+          }
+        }
+        document.cells[index] = cell;
+      }
+      const updated = `${JSON.stringify(document, null, 1)}\n`;
+      await atomicWrite(path, updated, (await stat(path)).mode);
+      await observe(path, updated);
+      if (context.services.has(EXECUTION_UPDATE_SERVICE)) await context.services.call(EXECUTION_UPDATE_SERVICE, { kind: "progress", message: `NotebookEdit: ${relative(cwd, path)}` });
+      const languageInfo = document.metadata?.["language_info"];
+      const languageRecord = languageInfo && typeof languageInfo === "object" && !Array.isArray(languageInfo) ? languageInfo as Record<string, unknown> : undefined;
+      const language = typeof languageRecord?.["name"] === "string" ? languageRecord["name"] : "unknown";
+      return { new_source: newSource, ...(mode === "insert" ? {} : { old_source: oldSource }), cell_id: cellId, cell_type: cellType, language, edit_mode: mode, notebook_path: path, original_file: original, updated_file: updated };
+    },
+  });
+
+  return Object.freeze({
+    definitions: Object.freeze([read, edit, write, notebook]),
+    observations,
+    resolveCurrentRoot,
+    enterRoot: async (path: string) => {
+      cwd = await realpath(resolve(path));
+      cwdBoundary = cwd;
+    },
+    updateRoot: async (path: string, expectedCurrentRoot?: string) => {
+      if (expectedCurrentRoot !== undefined && cwd !== expectedCurrentRoot) return "stale";
+      const candidate = await directory(path);
+      if (candidate === undefined) return "invalid";
+      if (!inside(cwdBoundary, candidate)) return "outside";
+      if (expectedCurrentRoot !== undefined && cwd !== expectedCurrentRoot) return "stale";
+      cwd = candidate;
+      return "updated";
+    },
+    resetRoot: () => { cwd = root; cwdBoundary = root; },
+  });
+}

@@ -1,0 +1,11 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/live-monitor-stop-scenario.ts
+export const MONITOR_READY_LINE = "发布广播已连接，当前发布窗口可用";
+export const monitorStopPrompt = (url: string) => `请通过WebSocket连接发布事件广播 ${url} 持续监听；这是连接地址，不是终端命令。不能靠计时到期停止监听；如果设置了安全期限，必须在到期前主动停止。确认收到第一条发布消息后立即主动停止这个监听，再核对它确实已经停止，并告诉我收到的消息。广播不会自行结束，不要一直等待广播结束；只查看当前已收到的输出即可。不运行终端命令、不访问文件、不使用网页抓取、不委派。`;
+export const LIVE_MONITOR_STOP_CASE: EvaluationCaseContract = {
+  contractVersion: 4, id: "assistant.live-monitor-stop", mode: "assistant", modelExecution: "live",
+  prompt: monitorStopPrompt("ws://127.0.0.1:<port>/release-events"), finalMarker: MONITOR_READY_LINE,
+  requiredTools: ["Monitor", "TaskOutput", "TaskStop"], requiredPolicyEvidence: ["builtin.model_tool_calls", "builtin.tool_scheduler"], toolSurface: "configured_plus_subagents",
+  artifactFiles: { sqliteAudit: "assistant-live-monitor-stop-sqlite-audit.json", timings: "assistant-live-monitor-stop-timings.json", serviceLog: "isolated-service.log" },
+  timingBudgetsMs: { durationMs: 300_000, refreshRecoveryMs: 10_000 },
+};

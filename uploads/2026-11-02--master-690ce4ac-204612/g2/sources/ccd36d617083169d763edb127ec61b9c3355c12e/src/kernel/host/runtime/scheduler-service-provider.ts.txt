@@ -1,0 +1,228 @@
+import { randomUUID } from "node:crypto";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { basename, dirname, join, resolve } from "node:path";
+import { BindingError, ContractError } from "../../api/foundation/errors.js";
+import { asJsonObject, type JsonValue } from "../../api/foundation/json.js";
+import {
+  SCHEDULER_SERVICE,
+  type ScheduledTaskRecord,
+  type SchedulerServiceRequest,
+  type SchedulerServiceResponse,
+} from "../../api/service/core-services.js";
+import type { CoreServiceProvider } from "../../api/service/provider.js";
+import type { CoreServiceGrant } from "../../api/service/types.js";
+
+interface MutableSchedule {
+  readonly id: string;
+  readonly sessionId: string;
+  readonly cron: string;
+  readonly prompt: string;
+  readonly recurring: boolean;
+  readonly durable: boolean;
+  readonly createdAt: string;
+  nextAt: string;
+}
+
+export interface SchedulerServiceProviderOptions {
+  readonly stateDirectory: string;
+  /** Limit this provider instance to one Host session while sharing the durable schedule file. */
+  readonly sessionId?: string;
+  readonly deliverPrompt?: (sessionId: string, prompt: string) => Promise<void>;
+  readonly onError?: (message: string) => void;
+}
+
+const scheduleFileLocks = new Map<string, Promise<void>>();
+
+function fieldMatches(field: string, value: number, minimum: number, maximum: number): boolean {
+  return field.split(",").some((part) => {
+    const [base = "*", stepRaw] = part.split("/", 2);
+    const step = stepRaw === undefined ? 1 : Number(stepRaw);
+    if (!Number.isSafeInteger(step) || step < 1) return false;
+    if (base === "*") return (value - minimum) % step === 0;
+    const range = /^(\d+)(?:-(\d+))?$/u.exec(base);
+    if (!range) return false;
+    const from = Number(range[1]);
+    const to = Number(range[2] ?? range[1]);
+    return from >= minimum && to <= maximum && value >= from && value <= to && (value - from) % step === 0;
+  });
+}
+
+function nextCron(expression: string, after = new Date()): Date {
+  const fields = expression.trim().split(/\s+/u);
+  if (fields.length !== 5) throw new ContractError("Cron expressions require five fields", "CRON_INVALID");
+  const [minute, hour, day, month, weekday] = fields as [string, string, string, string, string];
+  const candidate = new Date(after.getTime());
+  candidate.setSeconds(0, 0);
+  candidate.setMinutes(candidate.getMinutes() + 1);
+  for (let attempts = 0; attempts < 527_040; attempts += 1) {
+    const dayOfMonth = fieldMatches(day, candidate.getDate(), 1, 31);
+    const dayOfWeek = fieldMatches(weekday, candidate.getDay(), 0, 6);
+    const calendarDay = day === "*" && weekday === "*" ? true : day === "*" ? dayOfWeek : weekday === "*" ? dayOfMonth : dayOfMonth || dayOfWeek;
+    if (fieldMatches(minute, candidate.getMinutes(), 0, 59) && fieldMatches(hour, candidate.getHours(), 0, 23) && calendarDay && fieldMatches(month, candidate.getMonth() + 1, 1, 12)) return candidate;
+    candidate.setMinutes(candidate.getMinutes() + 1);
+  }
+  throw new ContractError("Cron expression has no matching time within one year", "CRON_NO_MATCH");
+}
+
+async function atomicJson(path: string, value: JsonValue): Promise<void> {
+  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+  const temporary = join(dirname(path), `.${basename(path)}.${randomUUID()}.tmp`);
+  await writeFile(temporary, `${JSON.stringify(value, null, 2)}\n`, { encoding: "utf8", mode: 0o600, flag: "wx" });
+  await rename(temporary, path);
+}
+
+function validateEmptyGrant(grant: CoreServiceGrant): void {
+  const permissions = asJsonObject(grant.permissions, `${grant.id}.permissions`);
+  const config = asJsonObject(grant.config, `${grant.id}.config`);
+  if (Object.keys(permissions).length > 0 || Object.keys(config).length > 0) {
+    throw new BindingError(`${grant.id} does not accept permission or configuration fields`, "CORE_SERVICE_GRANT_INVALID");
+  }
+}
+
+export async function createSchedulerServiceProvider(
+  options: SchedulerServiceProviderOptions,
+): Promise<CoreServiceProvider<SchedulerServiceRequest, SchedulerServiceResponse>> {
+  const path = join(resolve(options.stateDirectory), "scheduled_tasks.json");
+  const schedules = new Map<string, MutableSchedule>();
+  const timers = new Map<string, NodeJS.Timeout>();
+  const wakeups = new Map<string, NodeJS.Timeout>();
+  let closed = false;
+  let writeTail = Promise.resolve();
+  try {
+    const stored = JSON.parse(await readFile(path, "utf8")) as unknown;
+    if (Array.isArray(stored)) for (const item of stored) {
+      if (item && typeof item === "object" && !Array.isArray(item) && typeof (item as MutableSchedule).id === "string"
+        && (options.sessionId === undefined || (item as MutableSchedule).sessionId === options.sessionId)) {
+        schedules.set((item as MutableSchedule).id, item as MutableSchedule);
+      }
+    }
+  } catch (error) {
+    const code = error && typeof error === "object" && "code" in error ? (error as { readonly code?: unknown }).code : undefined;
+    if (code !== "ENOENT") throw error;
+  }
+  const persist = async (): Promise<void> => {
+    const operation = writeTail.then(async () => {
+      const prior = scheduleFileLocks.get(path) ?? Promise.resolve();
+      let release!: () => void;
+      const currentLock = new Promise<void>((resolveLock) => { release = resolveLock; });
+      scheduleFileLocks.set(path, prior.then(() => currentLock));
+      await prior;
+      try {
+        let otherSessions: MutableSchedule[] = [];
+        if (options.sessionId !== undefined) {
+          try {
+            const stored = JSON.parse(await readFile(path, "utf8")) as unknown;
+            if (Array.isArray(stored)) {
+              otherSessions = stored.filter((item): item is MutableSchedule => Boolean(
+                item && typeof item === "object" && !Array.isArray(item) && (item as MutableSchedule).sessionId !== options.sessionId,
+              ));
+            }
+          } catch (error) {
+            const code = error && typeof error === "object" && "code" in error ? (error as { readonly code?: unknown }).code : undefined;
+            if (code !== "ENOENT") throw error;
+          }
+        }
+        await atomicJson(path, [...otherSessions, ...schedules.values()].filter((item) => item.durable) as unknown as JsonValue);
+      } finally {
+        release();
+      }
+    });
+    writeTail = operation.catch(() => undefined);
+    await operation;
+  };
+  const deliver = async (sessionId: string, prompt: string): Promise<void> => {
+    if (options.deliverPrompt === undefined) throw new ContractError("Scheduled prompt delivery is unavailable in this Host", "SCHEDULER_UNAVAILABLE");
+    await options.deliverPrompt(sessionId, prompt);
+  };
+  const isActive = (schedule: MutableSchedule): boolean => !closed && schedules.get(schedule.id) === schedule;
+  const arm = (schedule: MutableSchedule): void => {
+    if (!isActive(schedule)) return;
+    timers.get(schedule.id)?.close();
+    const due = Math.max(1, new Date(schedule.nextAt).getTime() - Date.now());
+    const delay = Math.min(due, 2_147_483_647);
+    const timer = setTimeout(() => {
+      if (!isActive(schedule) || timers.get(schedule.id) !== timer) return;
+      timers.delete(schedule.id);
+      if (delay < due) { arm(schedule); return; }
+      void (async () => {
+        try {
+          await deliver(schedule.sessionId, schedule.prompt);
+          // Deletion/close can happen while the Host accepts the input. Do not
+          // revoke that delivery, but never rearm or persist its stale schedule.
+          if (!isActive(schedule)) return;
+          if (schedule.recurring && Date.now() - new Date(schedule.createdAt).getTime() < 7 * 24 * 60 * 60 * 1000) {
+            schedule.nextAt = nextCron(schedule.cron).toISOString();
+            arm(schedule);
+          } else schedules.delete(schedule.id);
+          if (schedule.durable) await persist();
+        } catch (error) {
+          options.onError?.(`Scheduled prompt ${schedule.id} failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+      })();
+    }, delay);
+    timer.unref();
+    timers.set(schedule.id, timer);
+  };
+  if (options.deliverPrompt !== undefined) schedules.forEach(arm);
+  return {
+    definition: SCHEDULER_SERVICE,
+    callers: ["tool"],
+    validateGrant: validateEmptyGrant,
+    invoke: async (context, request) => {
+      if (closed) throw new ContractError("Scheduler service is closed", "SCHEDULER_CLOSED");
+      if (context.sessionId === undefined) throw new ContractError("Scheduler service requires a session", "SCHEDULER_CONTEXT_REQUIRED");
+      if (options.sessionId !== undefined && context.sessionId !== options.sessionId) {
+        throw new ContractError("Scheduler service cannot cross its Host session boundary", "SCHEDULER_SESSION_MISMATCH");
+      }
+      if (request.operation === "create") {
+        if (options.deliverPrompt === undefined) throw new ContractError("Scheduled prompt delivery is unavailable in this Host", "SCHEDULER_UNAVAILABLE");
+        const task: MutableSchedule = {
+          id: `cron_${randomUUID()}`,
+          sessionId: context.sessionId,
+          cron: request.cron,
+          prompt: request.prompt,
+          recurring: request.recurring,
+          durable: request.durable,
+          createdAt: new Date().toISOString(),
+          nextAt: nextCron(request.cron).toISOString(),
+        };
+        schedules.set(task.id, task);
+        arm(task);
+        if (task.durable) await persist();
+        return { operation: "created", task: Object.freeze({ ...task }) as ScheduledTaskRecord };
+      }
+      if (request.operation === "delete") {
+        const task = schedules.get(request.id);
+        if (task === undefined || task.sessionId !== context.sessionId) throw new ContractError("Scheduled task was not found", "SCHEDULE_NOT_FOUND");
+        timers.get(task.id)?.close();
+        timers.delete(task.id);
+        schedules.delete(task.id);
+        if (task.durable) await persist();
+        return { operation: "deleted", id: task.id };
+      }
+      if (request.operation === "list") {
+        return { operation: "listed", tasks: Object.freeze([...schedules.values()].filter((item) => item.sessionId === context.sessionId).map((item) => Object.freeze({ ...item }))) };
+      }
+      wakeups.get(context.sessionId)?.close();
+      wakeups.delete(context.sessionId);
+      if (request.operation === "stop_wakeup") return { operation: "wakeup_stopped" };
+      if (options.deliverPrompt === undefined) throw new ContractError("Wake-up delivery is unavailable in this Host", "SCHEDULER_UNAVAILABLE");
+      const timer = setTimeout(() => {
+        if (closed || wakeups.get(context.sessionId!) !== timer) return;
+        wakeups.delete(context.sessionId!);
+        void deliver(context.sessionId!, request.prompt).catch((error) => options.onError?.(`Scheduled wake-up failed: ${error instanceof Error ? error.message : String(error)}`));
+      }, request.delaySeconds * 1000);
+      timer.unref();
+      wakeups.set(context.sessionId, timer);
+      return { operation: "wakeup_scheduled", delaySeconds: request.delaySeconds, reason: request.reason };
+    },
+    close: async () => {
+      closed = true;
+      timers.forEach((timer) => timer.close());
+      wakeups.forEach((timer) => timer.close());
+      timers.clear();
+      wakeups.clear();
+      await writeTail;
+    },
+  };
+}

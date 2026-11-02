@@ -1,0 +1,19 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/cases/standard-live-notebook-cell-edit.ts
+      originalNotebook,
+      expectedNotebook,
+    );
+    expect(audit.updatedNotebook, "SQLite NotebookEdit evidence disagrees with the workspace file")
+      .toBe(updatedNotebook);
+    expect(normalizedRenderedText(renderedAnswerBeforeRefresh),
+      "the page answer disagrees with the durable Assistant answer")
+      .toBe(normalizedRenderedText(audit.finalAnswer));
+
+    const completedActivity = page.locator(".timeline-group .turn-activity.completed");
+    await expect(completedActivity, "the page omitted the completed notebook activity").toHaveCount(1);
+    await completedActivity.locator(":scope > summary").click();
+    const toolCards = completedActivity.locator(".tool-card");
+    await expect(toolCards, "the page omitted a notebook Tool card").toHaveCount(audit.toolDetails.length);
+    await expect(toolCards.locator(".tool-copy > strong")).toHaveText(audit.toolCallSequence);
+    expect(await toolCards.locator(".tool-status").allTextContents(), "a notebook Tool card is not successful")
+      .toEqual(Array.from({ length: audit.toolDetails.length }, () => "已完成"));

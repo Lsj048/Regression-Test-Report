@@ -1,0 +1,17 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/compaction/compaction-policy.ts
+    let summary: string;
+    try {
+      summary = await summarize(messages.slice(0, boundary), input.snapshot, config, execution, this.systemPrompt);
+    } catch (error) {
+      const budgetExhausted = error instanceof ContractError
+        && error.code === "COMPACTION_LLM_REQUEST_BUDGET_EXHAUSTED";
+      return {
+        decision: "abstain",
+        proposals: [],
+        diagnostics: [{
+          severity: "error",
+          code: budgetExhausted ? error.code : "COMPACTION_SUMMARY_FAILED_OPEN",
+          message: `Compaction summarizer failed; original messages remain visible: ${errorMessage(error)}`,
+        }],
+      };

@@ -1,0 +1,9 @@
+{
+  "kind": "read-only-current-dns-observation",
+  "observedAt": "2026-11-02T16:13:31.551744+00:00",
+  "providerHost": "aigc.sankuai.com",
+  "providerResolved": true,
+  "addressCount": 2,
+  "githubResolved": true,
+  "scope": "socket.getaddrinfo succeeded at this later observation. It does not identify the cause of earlier ENOTFOUND or alter original sample eligibility."
+}

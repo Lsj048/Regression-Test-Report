@@ -1,0 +1,41 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/kernel/host/session/session-manager.ts
+    const askForApproval = async (questions: readonly ToolQuestion[], signal: AbortSignal, request: ToolApprovalRequest): Promise<ToolQuestionAnswer> => {
+      const active = this.#active.get(session.id);
+      if (!active) return Promise.reject(new ContractError("当前会话没有可接收审批的 Turn", "WEB_QUESTION_SESSION_INACTIVE"));
+      if (active.pendingApproval) return Promise.reject(new ContractError("已有一个审批正在等待回答", "WEB_QUESTION_ALREADY_PENDING"));
+      const questionTurn = await this.#repository.loadState(request.execution.turnId);
+      if (questionTurn.kind !== "paused"
+        || !questionTurn.suspensionReasons.some((reason) => reason.kind === "approval" && reason.requestId === request.requestId)) {
+        return Promise.reject(new ContractError("审批方当前没有已暂停的 Turn", "WEB_QUESTION_TURN_INACTIVE"));
+      }
+      this.#pendingUserQuestions.set(pendingQuestionKey(session.id, request.requestId), {
+        kind: "approval",
+        requestId: request.requestId,
+        rootSessionId: session.id,
+        sessionId: request.execution.sessionId,
+        turnId: request.execution.turnId,
+        rootTurnId: questionTurn.rootTurnId,
+        callId: request.execution.callId,
+        questions,
+      });
+      await this.#repository.appendEvents(questionTurn.turnId, [{
+        type: "host.question",
+        payload: {
+          requestId: request.requestId,
+          callId: request.execution.callId,
+          actionId: request.execution.actionId,
+          questions: questions as unknown as JsonValue,
+          kind: "approval",
+        },
+      }]);
+      return new Promise((resolveAnswer, rejectAnswer) => {
+        const abort = (): void => { delete active.pendingApproval; rejectAnswer(new Error("审批已取消")); };
+        signal.addEventListener("abort", abort, { once: true });
+        active.pendingApproval = {
+          turnId: questionTurn.turnId,
+          requestId: request.requestId,
+          resolve: (answer) => { signal.removeEventListener("abort", abort); resolveAnswer({ ...answer, answers: Object.fromEntries(questions.map((question) => [question.question, answer.response ?? Object.values(answer.answers)[0] ?? ""])) }); },
+          reject: (error) => { signal.removeEventListener("abort", abort); rejectAnswer(error); },
+        };
+      });

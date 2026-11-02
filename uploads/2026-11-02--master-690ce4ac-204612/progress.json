@@ -1,0 +1,227 @@
+{
+  "startedAt": "2026-11-02T12:46:13.154Z",
+  "pid": 23886,
+  "mode": "full",
+  "verdict": "FAIL",
+  "profiles": {
+    "deterministic": {
+      "tree": "e667aa16e5ed82ef9f588cb497e5bf571482c5cf",
+      "regression": 1,
+      "topUp": 0,
+      "evidence": 1,
+      "gate": "FAIL"
+    },
+    "live": {
+      "tree": "e667aa16e5ed82ef9f588cb497e5bf571482c5cf",
+      "regression": 1,
+      "topUp": 0,
+      "evidence": 1,
+      "gate": "FAIL"
+    },
+    "compaction-sixth": {
+      "exit": 0,
+      "evidence": 0,
+      "gate": "VERIFIED"
+    }
+  },
+  "steps": [
+    {
+      "label": "fetch-master",
+      "startedAt": "2026-11-02T12:46:13.175Z",
+      "exit": 0,
+      "pid": 23933,
+      "signal": null,
+      "endedAt": "2026-11-02T12:46:13.616Z"
+    },
+    {
+      "label": "deterministic-02",
+      "startedAt": "2026-11-02T12:46:16.729Z",
+      "exit": 0,
+      "pid": 24321,
+      "signal": null,
+      "endedAt": "2026-11-02T12:46:44.644Z"
+    },
+    {
+      "label": "deterministic-03",
+      "startedAt": "2026-11-02T12:46:44.824Z",
+      "exit": 0,
+      "pid": 24614,
+      "signal": null,
+      "endedAt": "2026-11-02T12:46:47.565Z"
+    },
+    {
+      "label": "deterministic-listing",
+      "startedAt": "2026-11-02T12:46:47.665Z",
+      "exit": 0,
+      "pid": 24785,
+      "signal": null,
+      "endedAt": "2026-11-02T12:46:51.319Z"
+    },
+    {
+      "label": "live-listing",
+      "startedAt": "2026-11-02T12:46:51.345Z",
+      "exit": 0,
+      "pid": 24904,
+      "signal": null,
+      "endedAt": "2026-11-02T12:46:52.850Z"
+    },
+    {
+      "label": "deterministic-04",
+      "startedAt": "2026-11-02T12:46:52.950Z",
+      "exit": 0,
+      "pid": 25013,
+      "signal": null,
+      "endedAt": "2026-11-02T12:47:00.013Z"
+    },
+    {
+      "label": "deterministic-preflight",
+      "startedAt": "2026-11-02T12:47:00.197Z",
+      "exit": 0,
+      "pid": 25255,
+      "signal": null,
+      "endedAt": "2026-11-02T12:48:33.705Z"
+    },
+    {
+      "label": "deterministic-05",
+      "startedAt": "2026-11-02T12:48:33.949Z",
+      "exit": 1,
+      "pid": 32979,
+      "signal": null,
+      "endedAt": "2026-11-02T14:04:45.792Z"
+    },
+    {
+      "label": "deterministic-05b",
+      "startedAt": "2026-11-02T14:04:46.010Z",
+      "exit": 0,
+      "pid": 12170,
+      "signal": null,
+      "endedAt": "2026-11-02T14:04:47.222Z"
+    },
+    {
+      "label": "deterministic-06",
+      "startedAt": "2026-11-02T14:04:47.450Z",
+      "exit": 1,
+      "pid": 12325,
+      "signal": null,
+      "endedAt": "2026-11-02T14:04:48.255Z"
+    },
+    {
+      "label": "live-03",
+      "startedAt": "2026-11-02T14:04:50.838Z",
+      "exit": 0,
+      "pid": 12514,
+      "signal": null,
+      "endedAt": "2026-11-02T14:04:54.060Z"
+    },
+    {
+      "label": "live-04",
+      "startedAt": "2026-11-02T14:04:54.254Z",
+      "exit": 0,
+      "pid": 12708,
+      "signal": null,
+      "endedAt": "2026-11-02T14:05:01.206Z"
+    },
+    {
+      "label": "live-preflight",
+      "startedAt": "2026-11-02T14:05:01.432Z",
+      "exit": 0,
+      "pid": 12903,
+      "signal": null,
+      "endedAt": "2026-11-02T14:06:37.064Z"
+    },
+    {
+      "label": "live-05",
+      "startedAt": "2026-11-02T14:06:37.327Z",
+      "exit": 1,
+      "pid": 20481,
+      "signal": null,
+      "endedAt": "2026-11-02T16:56:19.590Z"
+    },
+    {
+      "label": "live-05b",
+      "startedAt": "2026-11-02T16:56:19.982Z",
+      "exit": 0,
+      "pid": 30195,
+      "signal": null,
+      "endedAt": "2026-11-02T16:56:20.909Z"
+    },
+    {
+      "label": "live-06",
+      "startedAt": "2026-11-02T16:56:21.169Z",
+      "exit": 1,
+      "pid": 30355,
+      "signal": null,
+      "endedAt": "2026-11-02T16:56:21.788Z"
+    },
+    {
+      "label": "compaction-sixth",
+      "startedAt": "2026-11-02T16:56:22.105Z",
+      "exit": 0,
+      "pid": 30465,
+      "signal": null,
+      "endedAt": "2026-11-02T16:57:25.595Z"
+    },
+    {
+      "label": "compaction-sixth-verify",
+      "startedAt": "2026-11-02T16:57:25.788Z",
+      "exit": 0,
+      "pid": 30926,
+      "signal": null,
+      "endedAt": "2026-11-02T16:57:25.903Z"
+    },
+    {
+      "label": "g2-self-test",
+      "startedAt": "2026-11-02T16:57:26.066Z",
+      "exit": 0,
+      "pid": 30927,
+      "signal": null,
+      "endedAt": "2026-11-02T16:57:26.674Z"
+    },
+    {
+      "label": "g2-analysis",
+      "startedAt": "2026-11-02T16:57:26.726Z",
+      "exit": 2,
+      "pid": 31227,
+      "signal": null,
+      "endedAt": "2026-11-02T16:57:41.976Z"
+    },
+    {
+      "label": "g2-judge",
+      "startedAt": "2026-11-02T16:57:42.030Z",
+      "exit": 1,
+      "pid": 37305,
+      "signal": null,
+      "endedAt": "2026-11-02T16:57:51.367Z"
+    }
+  ],
+  "g2": {
+    "status": "INVALID_EVIDENCE",
+    "analysisExit": 2,
+    "judgeExit": 1,
+    "judgment": {
+      "status": "FAILED",
+      "reason": "裁判执行或输出校验未完成，原始结构检查及待审项完整保留",
+      "error": "Codex judge did not complete successfully; retained log and original checks"
+    },
+    "report": "g2/report.html",
+    "summary": {
+      "headline": "证据异常，结论不完整",
+      "violatedRuleIds": [],
+      "affectedCaseIds": [],
+      "evidenceGapRuleIds": [
+        "G2-036",
+        "G2-037"
+      ],
+      "sourceChangedRuleIds": []
+    },
+    "totals": {
+      "cases": 157,
+      "samples": 787,
+      "requests": 4173,
+      "auxiliaryCalls": 240,
+      "violatingRequests": 0,
+      "ignoredTraceEnvelopes": 4173
+    }
+  },
+  "endedAt": "2026-11-02T16:57:51.432Z"
+}

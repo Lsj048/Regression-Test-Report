@@ -1,0 +1,651 @@
+import { createHash } from "node:crypto";
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { readFile, readdir, stat } from "node:fs/promises";
+import { basename, extname, join, relative, resolve, sep } from "node:path";
+import { errorMessage } from "../../../kernel/api/foundation/errors.js";
+import { defaultHarnessStateDirectory } from "../../../kernel/api/foundation/storage-path.js";
+import { readImageAttachment, receiveImageAttachment } from "./image-attachments.js";
+import type { ApiErrorBody, CreateSessionRequest, ForkSessionRequest, RenameWorkspaceRequest, SelectWorkspaceRequest, SendMessageRequest, SetMessageFeedbackRequest, SetPermissionRequest, UpdateModelSettingsRequest, UpdateSessionRequest, WebEvent, WebJson } from "../shared/protocol.js";
+import { createNativePathPicker, type NativePathPicker } from "./directory-picker.js";
+import { readHostDragPaths } from "./drag-path-reader.js";
+import { webPerformanceTrace, webPerformanceTracingEnabled } from "./performance-trace.js";
+import type { WebSessionManager } from "./session-manager.js";
+import { ModelUsageProjection, MODEL_USAGE_EVENT_TYPES } from "./usage/model-usage.js";
+
+const MAX_BODY_BYTES = 128 * 1024;
+const MIME_TYPES: Readonly<Record<string, string>> = {
+  ".css": "text/css; charset=utf-8",
+  ".csv": "text/csv; charset=utf-8",
+  ".gif": "image/gif",
+  ".html": "text/html; charset=utf-8",
+  ".jpeg": "image/jpeg",
+  ".jpg": "image/jpeg",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".map": "application/json; charset=utf-8",
+  ".md": "text/markdown; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".pdf": "application/pdf",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".ts": "text/plain; charset=utf-8",
+  ".tsx": "text/plain; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
+  ".webp": "image/webp",
+  ".webmanifest": "application/manifest+json; charset=utf-8",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".ttf": "font/ttf",
+  ".xml": "application/xml; charset=utf-8",
+  ".yaml": "text/yaml; charset=utf-8",
+  ".yml": "text/yaml; charset=utf-8",
+};
+
+export interface LongCatWebServerOptions {
+  readonly manager: WebSessionManager;
+  readonly staticDirectory: string;
+  readonly host: string;
+  readonly port: number;
+  readonly pickDirectory?: () => Promise<string | undefined>;
+  readonly pickAttachments?: () => Promise<readonly string[]>;
+  readonly nativePathPicker?: NativePathPicker;
+  readonly readDragPaths?: () => Promise<readonly string[]>;
+  readonly imageAttachmentDirectory?: string;
+}
+
+export interface LongCatWebServer {
+  readonly server: Server;
+  readonly url: string;
+  prepareNativePicker(): Promise<void>;
+  close(): Promise<void>;
+}
+
+interface StaticAsset {
+  readonly body: Buffer;
+  readonly contentType: string;
+  readonly cacheControl: string;
+}
+
+async function loadStaticAssets(staticDirectory: string): Promise<ReadonlyMap<string, StaticAsset>> {
+  const root = resolve(staticDirectory);
+  const assets = new Map<string, StaticAsset>();
+  const visit = async (directory: string): Promise<void> => {
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const path = resolve(directory, entry.name);
+      if (entry.isDirectory()) await visit(path);
+      else if (entry.isFile()) {
+        const key = relative(root, path).split(sep).join("/");
+        assets.set(key, {
+          body: await readFile(path),
+          contentType: MIME_TYPES[extname(path)] ?? "application/octet-stream",
+          cacheControl: key === "index.html" ? "no-cache" : "public, max-age=31536000, immutable",
+        });
+      }
+    }
+  };
+  await visit(root);
+  if (!assets.has("index.html")) throw new Error(`静态目录缺少 index.html：${root}`);
+  return assets;
+}
+
+function setSecurityHeaders(response: ServerResponse): void {
+  response.setHeader("X-Content-Type-Options", "nosniff");
+  response.setHeader("Referrer-Policy", "no-referrer");
+  response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+  response.setHeader("Content-Security-Policy", "default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'");
+}
+
+function json(response: ServerResponse, status: number, body: unknown): void {
+  setSecurityHeaders(response);
+  response.statusCode = status;
+  response.setHeader("Content-Type", "application/json; charset=utf-8");
+  response.end(`${JSON.stringify(body)}\n`);
+}
+
+function apiError(response: ServerResponse, error: unknown): void {
+  const record = error && typeof error === "object" ? error as { readonly code?: unknown } : undefined;
+  const code = typeof record?.code === "string" ? record.code : "WEB_API_FAILED";
+  const status = code === "WEB_SESSION_NOT_FOUND" || code === "WEB_WORKSPACE_NOT_FOUND" || code === "WEB_ATTACHMENT_NOT_FOUND" ? 404
+    : code === "WEB_FILE_NOT_FOUND" ? 404
+      : code === "WEB_FILE_FORBIDDEN" ? 403
+        : code === "WEB_FILE_TOO_LARGE" || code === "WEB_ATTACHMENT_IMAGE_TOO_LARGE" ? 413
+    : code === "WEB_SESSION_BUSY" || code === "WEB_SESSION_NOT_RUNNING" || code === "WEB_SESSION_ARCHIVED" || code === "WEB_MODEL_SETTINGS_BUSY" || code === "HUMAN_INPUT_STALE" || code === "HUMAN_INPUT_ANSWER_CONFLICT" ? 409
+      : code === "MODEL_API_KEY_MISSING" ? 503
+        : code.startsWith("SETTINGS_") ? 400
+        : code === "HUMAN_INPUT_ANSWER_INVALID" || code.startsWith("SCHEMA_") ? 400
+        : code.startsWith("WEB_MODEL_") ? 400
+        : code.startsWith("WEB_WORKSPACE_") ? 400
+        : code.startsWith("WEB_ATTACHMENT_") ? 400
+        : code.startsWith("WEB_PERMISSION_") ? 400
+        : code.startsWith("WEB_SESSION_TITLE_") || code === "WEB_SESSION_UPDATE_INVALID" ? 400
+        : code.startsWith("WEB_MESSAGE_") || code.startsWith("WEB_FORK_") ? 400
+        : code.startsWith("WEB_INPUT_") || code.startsWith("WEB_FILE_") ? 400 : 500;
+  const body: ApiErrorBody = { error: { code, message: errorMessage(error) } };
+  json(response, status, body);
+}
+
+async function requestJson<T>(request: IncomingMessage): Promise<T> {
+  const chunks: Buffer[] = [];
+  let byteLength = 0;
+  for await (const chunk of request) {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    byteLength += buffer.byteLength;
+    if (byteLength > MAX_BODY_BYTES) throw Object.assign(new Error("请求内容过大"), { code: "WEB_INPUT_TOO_LARGE" });
+    chunks.push(buffer);
+  }
+  const text = Buffer.concat(chunks, byteLength).toString("utf8");
+  try {
+    return JSON.parse(text || "{}") as T;
+  } catch {
+    throw Object.assign(new Error("请求不是有效的 JSON"), { code: "WEB_INPUT_INVALID" });
+  }
+}
+
+function registeredWorkspace(options: LongCatWebServerOptions, value: unknown): string {
+  if (typeof value !== "string") throw Object.assign(new Error("附件工作区无效"), { code: "WEB_ATTACHMENT_WORKSPACE_INVALID" });
+  const requested = resolve(value);
+  const configured = options.manager.config().workspaces.find((workspace) => resolve(workspace.path) === requested);
+  if (!configured) throw Object.assign(new Error("附件工作区未注册"), { code: "WEB_ATTACHMENT_WORKSPACE_INVALID" });
+  return configured.path;
+}
+
+async function attachmentReference(value: unknown): Promise<{ readonly kind: "file" | "directory"; readonly name: string; readonly path: string }> {
+  if (typeof value !== "string" || !value.trim()) throw Object.assign(new Error("附件路径无效"), { code: "WEB_ATTACHMENT_PATH_INVALID" });
+  const path = resolve(value);
+  const information = await stat(path).catch((error: unknown) => {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") throw Object.assign(new Error("文件夹不存在"), { code: "WEB_ATTACHMENT_NOT_FOUND" });
+    throw error;
+  });
+  if (!information.isDirectory() && !information.isFile()) throw Object.assign(new Error("选择的路径不是文件或文件夹"), { code: "WEB_ATTACHMENT_PATH_INVALID" });
+  return Object.freeze({ kind: information.isDirectory() ? "directory" : "file", name: basename(path) || path, path });
+}
+
+async function resolveDroppedAttachment(options: LongCatWebServerOptions, workspaceValue: unknown, nameValue: unknown): Promise<{ readonly kind: "file" | "directory"; readonly name: string; readonly path: string } | null> {
+  const workspace = registeredWorkspace(options, workspaceValue);
+  if (typeof nameValue !== "string" || !nameValue || basename(nameValue) !== nameValue) return null;
+  const configuredMatch = options.manager.config().workspaces.find((candidate) => basename(resolve(candidate.path)) === nameValue);
+  const candidate = configuredMatch?.path ?? (basename(resolve(workspace)) === nameValue ? workspace : resolve(workspace, nameValue));
+  try {
+    return await attachmentReference(candidate);
+  } catch (error) {
+    if ((error as { readonly code?: unknown }).code === "WEB_ATTACHMENT_NOT_FOUND") return null;
+    throw error;
+  }
+}
+
+async function attachmentReferences(paths: readonly string[]): Promise<readonly { readonly kind: "file" | "directory"; readonly name: string; readonly path: string }[]> {
+  const references = await Promise.all(paths.map((path) => attachmentReference(path).catch(() => undefined)));
+  return references.filter((reference): reference is NonNullable<typeof reference> => Boolean(reference));
+}
+
+function sendSse(response: ServerResponse, event: WebEvent): void {
+  if (response.writableEnded || response.destroyed) return;
+  const id = event.transient ? "" : `id: ${event.cursor}\n`;
+  response.write(`${id}event: message\ndata: ${JSON.stringify(event)}\n\n`);
+}
+
+function sendSseKeepAlive(response: ServerResponse): void {
+  if (response.writableEnded || response.destroyed) return;
+  response.write(": keep-alive\n\n");
+}
+
+async function serveStatic(response: ServerResponse, assets: ReadonlyMap<string, StaticAsset>, pathname: string): Promise<void> {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    response.statusCode = 400;
+    response.end("Bad request");
+    return;
+  }
+  const requested = decoded === "/" || !extname(decoded) ? "index.html" : decoded.replace(/^\/+/, "");
+  if (requested === ".." || requested.startsWith("../") || requested.includes("/../")) {
+    response.statusCode = 403;
+    response.end("Forbidden");
+    return;
+  }
+  const asset = assets.get(requested);
+  if (!asset) {
+    response.statusCode = 404;
+    response.end("Not found");
+    return;
+  }
+  setSecurityHeaders(response);
+  response.statusCode = 200;
+  response.setHeader("Content-Type", asset.contentType);
+  response.setHeader("Cache-Control", asset.cacheControl);
+  response.end(asset.body);
+}
+
+async function serveSessionFile(options: LongCatWebServerOptions, response: ServerResponse, sessionId: string, requestedPath: string): Promise<void> {
+  const file = await options.manager.readSessionFile(sessionId, requestedPath);
+  const extension = extname(file.path).toLocaleLowerCase();
+  response.statusCode = 200;
+  response.setHeader("X-Content-Type-Options", "nosniff");
+  response.setHeader("Referrer-Policy", "no-referrer");
+  response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+  response.setHeader("Cache-Control", "no-store");
+  response.setHeader("Content-Type", MIME_TYPES[extension] ?? "application/octet-stream");
+  response.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent(file.name)}`);
+  response.setHeader("Content-Length", file.body.byteLength);
+  if (extension === ".html" || extension === ".svg") {
+    response.setHeader("Content-Security-Policy", "sandbox allow-scripts; default-src 'none'; img-src data: blob:; font-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline' 'unsafe-eval' blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'");
+  } else {
+    response.setHeader("Content-Security-Policy", "sandbox; default-src 'none'; img-src 'self' data: blob:; style-src 'unsafe-inline'");
+  }
+  response.end(file.body);
+}
+
+async function inspectSessionFile(options: LongCatWebServerOptions, response: ServerResponse, sessionId: string, requestedPath: string): Promise<void> {
+  const file = await options.manager.inspectSessionFile(sessionId, requestedPath);
+  setSecurityHeaders(response);
+  response.statusCode = 200;
+  response.setHeader("Cache-Control", "no-store");
+  response.setHeader("Content-Type", MIME_TYPES[extname(file.path).toLocaleLowerCase()] ?? "application/octet-stream");
+  response.setHeader("Content-Length", file.byteLength);
+  response.end();
+}
+
+async function waitForResponse(response: ServerResponse): Promise<void> {
+  if (response.writableFinished || response.destroyed) return;
+  await new Promise<void>((resolveComplete) => {
+    const complete = (): void => {
+      response.off("finish", complete);
+      response.off("close", complete);
+      resolveComplete();
+    };
+    response.once("finish", complete);
+    response.once("close", complete);
+  });
+}
+
+async function handle(
+  options: LongCatWebServerOptions,
+  assets: ReadonlyMap<string, StaticAsset>,
+  usage: ModelUsageProjection,
+  request: IncomingMessage,
+  response: ServerResponse,
+  registerEventStream: (response: ServerResponse, cleanup: () => void) => void,
+): Promise<void> {
+  const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
+  const method = request.method ?? "GET";
+
+  if (method === "POST" && url.pathname === "/api/attachments/images") {
+    // Require an image content type and reject cross-origin uploads to this local service.
+    if (request.headers.origin !== undefined && request.headers.origin !== url.origin) {
+      json(response, 403, { error: { code: "WEB_ATTACHMENT_ORIGIN_INVALID", message: "不允许从其他网站上传图片" } });
+      return;
+    }
+    json(response, 201, await receiveImageAttachment(options.imageAttachmentDirectory!, request));
+    return;
+  }
+  const imageAttachmentMatch = /^\/api\/attachments\/images\/([^/]+)$/u.exec(url.pathname);
+  if (method === "GET" && imageAttachmentMatch) {
+    const image = await readImageAttachment(options.imageAttachmentDirectory!, imageAttachmentMatch[1]!);
+    setSecurityHeaders(response);
+    response.setHeader("Content-Type", image.mime);
+    response.setHeader("Cache-Control", "private, max-age=31536000, immutable");
+    response.end(image.bytes);
+    return;
+  }
+
+  if (method === "POST" && url.pathname === "/api/diagnostics/performance" && webPerformanceTracingEnabled()) {
+    const body = await requestJson<{ readonly stage?: unknown; readonly clientTimestamp?: unknown; readonly clientMonotonicMs?: unknown; readonly sessionId?: unknown; readonly inputId?: unknown; readonly eventType?: unknown }>(request);
+    webPerformanceTrace("client.trace", {
+      clientStage: typeof body.stage === "string" ? body.stage : "unknown",
+      clientTimestamp: typeof body.clientTimestamp === "string" ? body.clientTimestamp : undefined,
+      clientMonotonicMs: typeof body.clientMonotonicMs === "number" ? body.clientMonotonicMs : undefined,
+      sessionId: typeof body.sessionId === "string" ? body.sessionId : undefined,
+      inputId: typeof body.inputId === "string" ? body.inputId : undefined,
+      eventType: typeof body.eventType === "string" ? body.eventType : undefined,
+    });
+    json(response, 200, { ok: true });
+    return;
+  }
+
+  if (method === "GET" && url.pathname === "/api/health") {
+    response.setHeader("Cache-Control", "no-store");
+    json(response, 200, { ok: true });
+    return;
+  }
+
+  if (method === "GET" && url.pathname === "/api/instance") {
+    response.setHeader("Cache-Control", "no-store");
+    json(response, 200, { pid: process.pid, staticDirectory: resolve(options.staticDirectory), frontendId: createHash("sha256").update(assets.get("index.html")!.body).digest("hex").slice(0, 16) });
+    return;
+  }
+  if (method === "GET" && url.pathname === "/api/usage") {
+    response.setHeader("Cache-Control", "no-store");
+    json(response, 200, await usage.overview());
+    return;
+  }
+  if (method === "GET" && url.pathname === "/api/config") {
+    json(response, 200, options.manager.config());
+    return;
+  }
+  if (method === "GET" && url.pathname === "/api/model-settings") {
+    json(response, 200, options.manager.modelSettings());
+    return;
+  }
+  if (method === "PATCH" && url.pathname === "/api/model-settings") {
+    const body = await requestJson<UpdateModelSettingsRequest>(request);
+    json(response, 200, await options.manager.updateModelSettings(body));
+    return;
+  }
+  if (method === "GET" && url.pathname === "/api/sessions") {
+    json(response, 200, await options.manager.list());
+    return;
+  }
+  if (method === "POST" && url.pathname === "/api/workspaces/pick") {
+    const path = await options.pickDirectory!();
+    json(response, 200, { path: path ?? null });
+    return;
+  }
+  if (method === "POST" && url.pathname === "/api/workspaces") {
+    const body = await requestJson<SelectWorkspaceRequest>(request);
+    json(response, 200, await options.manager.selectWorkspace(body.path, body.create === true));
+    return;
+  }
+  const workspaceMatch = /^\/api\/workspaces\/([^/]+)$/u.exec(url.pathname);
+  if (workspaceMatch && method === "PATCH") {
+    const body = await requestJson<RenameWorkspaceRequest>(request);
+    json(response, 200, await options.manager.renameWorkspace(decodeURIComponent(workspaceMatch[1]!), body.title));
+    return;
+  }
+  if (workspaceMatch && method === "DELETE") {
+    json(response, 200, await options.manager.deleteWorkspace(decodeURIComponent(workspaceMatch[1]!)));
+    return;
+  }
+  if (method === "POST" && url.pathname === "/api/attachments/pick") {
+    const paths = await options.pickAttachments!();
+    json(response, 200, { attachments: await attachmentReferences(paths) });
+    return;
+  }
+  if (method === "POST" && url.pathname === "/api/attachments/reference") {
+    const body = await requestJson<{ readonly path?: unknown }>(request);
+    json(response, 200, await attachmentReference(body.path));
+    return;
+  }
+  if (method === "POST" && url.pathname === "/api/attachments/resolve-drop") {
+    const body = await requestJson<{ readonly workspace?: unknown; readonly name?: unknown }>(request);
+    json(response, 200, { attachment: await resolveDroppedAttachment(options, body.workspace, body.name) });
+    return;
+  }
+  if (method === "POST" && url.pathname === "/api/attachments/drag-paths") {
+    const paths = await (options.readDragPaths ?? readHostDragPaths)();
+    json(response, 200, { attachments: await attachmentReferences(paths) });
+    return;
+  }
+  if (method === "POST" && url.pathname === "/api/sessions") {
+    const body = await requestJson<CreateSessionRequest>(request);
+    json(response, 202, await options.manager.createSession(typeof body.content === "string" ? body.content : "", body.permissionMode, body.model, body.inputId, body.mode));
+    return;
+  }
+
+  const detailMatch = /^\/api\/sessions\/([^/]+)$/u.exec(url.pathname);
+  if (detailMatch && method === "GET") {
+    const detail = await options.manager.get(decodeURIComponent(detailMatch[1]!));
+    if (!detail) throw Object.assign(new Error("找不到会话"), { code: "WEB_SESSION_NOT_FOUND" });
+    json(response, 200, detail);
+    return;
+  }
+  if (detailMatch && method === "PATCH") {
+    const body = await requestJson<UpdateSessionRequest>(request);
+    json(response, 200, await options.manager.updateSession(decodeURIComponent(detailMatch[1]!), body));
+    return;
+  }
+  const turnsMatch = /^\/api\/sessions\/([^/]+)\/turns$/u.exec(url.pathname);
+  if (turnsMatch && method === "GET") {
+    const turns = await options.manager.turns(decodeURIComponent(turnsMatch[1]!));
+    if (turns === undefined) throw Object.assign(new Error("找不到会话"), { code: "WEB_SESSION_NOT_FOUND" });
+    json(response, 200, turns);
+    return;
+  }
+  const turnMatch = /^\/api\/sessions\/([^/]+)\/turns\/([^/]+)$/u.exec(url.pathname);
+  if (turnMatch && method === "GET") {
+    const turn = await options.manager.turn(decodeURIComponent(turnMatch[1]!), decodeURIComponent(turnMatch[2]!));
+    if (turn === undefined) throw Object.assign(new Error("找不到该轮轨迹"), { code: "WEB_TURN_NOT_FOUND" });
+    json(response, 200, turn);
+    return;
+  }
+  const subagentTurnMatch = /^\/api\/sessions\/([^/]+)\/turns\/([^/]+)\/subagents\/([^/]+)$/u.exec(url.pathname);
+  if (subagentTurnMatch && method === "GET") {
+    const subagent = await options.manager.subagentTurn(
+      decodeURIComponent(subagentTurnMatch[1]!),
+      decodeURIComponent(subagentTurnMatch[2]!),
+      decodeURIComponent(subagentTurnMatch[3]!),
+    );
+    if (subagent === undefined) throw Object.assign(new Error("找不到该子 Agent 轨迹"), { code: "WEB_SUBAGENT_TURN_NOT_FOUND" });
+    json(response, 200, subagent);
+    return;
+  }
+  const fileMatch = /^\/api\/sessions\/([^/]+)\/files\/(.+)$/u.exec(url.pathname);
+  if (fileMatch && (method === "GET" || method === "HEAD")) {
+    let requestedPath: string;
+    try {
+      requestedPath = decodeURIComponent(fileMatch[2]!);
+    } catch {
+      throw Object.assign(new Error("文件路径无效"), { code: "WEB_FILE_PATH_INVALID" });
+    }
+    const sessionId = decodeURIComponent(fileMatch[1]!);
+    if (method === "HEAD") await inspectSessionFile(options, response, sessionId, requestedPath);
+    else await serveSessionFile(options, response, sessionId, requestedPath);
+    return;
+  }
+  const messageMatch = /^\/api\/sessions\/([^/]+)\/messages$/u.exec(url.pathname);
+  const presentationActionMatch = /^\/api\/sessions\/([^/]+)\/presentation-actions$/u.exec(url.pathname);
+  if (presentationActionMatch && request.method === "POST") {
+    json(response, 200, await options.manager.invokePresentationAction(decodeURIComponent(presentationActionMatch[1]!), await requestJson(request)));
+    return;
+  }
+  const humanInputMatch = /^\/api\/sessions\/([^/]+)\/human-input$/u.exec(url.pathname);
+  if (humanInputMatch && method === "POST") {
+    json(response, 200, await options.manager.answerHumanInput(decodeURIComponent(humanInputMatch[1]!), await requestJson(request)));
+    return;
+  }
+  if (messageMatch && method === "POST") {
+    const body = await requestJson<SendMessageRequest>(request);
+    json(response, 202, await options.manager.sendMessage(
+      decodeURIComponent(messageMatch[1]!),
+      typeof body.content === "string" ? body.content : "",
+      body.inputId,
+      body.replyToRequestId,
+    ));
+    return;
+  }
+  const compactMatch = /^\/api\/sessions\/([^/]+)\/commands\/compact$/u.exec(url.pathname);
+  if (compactMatch && method === "POST") {
+    json(response, 200, await options.manager.compactSession(decodeURIComponent(compactMatch[1]!)));
+    return;
+  }
+  const permissionMatch = /^\/api\/sessions\/([^/]+)\/permission$/u.exec(url.pathname);
+  if (permissionMatch && method === "POST") {
+    const body = await requestJson<SetPermissionRequest>(request);
+    json(response, 200, await options.manager.setPermission(decodeURIComponent(permissionMatch[1]!), body.permissionMode));
+    return;
+  }
+  const feedbackMatch = /^\/api\/sessions\/([^/]+)\/feedback$/u.exec(url.pathname);
+  if (feedbackMatch && method === "POST") {
+    const body = await requestJson<SetMessageFeedbackRequest>(request);
+    json(response, 200, await options.manager.setFeedback(decodeURIComponent(feedbackMatch[1]!), body));
+    return;
+  }
+  const forkMatch = /^\/api\/sessions\/([^/]+)\/fork$/u.exec(url.pathname);
+  if (forkMatch && method === "POST") {
+    const body = await requestJson<ForkSessionRequest>(request);
+    json(response, 201, await options.manager.forkSession(decodeURIComponent(forkMatch[1]!), body));
+    return;
+  }
+  const interruptMatch = /^\/api\/sessions\/([^/]+)\/interrupt$/u.exec(url.pathname);
+  if (interruptMatch && method === "POST") {
+    await options.manager.interrupt(decodeURIComponent(interruptMatch[1]!));
+    json(response, 202, { ok: true });
+    return;
+  }
+  const eventsMatch = /^\/api\/sessions\/([^/]+)\/events$/u.exec(url.pathname);
+  if (eventsMatch && method === "GET") {
+    const sessionId = decodeURIComponent(eventsMatch[1]!);
+    const detail = await options.manager.get(sessionId);
+    if (detail === undefined) {
+      json(response, 404, { error: { code: "WEB_SESSION_NOT_FOUND", message: "会话不存在" } });
+      return;
+    }
+    const afterHeader = Number(request.headers["last-event-id"] ?? 0);
+    const afterQuery = Number(url.searchParams.get("after") ?? 0);
+    const after = Number.isSafeInteger(afterHeader) && afterHeader > 0 ? afterHeader
+      : Number.isSafeInteger(afterQuery) && afterQuery > 0 ? afterQuery : 0;
+    setSecurityHeaders(response);
+    response.statusCode = 200;
+    response.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    response.setHeader("Cache-Control", "no-cache, no-transform");
+    response.setHeader("Connection", "keep-alive");
+    response.flushHeaders();
+    const dispose = options.manager.subscribe(sessionId, (event) => sendSse(response, event));
+    let keepAlive: ReturnType<typeof setInterval> | undefined;
+    let disposed = false;
+    const cleanup = (): void => {
+      if (disposed) return;
+      disposed = true;
+      if (keepAlive !== undefined) clearInterval(keepAlive);
+      dispose();
+    };
+    request.once("close", cleanup);
+    response.once("finish", cleanup);
+    response.once("close", cleanup);
+    registerEventStream(response, cleanup);
+    const replay = await options.manager.eventsAfter(sessionId, after);
+    if (replay === undefined) {
+      cleanup();
+      response.end();
+      return;
+    }
+    for (const event of replay) sendSse(response, event);
+    if (response.writableEnded || response.destroyed) {
+      cleanup();
+      return;
+    }
+    keepAlive = setInterval(() => sendSseKeepAlive(response), 15_000);
+    return;
+  }
+  if (url.pathname.startsWith("/api/")) {
+    json(response, 404, { error: { code: "WEB_ROUTE_NOT_FOUND", message: "接口不存在" } });
+    return;
+  }
+  await serveStatic(response, assets, url.pathname);
+}
+
+/** Start the same-origin static and API server used by the production web command. */
+export async function startLongCatWebServer(options: LongCatWebServerOptions): Promise<LongCatWebServer> {
+  const assets = await loadStaticAssets(options.staticDirectory);
+  const usage = new ModelUsageProjection(async (after, limit) =>
+    (await options.manager.queryEvents(MODEL_USAGE_EVENT_TYPES, after, limit))
+      .map((event) => ({ ...event, seq: event.cursor })));
+  const picker = options.nativePathPicker ?? createNativePathPicker();
+  const resolvedOptions = {
+    ...options,
+    imageAttachmentDirectory: options.imageAttachmentDirectory ?? join(defaultHarnessStateDirectory(), "attachments", "images"),
+    pickDirectory: options.pickDirectory ?? picker.pickDirectory,
+    pickAttachments: options.pickAttachments ?? picker.pickAttachments,
+  };
+  const handlers = new Set<Promise<void>>();
+  const eventStreams = new Set<ServerResponse>();
+  const eventStreamResponses = new WeakSet<ServerResponse>();
+  const eventStreamCleanups = new WeakMap<ServerResponse, () => void>();
+  let closing = false;
+  let closePromise: Promise<void> | undefined;
+  const registerEventStream = (response: ServerResponse, cleanup: () => void): void => {
+    eventStreamResponses.add(response);
+    eventStreams.add(response);
+    eventStreamCleanups.set(response, cleanup);
+    const remove = (): void => { eventStreams.delete(response); };
+    response.once("finish", remove);
+    response.once("close", remove);
+  };
+  const server = createServer((request, response) => {
+    if (closing) {
+      response.setHeader("Connection", "close");
+      json(response, 503, { error: { code: "WEB_SERVER_CLOSING", message: "网页服务正在关闭" } });
+      return;
+    }
+    let handler: Promise<void>;
+    handler = (async () => {
+      try {
+        await handle(resolvedOptions, assets, usage, request, response, registerEventStream);
+      } catch (error) {
+        if (response.headersSent) {
+          response.destroy(error instanceof Error ? error : undefined);
+        } else {
+          apiError(response, error);
+        }
+      } finally {
+        if (!eventStreamResponses.has(response)) await waitForResponse(response);
+      }
+    })().finally(() => { handlers.delete(handler); });
+    handlers.add(handler);
+  });
+  // Defensive: event streams live as long as the observed session; make sure no
+  // default socket idle timeout can cut one mid-session. Empirically Node's
+  // default requestTimeout does not cut active SSE streams, but explicit
+  // zero-timeouts keep that invariant independent of runtime defaults.
+  server.on("request", (request, response) => {
+    if (request.method !== "GET") return;
+    try {
+      const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
+      if (/^\/api\/sessions\/[^/]+\/events$/u.test(url.pathname)) {
+        response.setTimeout(0);
+        request.setTimeout(0);
+      }
+    } catch {
+      // A malformed URL reaches the main handler, which rejects it there.
+    }
+  });
+  await new Promise<void>((resolveListen, rejectListen) => {
+    server.once("error", rejectListen);
+    server.listen(options.port, options.host, () => {
+      server.off("error", rejectListen);
+      resolveListen();
+    });
+  });
+  const close = (): Promise<void> => {
+    if (closePromise !== undefined) return closePromise;
+    closing = true;
+    const serverClosed = new Promise<void>((resolveClose, rejectClose) => {
+      server.close((error) => error ? rejectClose(error) : resolveClose());
+    });
+    closePromise = (async () => {
+      let pickerCloseError: unknown;
+      try {
+        try {
+          await picker.close();
+        } catch (error) {
+          pickerCloseError = error;
+        }
+        await Promise.allSettled([...handlers]);
+        const streams = [...eventStreams];
+        const streamCompletions = streams.map((response) => waitForResponse(response));
+        for (const response of streams) {
+          eventStreamCleanups.get(response)?.();
+          if (!response.writableEnded && !response.destroyed) response.end();
+        }
+        await Promise.allSettled(streamCompletions);
+        try {
+          await options.manager.close();
+        } catch (managerCloseError) {
+          if (pickerCloseError !== undefined) throw new AggregateError([pickerCloseError, managerCloseError], "Web 资源关闭失败");
+          throw managerCloseError;
+        }
+        if (pickerCloseError !== undefined) throw pickerCloseError;
+      } finally {
+        server.closeAllConnections();
+        await serverClosed;
+      }
+    })();
+    return closePromise;
+  };
+  return {
+    server,
+    url: `http://${options.host}:${options.port}`,
+    prepareNativePicker: picker.prepare,
+    close,
+  };
+}

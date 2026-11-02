@@ -1,0 +1,79 @@
+import type { JsonObject, JsonValue } from "../../api/foundation/json.js";
+import type { MessageOrigin } from "../../api/messages/types.js";
+import type { ChatMessage, ModelInputModality, ProviderStreamEvent } from "../../api/model/types.js";
+import type { RuntimeContextContribution } from "../../api/policy/types.js";
+import type { AgentState } from "../state/types.js";
+
+export interface AgentKernelModelConfig {
+  readonly model: string;
+  readonly inputModalities?: readonly ModelInputModality[];
+  readonly temperature?: number;
+  readonly maxOutputTokens?: number;
+  readonly topP?: number;
+  readonly seed?: number;
+  readonly reasoningEffort?: "low" | "medium" | "high";
+  readonly contextWindowTokens?: number;
+  readonly providerOptions?: JsonObject;
+  readonly timeouts?: {
+    readonly headersMs?: number;
+    readonly chunkStallMs?: number;
+    readonly absoluteMs?: number;
+  };
+}
+
+export interface AgentKernelConfig {
+  readonly model: AgentKernelModelConfig;
+  readonly systemMessage?: string;
+  readonly maxTransitionsPerDrain?: number;
+  readonly runtimeContextRefs?: Readonly<Record<string, RuntimeContextContribution>>;
+  /** Host-only live projection hook. Stream frames are never durable events. */
+  readonly onModelStream?: (frame: ModelStreamFrame) => Promise<void> | void;
+}
+
+export interface ModelStreamFrame {
+  readonly sessionId: string;
+  readonly turnId: string;
+  readonly planId: string;
+  readonly event: ProviderStreamEvent;
+}
+
+export interface StartTurnInput {
+  readonly sessionId?: string;
+  readonly turnId?: string;
+  readonly inputId?: string;
+  readonly content: string;
+  readonly origin?: MessageOrigin;
+  readonly rootTurnId?: string;
+  readonly parentTurnId?: string;
+  readonly causedByCallId?: string;
+  readonly initialHistory?: readonly ChatMessage[];
+  readonly initialPolicyState?: Readonly<Record<string, JsonValue>>;
+  readonly delegationDepth?: number;
+  readonly parentSessionId?: string;
+  readonly metadata?: JsonObject;
+  readonly toolRestriction?: { readonly allow?: readonly string[]; readonly deny?: readonly string[] };
+}
+
+export interface TurnHandle {
+  readonly sessionId: string;
+  readonly turnId: string;
+  readonly inputId: string;
+  readonly completion: Promise<AgentState>;
+}
+
+export interface PendingTurnHandle {
+  readonly sessionId: string;
+  readonly turnId: string;
+  readonly inputId: string;
+  readonly completion: Promise<AgentState>;
+}
+
+export interface QueueInputRequest {
+  readonly sessionId: string;
+  readonly inputId?: string;
+  readonly content: string;
+  readonly origin?: MessageOrigin;
+  readonly rootTurnId?: string;
+  readonly parentTurnId?: string;
+  readonly causedByCallId?: string;
+}

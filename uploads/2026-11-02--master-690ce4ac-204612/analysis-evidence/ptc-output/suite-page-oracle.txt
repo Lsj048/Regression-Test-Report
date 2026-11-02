@@ -1,0 +1,31 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/cases/ptc-live-file-handoff-summary.ts
+      const question = page.getByRole("region", { name: "等待回答" });
+      if (await question.isVisible()) throw new Error(`PTC file processing requested unexpected input: ${await question.innerText()}`);
+      const current = await sessionFrom(await fetchBeforeDeadline(`${environment.baseUrl}/api/sessions/${session.id}`, deadline));
+      if (current.status === "completed") break;
+      if (current.status !== "running") throw new Error(`PTC file processing ended with status ${current.status}`);
+      await page.waitForTimeout(100);
+    }
+    const terminal = await sessionFrom(await fetchBeforeDeadline(`${environment.baseUrl}/api/sessions/${session.id}`, deadline));
+    expect(terminal.status, "PTC file processing did not complete within its Turn budget").toBe("completed");
+    const finalAnswer = page.locator(".timeline-group > .assistant-message > .markdown").filter({ hasText: /\S/u });
+    await expect(finalAnswer, "the PTC Turn must show one ordinary final answer").toHaveCount(1);
+    await expect(finalAnswer.first()).toBeVisible();
+    const pageFinalAnswer = (await finalAnswer.first().innerText()).trim();
+    assertPtcFileHandoffAnswer(pageFinalAnswer);
+    const durationMs = Date.now() - startedAt;
+    expect(durationMs, "PTC file processing exceeded its Turn budget").toBeLessThan(durationBudget);
+    await expect(page.getByTestId("stop-task")).toHaveCount(0);
+    await expect(page.getByTestId("permission-select")).toBeEnabled();
+    await expect(page.getByRole("button", { name: "复制回答" })).toHaveCount(1);
+    await expect(page.locator(".timeline-group .user-message")).toHaveText([scenario.prompt]);
+    expect(await businessEntries(environment.workspace)).toEqual([scenario.outputPath, scenario.inputPath].sort());
+    expect(await readFile(join(environment.workspace, scenario.inputPath), "utf8")).toBe(scenario.inputContent);
+    const outputContent = await readFile(join(environment.workspace, scenario.outputPath), "utf8");
+    expect(parsePtcFileHandoffSummary(outputContent)).toEqual(scenario.outputValue);
+
+    const audit = await auditPtcLiveFileHandoffSummarySession(
+      eventLogPath, messagePath, session.id, environment.workspace, inputId,
+    );
+    const finalMarkup = renderToStaticMarkup(createElement(ReactMarkdown, {

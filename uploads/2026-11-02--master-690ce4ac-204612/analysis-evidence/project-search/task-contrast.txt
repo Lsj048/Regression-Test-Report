@@ -1,0 +1,15 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/assistant-maintenance-scenarios.ts
+  "project-read": {
+    prompt: "请通过长期项目资料管理功能查阅 release/current.txt，告诉我本周发布负责人和发布窗口，姓名和时间请沿用资料原文。这里说的是已保存的项目资料，不是工作区文件；不要查找或读取工作区文件，不修改、删除资料或执行命令，也不用联网。",
+    marker: "周四 16:00", target: "release/current.txt",
+    documents: { "release/current.txt": "本周发布负责人：林澈；发布窗口：周四 16:00", "release/notes.txt": "周三整理历史会议纪要。" },
+  },
+  "project-search": {
+    prompt: "我忘了长期项目资料中哪份文件记录了鹈鹕结算迁移，请按“鹈鹕结算迁移”搜索资料正文，列出匹配的资料路径和其中的联系人。不要修改资料、执行命令或联网。",
+    marker: "陈禾", query: "鹈鹕结算迁移",
+    documents: { "migrations/settlement.txt": "鹈鹕结算迁移：联系人陈禾，周二交接。", "migrations/archive.txt": "旧计费平台升级：联系人顾宁，已归档。" },
+  },
+  "project-delete": {
+    prompt: "请通过长期项目资料管理功能删除 release/obsolete.txt，这份旧发布说明已作废。这里说的是已保存的项目资料，不是工作区文件，不要查找或读取工作区文件。若页面询问删除权限，我会批准；其他资料必须保留，不执行命令或联网。完成后告诉我删除了哪个资料路径。",
+    marker: "release/obsolete.txt", target: "release/obsolete.txt",

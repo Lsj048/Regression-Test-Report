@@ -1,0 +1,35 @@
+{
+  "kind": "independent-evaluated-product-tree-check",
+  "scope": "Read-only comparison after original G2 completed; does not alter or rerun its INVALID_EVIDENCE verdict.",
+  "masterSha": "690ce4ac3d8bd4f24b734173019b8c61340c0a83",
+  "evaluatedTree": "e667aa16e5ed82ef9f588cb497e5bf571482c5cf",
+  "mainRepositoryTreeLookup": {
+    "exit": 128,
+    "stderr": "fatal: git cat-file: could not get object info"
+  },
+  "productScopes": [
+    "src",
+    "config",
+    "spec",
+    "package.json",
+    "package-lock.json"
+  ],
+  "referenceLeafCount": 331,
+  "referenceLeafListSha256": "fd0bc04eb44cc34b068717e795bec29f820a2ae0f03c67ab923450dc1316f818",
+  "profiles": [
+    {
+      "profile": "deterministic",
+      "treeObjectExists": true,
+      "leafListMatchesMaster": true,
+      "productDiff": [],
+      "leafListSha256": "fd0bc04eb44cc34b068717e795bec29f820a2ae0f03c67ab923450dc1316f818"
+    },
+    {
+      "profile": "live",
+      "treeObjectExists": true,
+      "leafListMatchesMaster": true,
+      "productDiff": [],
+      "leafListSha256": "fd0bc04eb44cc34b068717e795bec29f820a2ae0f03c67ab923450dc1316f818"
+    }
+  ]
+}

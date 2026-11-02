@@ -1,0 +1,124 @@
+import { existsSync, realpathSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
+import type { JsonValue } from "../../kernel/api/foundation/json.js";
+import { hashJson, sha256 } from "../../kernel/api/foundation/json.js";
+import { PLANNING_POLICY_ID, type PlanModeState } from "./types.js";
+import type {
+  ContextEffectForPoint, ContextPoint, ContextPolicy, ContextSnapshot, PolicyInputEnvelope, PolicyResult,
+  StatePolicy, StatePolicyInput, StatePolicyResult,
+  ActionPolicy, ActionEffect, ActionPoint, ActionSnapshot, PolicyDescriptor,
+} from "../../kernel/api/policy/types.js";
+import { renderPlanModeReentry, renderPlanModeReminder } from "./policy-prompts.js";
+import { resourceScopeConstraint } from "../common/execution-constraints/resource-scope.js";
+import { PROCESS_RESTRICTIONS_PROTOCOL, processRestrictionsConstraint } from "../common/execution-constraints/process.js";
+
+const descriptor = {
+  apiVersion: "policy.longcat/v1",
+  id: PLANNING_POLICY_ID,
+  version: "1.0.0",
+  configSchema: { type: "object", properties: { entryGuidance: { type: "string" }, planMutationActions: { type: "array", uniqueItems: true, items: { type: "string", minLength: 1 } } }, additionalProperties: false },
+  implementedInterfaces: ["context/v1", "action/v1", "state/v1"],
+  points: ["assemble", "fit", "interpret_actions", "after_actions"],
+  claims: [
+    { kind: "key_prefix", resource: "context.runtime", prefix: "plan-workflow" },
+    { kind: "chain_member", chain: "state.policies" },
+    { kind: "set_contributor", resource: "action.rejections" },
+  ],
+  replayMode: "recorded_external_io",
+  requires: [],
+} as const satisfies Omit<PolicyDescriptor, "checksum">;
+
+export const PLANNING_POLICY_DESCRIPTOR: PolicyDescriptor = Object.freeze({
+  ...descriptor, checksum: hashJson(descriptor as unknown as JsonValue),
+});
+
+function record(value: JsonValue | undefined): Readonly<Record<string, JsonValue>> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Readonly<Record<string, JsonValue>> : undefined;
+}
+
+export class PlanModePolicy implements ContextPolicy<"assemble" | "fit">, ActionPolicy, StatePolicy {
+  readonly descriptor = PLANNING_POLICY_DESCRIPTOR;
+
+  constructor(private readonly artifactDirectory: string) {}
+
+  async decideAction(input: PolicyInputEnvelope<ActionPoint, ActionSnapshot>): Promise<PolicyResult<ActionEffect>> {
+    const calls = input.snapshot.candidates;
+    if (calls.length > 1 && calls.some((call) => call.name === "EnterPlanMode" || call.name === "ExitPlanMode")) {
+      return { decision: "propose", proposals: calls.map((call) => ({ kind: "reject_candidate", candidateId: call.candidateId, code: "PLAN_MODE_TRANSITION_REQUIRES_OWN_STEP", modelResult: [{ type: "text", text: "EnterPlanMode and ExitPlanMode must each be the only tool call in their model step. Nothing in this mixed batch was executed. Retry the mode transition alone, then wait for its result." }] })) };
+    }
+    const state = this.#state(input.privateState, input.agent.sessionId);
+    if (state.active) {
+      let resource = state.planFilePath;
+      try { resource = join(realpathSync(dirname(resource)), basename(resource)); } catch { /* No file may be written before entry creates the artifact directory. */ }
+      return { decision: "propose", proposals: calls.flatMap((call): ActionEffect[] => [
+        { kind: "constrain_execution", candidateId: call.candidateId, constraint: resourceScopeConstraint(((input.config as { planMutationActions?: readonly string[] }).planMutationActions ?? []).map(action => ({ action, resource }))) },
+        ...(call.constraintProtocols?.some(({ id }) => id === PROCESS_RESTRICTIONS_PROTOCOL.id) ? [{ kind: "constrain_execution" as const, candidateId: call.candidateId, constraint: processRestrictionsConstraint({ readOnly: true, foregroundOnly: true }) }] : []),
+      ]) };
+    }
+    if (state.executionMode === "default") return { decision: "propose", proposals: calls.filter((call) => call.name !== "EnterPlanMode" && call.name !== "ExitPlanMode").map((call) => ({ kind: "ask_permission_by_default", candidateId: call.candidateId })) };
+    return { decision: "abstain", proposals: [] };
+  }
+
+  #state(value: Readonly<JsonValue | null>, sessionId: string): PlanModeState {
+    const record = value && typeof value === "object" && !Array.isArray(value) ? value as Readonly<Record<string, JsonValue>> : undefined;
+    const planFilePath = join(this.artifactDirectory, "plans", `${sha256(sessionId).slice(0, 24)}.md`);
+    if (record && typeof record["active"] === "boolean") return { ...record, active: record["active"], planFilePath: typeof record["planFilePath"] === "string" ? record["planFilePath"] : planFilePath } as PlanModeState;
+    return { active: false, planFilePath };
+  }
+
+  async decideContext(input: PolicyInputEnvelope<ContextPoint, ContextSnapshot>): Promise<PolicyResult<ContextEffectForPoint<"assemble" | "fit">>> {
+    const state = this.#state(input.privateState, input.agent.sessionId);
+    if ((input.agent.delegationDepth ?? 0) > 0) return input.point === "assemble" ? { decision: "propose", proposals: [{ kind: "deny_tools", names: ["EnterPlanMode", "ExitPlanMode"], reasonCode: "PLAN_APPROVAL_ROOT_ONLY" }] } : { decision: "abstain", proposals: [] };
+    if (input.point === "fit") {
+      const range = input.snapshot.surfaceMessages.filter((message) => message.message.role !== "system");
+      if (!state.active && state.clearContext && state.approvedPlan !== undefined && range.length > 0) {
+        return {
+          decision: "propose",
+          proposals: [{ kind: "replace_range", startMessageId: range[0]!.messageId, endMessageId: range.at(-1)!.messageId,
+            message: { role: "user", content: `Implement the following plan:\n\n${state.approvedPlan}\n\nThe approved plan is saved at ${state.planFilePath}.${state.approvalFeedback ? `\n\nUser feedback on the approved plan:\n${state.approvalFeedback}` : ""}` },
+            reasonCode: "PLAN_APPROVED_CLEAR_CONTEXT" }],
+          privateState: { ...state, clearContext: false },
+        };
+      }
+      return { decision: "abstain", proposals: [] };
+    }
+    if (input.point !== "assemble") return { decision: "abstain", proposals: [] };
+    const proposals: ContextEffectForPoint<"assemble">[] = [];
+    const guidance = (input.config as { entryGuidance?: string }).entryGuidance?.trim();
+    if (!state.active && guidance && input.snapshot.availableTools.some(({ name }) => name === "EnterPlanMode")) proposals.push({
+      kind: "upsert_runtime_context", key: "plan-workflow/entry", ref: { kind: "planning_workflow", digest: sha256(guidance) },
+      content: [{ type: "text", text: `<system-reminder>\n${guidance}\n</system-reminder>` }], placement: "before_messages",
+    });
+    // Current state is a replaceable Policy projection, not another historical user message.
+    // Never emit an "inactive" instruction: lack of entry is not a decision to skip planning.
+    if (state.active || state.exitedCallId) {
+      const exists = existsSync(state.planFilePath);
+      const text = state.active ? [
+        `Plan mode is ACTIVE. The current plan has NOT been approved. Only read-only exploration and edits to ${state.planFilePath} are allowed. Full file permissions do not waive plan approval. User requests such as "continue" do not end plan mode. Only a successful, explicitly approved ExitPlanMode result permits implementation.`,
+        ...(state.exitedCallId && exists ? [renderPlanModeReentry(state.planFilePath)] : []),
+        renderPlanModeReminder(state.planFilePath, exists),
+      ].join("\n\n") : `The user explicitly approved the plan saved at ${state.planFilePath}. Implement that approved scope. This approval does not cover a new plan; enter plan mode again when the current request calls for planning.`;
+      proposals.push({ kind: "upsert_runtime_context", key: "plan-workflow/current", ref: { active: state.active, digest: sha256(text) },
+        content: [{ type: "text", text: `<system-reminder>\n${text}\n</system-reminder>` }], placement: "before_messages" });
+    }
+    return { decision: proposals.length ? "propose" : "abstain", proposals, privateState: state };
+  }
+
+  async decideState(input: StatePolicyInput): Promise<StatePolicyResult> {
+    const state = this.#state(input.privateState, input.agent.sessionId);
+    if (input.point !== "after_actions") return {};
+    let next = state;
+    const results = record(input.snapshot.actionBatch)?.["results"];
+    for (const raw of Array.isArray(results) ? results : []) {
+      const result = record(raw);
+      const name = record(result?.["execution"])?.["name"];
+      if (!result || result["isError"] === true || result["status"] !== "succeeded" || (name !== "EnterPlanMode" && name !== "ExitPlanMode")) continue;
+      const value = record(result["canonicalValue"]);
+      if (!value || (name === "ExitPlanMode" && value["approved"] !== true)) continue;
+      const transition = record(value["planMode"]);
+      if (transition
+        && typeof transition["active"] === "boolean" && transition["planFilePath"] === state.planFilePath) next = { ...state, ...transition } as PlanModeState;
+    }
+    return next === state ? {} : { privateStateAfterEvaluation: next };
+  }
+}

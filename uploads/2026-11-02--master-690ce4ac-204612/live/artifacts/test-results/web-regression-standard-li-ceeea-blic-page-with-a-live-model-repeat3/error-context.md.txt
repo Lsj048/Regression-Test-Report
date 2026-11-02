@@ -1,0 +1,297 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> standard.live-web-fetch-page >> standard mode fetches one public page with a live model
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+Error: WebFetch requested unexpected user input: 是否允许：curl -s https://example.com/？ 1. 允许 只允许本次调用。 ↑↓ 2. 拒绝 阻止本次调用。 3. 其他想法，直接告诉我 选择一项 ↑↓ 切换 · 数字选择 收起 Esc 确认并继续 ↵
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-TTAGwG/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "请访问并读取 https://example.com/，…" [ref=e56] [cursor=pointer]
+        - button "请访问并读取 https://example.com/，… 的会话操作" [ref=e60] [cursor=pointer]
+    - button "归档会话" [ref=e65] [cursor=pointer]
+    - button "设置" [ref=e69] [cursor=pointer]
+  - main [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 请访问并读取 https://example.com/，…
+        - button "复制会话 ID session_9a5062e4-5c54-4928-9e6d-829237cad5dc" [ref=e79] [cursor=pointer]:
+          - generic [ref=e80]: session_9a5062e4-5c54-4928-9e6d-829237cad5dc
+      - generic [ref=e84]:
+        - button "对话" [ref=e85] [cursor=pointer]
+        - button "轨迹" [ref=e88] [cursor=pointer]
+    - generic [ref=e91]:
+      - generic [ref=e94]:
+        - generic [ref=e97]:
+          - generic [ref=e98]: 请访问并读取 https://example.com/，不要搜索，也不要访问页面中的其他链接。 请从实际页面中取得标题和正文第一句话，并保留英文原文。最后只输出下面两种字段，各占一行，不加列表符号或其他说明： title=<页面标题原文> sentence=<正文第一句话原文>
+          - generic:
+            - time: 23:56
+            - button "复制消息"
+        - generic [ref=e100]:
+          - generic [ref=e101]: 已处理 6 秒
+          - generic [ref=e103]:
+            - paragraph [ref=e106]:
+              - text: 我将获取
+              - link "https://example.com/" [ref=e107] [cursor=pointer]:
+                - /url: https://example.com/
+              - text: 并提取标题和正文第一句话。
+            - 'button "WebFetch prompt: Extract the exact page title (from the <title> tag or main heading) and the first senten 已完成" [ref=e108] [cursor=pointer]':
+              - generic [ref=e112]:
+                - strong [ref=e113]: WebFetch
+                - generic [ref=e114]: "prompt: Extract the exact page title (from the <title> tag or main heading) and the first senten"
+              - generic [ref=e115]: 已完成
+            - paragraph [ref=e118]: 让我核对一下原始 HTML，以确认标题和正文第一句话的准确原文。
+            - 'button "Bash command: curl -s https://example.com/ · description: Fetch raw HTML of example.com 等待回答" [ref=e119] [cursor=pointer]':
+              - generic [ref=e123]:
+                - strong [ref=e124]: Bash
+                - generic [ref=e125]: "command: curl -s https://example.com/ · description: Fetch raw HTML of example.com"
+              - generic [ref=e126]: 等待回答
+            - generic [ref=e127]: 等待你的回答
+        - status [ref=e130]:
+          - generic [ref=e133]: 正在等待你的回答
+      - region "等待回答" [ref=e136]:
+        - generic [ref=e137]:
+          - paragraph [ref=e141]:
+            - text: 是否允许：curl -s
+            - link "https://example.com/？" [ref=e142] [cursor=pointer]:
+              - /url: https://example.com/%EF%BC%9F
+          - radiogroup "是否允许：curl -s https://example.com/？" [ref=e144]:
+            - radio [active] [ref=e145] [cursor=pointer]:
+              - generic [aria-hidden] [ref=e146]: "1."
+              - generic [ref=e147]:
+                - strong [ref=e148]: 允许
+                - generic [ref=e149]: 只允许本次调用。
+              - generic [ref=e151]: ↑↓
+            - radio [ref=e152] [cursor=pointer]:
+              - generic [aria-hidden] [ref=e153]: "2."
+              - generic [ref=e154]:
+                - strong [ref=e155]: 拒绝
+                - generic [ref=e156]: 阻止本次调用。
+            - radio "其他想法，直接告诉我" [ref=e158] [cursor=pointer]:
+              - generic [aria-hidden] [ref=e159]: "3."
+          - generic [ref=e161]:
+            - generic [ref=e162]:
+              - generic [ref=e163]: 选择一项
+              - generic [ref=e164]: ↑↓ 切换 · 数字选择
+            - generic [ref=e165]:
+              - button "收起 Esc" [ref=e166] [cursor=pointer]:
+                - text: 收起
+                - generic [ref=e167]: Esc
+              - button "确认并继续 ↵" [disabled] [ref=e168]:
+                - text: 确认并继续
+                - generic [ref=e169]: ↵
+    - generic [ref=e170]:
+      - generic [ref=e173]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e174] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  5   | import { auditStandardLiveWebFetchPage, type StandardLiveWebFetchPageAudit } from "../audits/standard-live-web-fetch-page.js";
+  6   | import {
+  7   |   assertNoBrowserErrors,
+  8   |   attachJson,
+  9   |   browserDiagnostics,
+  10  |   sessionFrom,
+  11  |   type EvaluationCaseDriver,
+  12  | } from "../case-driver.js";
+  13  | import {
+  14  |   STANDARD_LIVE_WEB_FETCH_PAGE_CASE,
+  15  |   STANDARD_LIVE_WEB_FETCH_PAGE_SCENARIO,
+  16  |   evaluationTimingBudget,
+  17  | } from "../evaluation-cases.js";
+  18  | 
+  19  | async function inspectFetchCards(
+  20  |   page: Page,
+  21  |   activity: Locator,
+  22  |   details: StandardLiveWebFetchPageAudit["toolDetails"],
+  23  | ): Promise<readonly { readonly card: string; readonly detail: string }[]> {
+  24  |   if (await activity.getAttribute("open") === null) await activity.locator(":scope > summary").click();
+  25  |   const cards = activity.locator(".tool-card");
+  26  |   await expect(cards).toHaveCount(details.length);
+  27  |   const snapshots: { card: string; detail: string }[] = [];
+  28  |   for (const [index, expected] of details.entries()) {
+  29  |     const card = cards.nth(index);
+  30  |     await expect(card.locator(".tool-copy > strong")).toHaveText(expected.name);
+  31  |     await expect(card.locator(".tool-status")).toHaveText("已完成");
+  32  |     const cardText = (await card.innerText()).replace(/\s+/gu, " ").trim();
+  33  |     await card.click();
+  34  |     const panel = page.locator(".details-panel");
+  35  |     await expect(panel).toBeVisible();
+  36  |     await expect(panel.locator(".details-head span")).toHaveText(expected.name);
+  37  |     const values = panel.locator(".details-body pre");
+  38  |     await expect(values).toHaveCount(2);
+  39  |     expect(await values.nth(0).textContent(), "WebFetch page arguments disagree with SQLite").toBe(expected.argumentsJson);
+  40  |     expect(await values.nth(1).textContent(), "WebFetch page result disagrees with SQLite").toBe(expected.renderedResult);
+  41  |     snapshots.push({ card: cardText, detail: (await panel.innerText()).replace(/\s+/gu, " ").trim() });
+  42  |     await page.getByRole("button", { name: "关闭详情", exact: true }).click();
+  43  |     await expect(panel).toHaveCount(0);
+  44  |   }
+  45  |   return snapshots;
+  46  | }
+  47  | 
+  48  | export const standardLiveWebFetchPageDriver = Object.freeze({
+  49  |   caseId: STANDARD_LIVE_WEB_FETCH_PAGE_CASE.id,
+  50  |   title: "standard mode fetches one public page with a live model",
+  51  |   timingBudgetKeys: Object.freeze(["durationMs", "refreshRecoveryMs"]),
+  52  |   permissionMode: "read-only",
+  53  |   async prepareWorkspace({ workspace }) {
+  54  |     const scenario = STANDARD_LIVE_WEB_FETCH_PAGE_SCENARIO;
+  55  |     expect(await readdir(workspace), "the isolated WebFetch workspace must start empty").toEqual([]);
+  56  |     const settingsDirectory = join(workspace, ".longcat-harness");
+  57  |     await mkdir(settingsDirectory, { recursive: true, mode: 0o700 });
+  58  |     await writeFile(join(settingsDirectory, "settings.local.json"), `${JSON.stringify({
+  59  |       permissions: { allow: scenario.permissionRules },
+  60  |     }, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+  61  |   },
+  62  |   async run({ page, testInfo, environment: current }) {
+  63  |     const contract = STANDARD_LIVE_WEB_FETCH_PAGE_CASE;
+  64  |     const scenario = STANDARD_LIVE_WEB_FETCH_PAGE_SCENARIO;
+  65  |     const durationBudgetMs = evaluationTimingBudget(contract, "durationMs");
+  66  |     const refreshRecoveryBudgetMs = evaluationTimingBudget(contract, "refreshRecoveryMs");
+  67  |     testInfo.setTimeout(durationBudgetMs + refreshRecoveryBudgetMs + 30_000);
+  68  |     expect(current.model.execution).toBe("live");
+  69  | 
+  70  |     const settingsDirectory = join(current.workspace, ".longcat-harness");
+  71  |     const settingsPath = join(settingsDirectory, "settings.local.json");
+  72  |     const settingsBefore = await readFile(settingsPath);
+  73  |     const settingsHash = createHash("sha256").update(settingsBefore).digest("hex");
+  74  |     expect(await readdir(current.workspace)).toEqual([".longcat-harness"]);
+  75  |     expect(await readdir(settingsDirectory)).toEqual(["settings.local.json"]);
+  76  |     expect((await stat(settingsPath)).mode & 0o777, "the WebFetch permission fixture has unsafe permissions").toBe(0o600);
+  77  | 
+  78  |     const browserState = browserDiagnostics(page);
+  79  |     await page.goto(current.baseUrl);
+  80  |     await expect(page.getByRole("button", { name: "LongCat Harness" })).toBeVisible();
+  81  |     await expect(page.getByTestId("mode-select")).toContainText("标准模式");
+  82  |     await expect(page.getByTestId("model-select")).toContainText(current.model.name);
+  83  |     await expect(page.getByTestId("permission-select")).toContainText("只读");
+  84  |     await expect(page.getByTestId("workspace-select")).toContainText(basename(current.workspace));
+  85  | 
+  86  |     await page.getByTestId("composer-input").fill(contract.prompt);
+  87  |     const accepted = page.waitForResponse((response) => response.url() === `${current.baseUrl}/api/sessions`
+  88  |       && response.request().method() === "POST");
+  89  |     const startedAt = Date.now();
+  90  |     await page.getByTestId("send-message").click();
+  91  |     const response = await accepted;
+  92  |     expect(response.ok(), "WebFetch create-session request failed").toBe(true);
+  93  |     const session = await sessionFrom(response);
+  94  |     expect(session).toMatchObject({ status: "running", mode: "standard" });
+  95  |     await expect(page.getByTestId("stop-task")).toBeVisible();
+  96  |     await expect(page.getByTestId("permission-select")).toBeDisabled();
+  97  |     await expect(page.getByTestId("composer-input")).toHaveAttribute("placeholder", /追加消息/u);
+  98  | 
+  99  |     const finalAnswer = page.locator(".timeline-group > .assistant-message").last();
+  100 |     const unexpectedQuestion = page.getByRole("region", { name: "等待回答" });
+  101 |     const deadline = startedAt + durationBudgetMs;
+  102 |     while (Date.now() < deadline) {
+  103 |       if (await unexpectedQuestion.isVisible()) {
+  104 |         const question = (await unexpectedQuestion.innerText()).replace(/\s+/gu, " ").trim();
+> 105 |         throw new Error(`WebFetch requested unexpected user input: ${question}`);
+      |               ^ Error: WebFetch requested unexpected user input: 是否允许：curl -s https://example.com/？ 1. 允许 只允许本次调用。 ↑↓ 2. 拒绝 阻止本次调用。 3. 其他想法，直接告诉我 选择一项 ↑↓ 切换 · 数字选择 收起 Esc 确认并继续 ↵
+  106 |       }
+  107 |       const observed = await sessionFrom(await fetch(`${current.baseUrl}/api/sessions/${session.id}`));
+  108 |       if (observed.status === "completed") break;
+  109 |       if (observed.status !== "running") throw new Error(`WebFetch ended with unexpected status ${observed.status}`);
+  110 |       await page.waitForTimeout(100);
+  111 |     }
+  112 |     const terminal = await sessionFrom(await fetch(`${current.baseUrl}/api/sessions/${session.id}`));
+  113 |     expect(terminal.status, "WebFetch did not complete within its duration budget").toBe("completed");
+  114 |     await expect(finalAnswer).toBeVisible();
+  115 |     const renderedAnswerBeforeRefresh = (await finalAnswer.innerText()).trim();
+  116 |     expect(renderedAnswerBeforeRefresh.replace(/\s+/gu, " "), "the page rendered the wrong WebFetch answer")
+  117 |       .toBe(scenario.finalLines.join(" "));
+  118 |     const durationMs = Date.now() - startedAt;
+  119 |     expect(durationMs, "WebFetch exceeded its duration budget").toBeLessThan(durationBudgetMs);
+  120 |     await expect(page.getByTestId("stop-task")).toHaveCount(0);
+  121 |     await expect(page.getByTestId("permission-select")).toBeEnabled();
+  122 |     await expect(page.getByRole("button", { name: "复制回答" })).toBeVisible();
+  123 |     await expect(unexpectedQuestion).toHaveCount(0);
+  124 | 
+  125 |     const audit = auditStandardLiveWebFetchPage(
+  126 |       join(current.stateDirectory, "event_log.sqlite"),
+  127 |       join(current.stateDirectory, "message.sqlite"),
+  128 |       session.id,
+  129 |       current.workspace,
+  130 |     );
+  131 |     expect(audit.fetchedUrl).toBe(scenario.url);
+  132 |     expect(audit.fetchedContentType.split(";", 1)[0]!.trim().toLowerCase()).toBe(scenario.expectedContentType);
+  133 | 
+  134 |     const completedActivity = page.locator(".timeline-group .turn-activity.completed");
+  135 |     await expect(completedActivity, "the page omitted the completed WebFetch activity").toHaveCount(1);
+  136 |     const cardsBeforeRefresh = await inspectFetchCards(page, completedActivity, audit.toolDetails);
+  137 | 
+  138 |     const refreshStartedAt = Date.now();
+  139 |     const recovered = page.waitForResponse((candidate) => candidate.url()
+  140 |       === `${current.baseUrl}/api/sessions/${encodeURIComponent(session.id)}`
+  141 |       && candidate.request().method() === "GET");
+  142 |     await page.reload({ timeout: refreshRecoveryBudgetMs });
+  143 |     const rows = page.locator(".session-tree .session-item:not(.provisional) > .session-row");
+  144 |     await expect(rows, "refresh did not restore the WebFetch Session").toHaveCount(1);
+  145 |     await rows.first().click();
+  146 |     const recoveredResponse = await recovered;
+  147 |     expect(recoveredResponse.ok(), "the WebFetch Session did not reload successfully").toBe(true);
+  148 |     expect(await sessionFrom(recoveredResponse)).toMatchObject({
+  149 |       id: session.id,
+  150 |       status: "completed",
+  151 |       mode: "standard",
+  152 |     });
+  153 |     await expect(rows.first()).toHaveClass(/active/u);
+  154 |     expect((await finalAnswer.innerText()).trim(), "the WebFetch answer changed after refresh")
+  155 |       .toBe(renderedAnswerBeforeRefresh);
+  156 |     expect(await inspectFetchCards(page, completedActivity, audit.toolDetails),
+  157 |       "the WebFetch cards or details changed after refresh").toEqual(cardsBeforeRefresh);
+  158 |     expect(await readdir(current.workspace)).toEqual([".longcat-harness"]);
+  159 |     expect(await readdir(settingsDirectory)).toEqual(["settings.local.json"]);
+  160 |     expect(createHash("sha256").update(await readFile(settingsPath)).digest("hex"),
+  161 |       "the WebFetch Case changed its permission fixture").toBe(settingsHash);
+  162 |     await expect(page.getByTestId("stop-task")).toHaveCount(0);
+  163 |     await expect(page.getByTestId("permission-select")).toBeEnabled();
+  164 |     await expect(unexpectedQuestion).toHaveCount(0);
+  165 |     const refreshRecoveryMs = Date.now() - refreshStartedAt;
+  166 |     expect(refreshRecoveryMs, "WebFetch refresh exceeded its budget").toBeLessThan(refreshRecoveryBudgetMs);
+  167 | 
+  168 |     assertNoBrowserErrors(browserState);
+  169 |     await attachJson(testInfo, contract, "timings", { durationMs, refreshRecoveryMs });
+  170 |     await attachJson(testInfo, contract, "sqlite-audit", {
+  171 |       ...audit,
+  172 |       model: current.model,
+  173 |       settingsSha256: settingsHash,
+  174 |     });
+  175 |   },
+  176 | } satisfies EvaluationCaseDriver);
+  177 | 
+```

@@ -1,0 +1,85 @@
+import { realpath } from "node:fs/promises";
+import { isAbsolute, relative, resolve, sep } from "node:path";
+import { BindingError, ContractError } from "../../../kernel/api/foundation/errors.js";
+import type { JsonValue } from "../../../kernel/api/foundation/json.js";
+import type { ToolPackage } from "../../../kernel/api/tool/package.js";
+import type { ToolPermissionTarget } from "../../../kernel/api/tool/types.js";
+import { createGlobTool } from "./glob.js";
+import { createGrepTool } from "./grep.js";
+import { FILESYSTEM_SEARCH_TOOL_NAMES, type FilesystemSearchToolName } from "./schemas.js";
+
+export const FILESYSTEM_SEARCH_TOOL_PACKAGE_ID = "@longcat/tools-filesystem-search";
+
+export interface FilesystemSearchContext {
+  readonly root: string;
+  lexical(input: string): string;
+  existing(input: string): Promise<string>;
+  permission(path: string): ToolPermissionTarget;
+}
+
+function inside(root: string, path: string): boolean {
+  const value = relative(root, path);
+  return value === "" || (!value.startsWith(`..${sep}`) && value !== ".." && !isAbsolute(value));
+}
+
+function emptyConfig(value: JsonValue, component: string): void {
+  if (value === null || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length > 0) {
+    throw new ContractError(`Tool ${component} 当前只接受空配置对象`, "TOOL_COMPONENT_CONFIG_INVALID");
+  }
+}
+
+export function createFilesystemSearchToolPackage(): ToolPackage {
+  const toolPackage: ToolPackage = {
+    manifest: Object.freeze({
+      apiVersion: "tool-package.longcat/v1" as const,
+      id: FILESYSTEM_SEARCH_TOOL_PACKAGE_ID,
+      version: "1.0.0",
+      components: FILESYSTEM_SEARCH_TOOL_NAMES,
+    }),
+    async create(selections, environment) {
+      const root = await realpath(resolve(environment.workspaceRoot));
+      const additional = await Promise.all((environment.additionalDirectories ?? []).map((path) => realpath(resolve(path))));
+      const roots = [root, ...additional];
+      const search: FilesystemSearchContext = Object.freeze({
+        root,
+        lexical(input: string): string {
+          if (!isAbsolute(input)) throw new ContractError("File search Tools require an absolute path", "TOOL_FILE_PATH_NOT_ABSOLUTE");
+          return resolve(input);
+        },
+        existing(input: string): Promise<string> {
+          return realpath(this.lexical(input));
+        },
+        permission(path: string): ToolPermissionTarget {
+          const trusted = roots.some((candidate) => inside(candidate, path));
+          return { action: "Read", resource: path, mutates: false, permissionRequired: !trusted, description: `Read ${path}` };
+        },
+      });
+      const names = selections.map(({ component, config }) => {
+        if (!(FILESYSTEM_SEARCH_TOOL_NAMES as readonly string[]).includes(component)) {
+          throw new BindingError(`${FILESYSTEM_SEARCH_TOOL_PACKAGE_ID} 不提供 Tool：${component}`, "TOOL_PACKAGE_COMPONENT_NOT_FOUND");
+        }
+        emptyConfig(config, component);
+        return component as FilesystemSearchToolName;
+      });
+      if (new Set(names).size !== names.length) throw new BindingError("Mode 不能重复安装同一个 Tool", "TOOL_COMPONENT_DUPLICATE");
+      const available = new Map([
+        ["Glob", createGlobTool(search)],
+        ["Grep", createGrepTool(search)],
+      ]);
+      const definitions = Object.freeze(names.map((name) => available.get(name)!));
+      return Object.freeze({
+        definitions,
+        controls: Object.freeze([]),
+        bindingMaterial: {
+          apiVersion: "tool-suite-binding.longcat/v1",
+          requested: names,
+          installed: definitions.map((definition) => definition.name),
+          workspaceRoot: root,
+          additionalDirectories: additional,
+        },
+        close: async () => {},
+      });
+    },
+  };
+  return Object.freeze(toolPackage);
+}

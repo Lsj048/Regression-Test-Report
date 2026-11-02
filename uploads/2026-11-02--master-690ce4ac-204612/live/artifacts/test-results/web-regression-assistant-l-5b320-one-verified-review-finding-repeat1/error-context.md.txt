@@ -1,0 +1,335 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> assistant.live-code-review-finding >> assistant mode reads one source file and records one verified review finding
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+AssertionError: one or more tools failed
++ actual - expected
+
++ [
++   {
++     name: 'ReportFindings',
++     payload: {
++       actionId: 'action:call_65f9284d3735428ead2e6222',
++       actionPlanId: 'plan_0b49e121-9bce-423c-afc5-11b58b8b25fd',
++       callId: 'call_65f9284d3735428ead2e6222',
++       content: [
++         {
++           text: 'TOOL_ARGUMENTS_SCHEMA: $.findings[0].level is not allowed',
++           type: 'text'
++         }
++       ],
++       errorCode: 'TOOL_ARGUMENTS_SCHEMA',
++       errorMessage: '$.findings[0].level is not allowed',
++       isError: true,
++       name: 'ReportFindings',
++       ordinal: 0,
++       origin: {
++         component: 'ReportFindings',
++         kind: 'tool',
++         package: '@longcat/tools-builtin',
++         version: '1.0.0'
++       },
++       status: 'failed'
++     }
++   }
++ ]
+- []
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-ZLkEku/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "请只读审查 src/invoice-access.ts … 刚刚" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]: 请只读审查 src/invoice-access.ts …
+          - time [ref=e59]: 刚刚
+        - button "请只读审查 src/invoice-access.ts … 的会话操作" [ref=e60] [cursor=pointer]
+    - button "归档会话" [ref=e65] [cursor=pointer]
+    - button "设置" [ref=e69] [cursor=pointer]
+  - main [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 请只读审查 src/invoice-access.ts …
+        - button "复制会话 ID session_a8ae84da-2fa5-4a66-a020-57505cf5a267" [ref=e78] [cursor=pointer]:
+          - generic [ref=e79]: session_a8ae84da-2fa5-4a66-a020-57505cf5a267
+      - generic [ref=e83]:
+        - button "对话" [ref=e84] [cursor=pointer]
+        - button "轨迹" [ref=e87] [cursor=pointer]
+    - generic [ref=e90]:
+      - generic [ref=e93]:
+        - generic [ref=e96]:
+          - generic [ref=e97]: 请只读审查 src/invoice-access.ts 中 canReadInvoice 的授权判断。业务规则是：只有请求账户与当前登录账户相同才允许读取。 这个文件很短，请先完整查看它；如果确认实现违反规则，请把这一项结构化代码审查发现实际登记到应用的发现记录中，不要只在回复里描述；登记时文件定位为 src/invoice-access.ts 第 5 行，摘要逐字写为「账户标识比较方向相反」，失败场景逐字写为「requestedAccountId 与 signedInAccountId 相同时函数返回 false，拒绝合法读取。」。 不要修改文件、执行终端命令、搜索或查看其他文件、联网、向我提问或启动子任务。完成后最后只输出下面三行，不加列表符号或其他文字： finding-count=1 finding-file=src/invoice-access.ts finding-line=5
+          - generic:
+            - time: 22:39
+            - button "复制消息"
+        - group [ref=e99]:
+          - generic "用时 19 秒" [ref=e100] [cursor=pointer]
+        - generic [ref=e104]:
+          - paragraph [ref=e106]: finding-count=1 finding-file=src/invoice-access.ts finding-line=5
+          - generic:
+            - button "复制回答"
+            - button "赞"
+            - button "踩"
+            - button "从此回答分叉会话"
+      - generic [ref=e109]:
+        - textbox "继续输入消息" [ref=e110]
+        - generic [ref=e111]:
+          - generic [ref=e112]:
+            - button "添加" [ref=e114] [cursor=pointer]
+            - generic [ref=e117] [cursor=pointer]: 个人助理
+            - button "权限：只读" [ref=e123] [cursor=pointer]:
+              - generic [ref=e126]: 只读
+          - generic [ref=e129]:
+            - button "模型：LongCat-2.0" [ref=e131] [cursor=pointer]:
+              - generic [ref=e132]: LongCat-2.0
+              - generic [ref=e133]: 思考
+            - generic "模型缓存与上下文用量" [ref=e136]:
+              - meter "最近一次模型请求缓存命中 11,776 / 12,192 输入令牌（96.6%）" [ref=e137]:
+                - generic [ref=e138]: 缓存
+                - strong [ref=e139]: 97%
+              - meter "上下文已使用 12,192 / 1,048,576 令牌（1.2%）；最近一次模型请求" [ref=e140]:
+                - generic [ref=e141]: 令牌
+                - strong [ref=e142]: 1%
+            - button "发送消息" [disabled] [ref=e143]
+    - generic [ref=e146]:
+      - generic [ref=e149]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e150] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  495 |     .map((event) => componentId(eventLogPath, event))
+  496 |     .filter((value): value is string => value !== undefined && configuredPolicies.has(value)));
+  497 |   const missing = contract.requiredPolicyEvidence.filter((policy) => !observedPolicies.has(policy));
+  498 |   assert.deepEqual(missing, [], `${contract.id} is missing observable Policy evidence`);
+  499 |   return {
+  500 |     modelVisibleTools: visibleTools,
+  501 |     modelToolSurfaces: surfaces,
+  502 |     policyEvidence: Object.freeze([...observedPolicies].sort()),
+  503 |   };
+  504 | }
+  505 | 
+  506 | export function tools(databasePath: string, events: readonly EventRow[], type: "tool.call" | "tool.result"): readonly ToolFact[] {
+  507 |   return events.filter((event) => event.type === type).map((event) => {
+  508 |     const value = payload(databasePath, event);
+  509 |     assert.equal(typeof event.turn_id, "string", `${type} #${event.seq} has no turnId`);
+  510 |     assert.equal(typeof value["callId"], "string", `${type} #${event.seq} has no callId`);
+  511 |     assert.equal(typeof value["name"], "string", `${type} #${event.seq} has no name`);
+  512 |     return {
+  513 |       seq: event.seq,
+  514 |       sessionId: event.session_id,
+  515 |       turnId: event.turn_id as string,
+  516 |       callId: value["callId"] as string,
+  517 |       name: value["name"] as string,
+  518 |       payload: value,
+  519 |     };
+  520 |   });
+  521 | }
+  522 | 
+  523 | export function commonAudit(
+  524 |   eventLogPath: string,
+  525 |   messagePath: string,
+  526 |   rootSessionId: string,
+  527 |   peerSessionIds: readonly string[] = [],
+  528 | ): {
+  529 |   readonly database: DatabaseSync;
+  530 |   readonly messages: DatabaseSync;
+  531 |   readonly sessionIds: readonly string[];
+  532 |   readonly childSessionIds: readonly string[];
+  533 |   readonly events: readonly EventRow[];
+  534 |   readonly calls: readonly ToolFact[];
+  535 |   readonly results: readonly ToolFact[];
+  536 |   readonly summary: Omit<SessionAudit, "turnCount" | "eventCount" | "messageCount" | "toolNames" | "forbiddenEvents" | "pendingInputs" | "pendingMessageWrites" | "modelVisibleTools" | "modelToolSurfaces" | "policyEvidence" | "policyDiagnostics">;
+  537 | } {
+  538 |   const database = new DatabaseSync(eventLogPath, { readOnly: true });
+  539 |   const messages = new DatabaseSync(messagePath, { readOnly: true });
+  540 |   integrity(database, "event_log.sqlite");
+  541 |   integrity(messages, "message.sqlite");
+  542 |   const storageSchemaVersions = Object.freeze({
+  543 |     eventLog: assertSchemaCompatible(database, SQLITE_AUDIT_SCHEMA_CONTRACT.eventLog),
+  544 |     messages: assertSchemaCompatible(messages, SQLITE_AUDIT_SCHEMA_CONTRACT.messages),
+  545 |   });
+  546 |   const parentSessionIds = [rootSessionId, ...peerSessionIds];
+  547 |   assert.equal(new Set(parentSessionIds).size, parentSessionIds.length, "evaluation session IDs must be unique");
+  548 |   const parentEvents = rowsFor(database, parentSessionIds);
+  549 |   const childSessionIds = parentEvents
+  550 |     .filter((event) => event.type === "subagent.created")
+  551 |     .map((event) => {
+  552 |       const value = payload(eventLogPath, event)["subagentId"];
+  553 |       assert.equal(typeof value, "string", `subagent.created #${event.seq} has no subagentId`);
+  554 |       return value as string;
+  555 |     });
+  556 |   const sessionIds = [...parentSessionIds, ...childSessionIds];
+  557 |   assert.equal(new Set(sessionIds).size, sessionIds.length, "a child Agent reused an evaluation session ID");
+  558 |   const events = rowsFor(database, sessionIds);
+  559 |   for (const event of events.filter(({ type }) => type === "action.plan.committed")) {
+  560 |     const plan = payload(eventLogPath, event);
+  561 |     if (typeof plan["traceEventId"] === "string") continue;
+  562 |     assert.ok(Array.isArray(plan["actions"]), `canonical action plan #${event.seq} has no actions array`);
+  563 |   }
+  564 |   return {
+  565 |     database,
+  566 |     messages,
+  567 |     sessionIds,
+  568 |     childSessionIds,
+  569 |     events,
+  570 |     calls: tools(eventLogPath, events, "tool.call"),
+  571 |     results: tools(eventLogPath, events, "tool.result"),
+  572 |     summary: { rootSessionId, childSessionIds, storageSchemaVersions },
+  573 |   };
+  574 | }
+  575 | 
+  576 | export function assertNoFailures(
+  577 |   eventLogPath: string,
+  578 |   events: readonly EventRow[],
+  579 |   results: readonly ToolFact[],
+  580 |   supportingPolicies?: Readonly<{ database: DatabaseSync; sessionIds: readonly string[]; contract: EvaluationCaseContract }>,
+  581 | ): readonly string[] {
+  582 |   const recovered = new Set(recoveredModelRequests(events.map(event => ({ ...event, body: payload(eventLogPath, event) }))));
+  583 |   // No caller-provided sequence whitelist: exceptions must pass the full Policy audit.
+  584 |   const supportingFailures = new Set(supportingPolicies === undefined ? [] :
+  585 |     assertNoRecordedContractPolicyErrors(eventLogPath, supportingPolicies.database, events,
+  586 |       supportingPolicies.sessionIds, supportingPolicies.contract)
+  587 |       .flatMap(diagnostic => diagnostic.serviceExchanges)
+  588 |       .flatMap(exchange => exchange.outcome === "failed" ? [exchange.failureSeq] : []));
+  589 |   const forbiddenEvents = events
+  590 |     .filter((event) => !recovered.has(event.seq) && !supportingFailures.has(event.seq) && (event.type.endsWith(".failed") || STRICT_FAILURE_EVENT_TYPES.has(event.type)))
+  591 |     .map((event) => `${event.seq}:${event.type}`);
+  592 |   assert.deepEqual(forbiddenEvents, [], `unexpected failure, retry, blocked, or interrupted events: ${forbiddenEvents.join(", ")}`);
+  593 |   const failedResults = results.filter((result) =>
+  594 |     result.payload["isError"] === true || result.payload["status"] !== "succeeded");
+> 595 |   assert.deepEqual(failedResults.map((result) => ({ name: result.name, payload: result.payload })), [], "one or more tools failed");
+      |          ^ AssertionError: one or more tools failed
+  596 |   for (const result of results) payload(eventLogPath, events.find((event) => event.seq === result.seq)!);
+  597 |   return forbiddenEvents;
+  598 | }
+  599 | 
+  600 | const PLAN_MODE_COMPONENT = "builtin.plan_mode";
+  601 | const CONTRACT_LEDGER_COMPONENT = "builtin.contract_ledger_reminder";
+  602 | 
+  603 | function optionalObject(value: unknown): Readonly<Record<string, unknown>> | undefined {
+  604 |   return value !== null && typeof value === "object" && !Array.isArray(value)
+  605 |     ? value as Readonly<Record<string, unknown>>
+  606 |     : undefined;
+  607 | }
+  608 | 
+  609 | interface PlanApprovalCheckpoint {
+  610 |   readonly event: EventRow;
+  611 |   readonly requestId: string;
+  612 |   readonly requestHash?: string;
+  613 | }
+  614 | 
+  615 | function eventCallKey(event: EventRow, callId: string): string {
+  616 |   return `${event.session_id}\u0000${event.turn_id ?? ""}\u0000${callId}`;
+  617 | }
+  618 | 
+  619 | function presentationDecisions(presentation: Readonly<Record<string, unknown>>): ReadonlySet<string> {
+  620 |   const actions = presentation["actions"];
+  621 |   if (!Array.isArray(actions)) return new Set();
+  622 |   return new Set(actions.flatMap((item) => {
+  623 |     const action = optionalObject(item);
+  624 |     const value = optionalObject(action?.["value"]);
+  625 |     const decision = action?.["kind"] === "answer" ? value?.["decision"] : undefined;
+  626 |     return typeof decision === "string" ? [decision] : [];
+  627 |   }));
+  628 | }
+  629 | 
+  630 | function planApprovalCheckpoint(
+  631 |   eventLogPath: string,
+  632 |   event: EventRow,
+  633 |   exitCalls: ReadonlyMap<string, { readonly event: EventRow; readonly value: Readonly<Record<string, unknown>> }>,
+  634 | ): PlanApprovalCheckpoint | undefined {
+  635 |   const value = payload(eventLogPath, event);
+  636 |   const checkpoint = event.type === "host.human_input.requested"
+  637 |     ? value
+  638 |     : event.type === "permission.approval.requested"
+  639 |       ? optionalObject(optionalObject(value["presentation"])?.["payload"])
+  640 |       : undefined;
+  641 |   if (checkpoint === undefined) return undefined;
+  642 | 
+  643 |   const request = optionalObject(checkpoint["request"]);
+  644 |   const presentation = optionalObject(request?.["presentation"]);
+  645 |   const callId = checkpoint["callId"];
+  646 |   const call = typeof callId === "string" ? exitCalls.get(eventCallKey(event, callId)) : undefined;
+  647 |   const declaredExit = checkpoint["toolName"] === "ExitPlanMode";
+  648 |   // Old Plan checkpoints carried the plan directly. Treat them as forbidden
+  649 |   // legacy facts, but never use their removed presentation kind as identity.
+  650 |   const legacyPlan = typeof presentation?.["plan"] === "string";
+  651 |   if (!declaredExit && call === undefined && !legacyPlan) return undefined;
+  652 | 
+  653 |   assert.ok(call, `Plan approval facts #${event.seq} have no causal ExitPlanMode Tool call`);
+  654 |   assert.equal(call.event.session_id, event.session_id, `Plan approval facts #${event.seq} changed Session identity`);
+  655 |   assert.equal(call.event.turn_id, event.turn_id, `Plan approval facts #${event.seq} changed Turn identity`);
+  656 |   assert.ok(call.event.seq < event.seq, `Plan approval facts #${event.seq} precede their ExitPlanMode Tool call`);
+  657 |   assert.equal(checkpoint["toolName"], "ExitPlanMode", `Plan approval facts #${event.seq} changed Tool identity`);
+  658 |   assert.equal(checkpoint["callId"], call.value["callId"], `Plan approval facts #${event.seq} changed call identity`);
+  659 |   assert.equal(checkpoint["actionId"], call.value["actionId"], `Plan approval facts #${event.seq} changed action identity`);
+  660 |   assert.equal(checkpoint["packageId"], "@longcat/planning", `Plan approval facts #${event.seq} changed package identity`);
+  661 |   assert.equal(checkpoint["apiVersion"], "human-input-checkpoint.longcat/v1",
+  662 |     `Plan approval facts #${event.seq} use an unsupported checkpoint contract`);
+  663 | 
+  664 |   const requestId = checkpoint["requestId"];
+  665 |   const requestHash = checkpoint["requestHash"];
+  666 |   assert.ok(typeof requestId === "string" && requestId.length > 0,
+  667 |     `Plan approval facts #${event.seq} have no request identity`);
+  668 |   assert.equal(requestId, `human:${event.turn_id}:${callId}`,
+  669 |     `Plan approval facts #${event.seq} have a non-causal request identity`);
+  670 |   assert.ok(typeof requestHash === "string" && requestHash.length > 0,
+  671 |     `Plan approval facts #${event.seq} have no request hash`);
+  672 |   assert.ok(request !== undefined, `Plan approval facts #${event.seq} have no human-input request`);
+  673 |   assert.ok(optionalObject(request["responseSchema"]) !== undefined,
+  674 |     `Plan approval facts #${event.seq} have no response schema`);
+  675 |   assert.equal(presentation?.["apiVersion"], "presentation.longcat/v1",
+  676 |     `Plan approval facts #${event.seq} use an unsupported presentation contract`);
+  677 |   const decisions = presentationDecisions(presentation!);
+  678 |   assert.ok(decisions.has("approve") && decisions.has("revise"),
+  679 |     `Plan approval facts #${event.seq} do not expose both approval decisions`);
+  680 |   return { event, requestId, requestHash };
+  681 | }
+  682 | 
+  683 | export function assertStandardPlanModeInactive(
+  684 |   eventLogPath: string,
+  685 |   events: readonly EventRow[],
+  686 |   turns: readonly TurnAuditRow[],
+  687 |   rootSessionId: string,
+  688 | ): void {
+  689 |   for (const turn of turns) {
+  690 |     const label = `${turn.session_id}/${turn.turn_id}: ${PLAN_MODE_COMPONENT}`;
+  691 |     const state = jsonObject(JSON.parse(turn.state_json), `${label} Turn state`);
+  692 |     const policyState = jsonObject(state["policyState"], `${label} Policy state`);
+  693 |     const raw = policyState[PLAN_MODE_COMPONENT];
+  694 |     if (raw === undefined) {
+  695 |       assert.notEqual(turn.session_id, rootSessionId, `${label} is missing from a root Turn`);
+```

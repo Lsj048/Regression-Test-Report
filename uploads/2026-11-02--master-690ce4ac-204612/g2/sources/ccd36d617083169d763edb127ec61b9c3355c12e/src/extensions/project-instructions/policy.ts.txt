@@ -1,0 +1,85 @@
+import { hashJson, type JsonValue } from "../../kernel/api/foundation/json.js";
+import type { ContentBlock } from "../../kernel/api/model/types.js";
+import type { ContextEffectForPoint, ContextPoint, ContextPolicy, ContextSnapshot, PolicyExecutionContext, PolicyInputEnvelope, PolicyResult } from "../../kernel/api/policy/types.js";
+import { readFile, realpath, stat } from "node:fs/promises";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
+import { createDescriptor } from "../../kernel/api/policy/descriptor.js";
+
+const instructionKeys = ["agent_instructions", "instructions"] as const;
+
+async function discoverInstructions(workspaceRoot: string, signal: AbortSignal, maxBytes = 256 * 1024): Promise<readonly ContentBlock[]> {
+  const root = await realpath(resolve(workspaceRoot));
+  const insideRoot = (path: string): boolean => {
+    const fromRoot = relative(root, path);
+    return fromRoot === "" || (!fromRoot.startsWith(`..${sep}`) && fromRoot !== ".." && !isAbsolute(fromRoot));
+  };
+  const sections: string[] = [];
+  const seen = new Set<string>();
+  let bytes = 0;
+  for (const candidate of ["AGENTS.md", "LONGCAT.md", "AGENTS.local.md", "LONGCAT.local.md"]) {
+    signal.throwIfAborted();
+    try {
+      const actual = await realpath(join(root, candidate));
+      const metadata = await stat(actual);
+      if (!insideRoot(actual) || !metadata.isFile() || metadata.size > maxBytes) continue;
+      const trimmed = (await readFile(actual, "utf8")).trim();
+      if (!trimmed || seen.has(trimmed)) continue;
+      const rendered = `Instructions from: ${candidate}\n${trimmed.replaceAll("</system-reminder>", "&lt;/system-reminder&gt;")}`;
+      const nextBytes = Buffer.byteLength(rendered, "utf8");
+      if (bytes + nextBytes > maxBytes) break;
+      sections.push(rendered);
+      seen.add(trimmed);
+      bytes += nextBytes;
+    } catch (error) {
+      const code = error && typeof error === "object" && "code" in error ? (error as { readonly code?: unknown }).code : undefined;
+      if (code !== "ENOENT" && code !== "ENOTDIR") throw error;
+    }
+  }
+  return sections.length === 0 ? [] : [{
+    type: "text",
+    text: `<system-reminder>\nThe following workspace instructions may be relevant. More specific instructions take precedence; they do not override system or direct user instructions.\n\n${sections.join("\n\n")}\n</system-reminder>`,
+  }];
+}
+
+export class AgentInstructionsPolicy implements ContextPolicy<"assemble"> {
+  readonly descriptor = createDescriptor({
+    apiVersion: "policy.longcat/v1",
+    id: "builtin.agent_instructions",
+    version: "1.0.0",
+    configSchema: { type: "object", properties: { discover: { type: "boolean" } }, additionalProperties: false },
+    implementedInterfaces: ["context/v1"],
+    points: ["assemble"],
+    claims: [{ kind: "key_prefix", resource: "context.runtime", prefix: "instructions" }],
+    replayMode: "recorded_external_io",
+  });
+
+  constructor(private readonly workspaceRoot: string) {}
+
+  async decideContext(input: PolicyInputEnvelope<ContextPoint, ContextSnapshot>, execution: PolicyExecutionContext): Promise<PolicyResult<ContextEffectForPoint<"assemble">>> {
+    if (input.point !== "assemble") return { decision: "abstain", proposals: [] };
+    let selected: readonly ContentBlock[] | undefined;
+    for (const key of instructionKeys) {
+      const context = input.snapshot.runtimeContextRefs[key];
+      if (context !== undefined) { selected = context.content; break; }
+    }
+    const config = input.config as { discover?: boolean };
+    if (selected === undefined && config.discover !== false) selected = await discoverInstructions(this.workspaceRoot, execution.signal);
+    if (selected === undefined) return { decision: "abstain", proposals: [] };
+    const digest = hashJson(selected as unknown as JsonValue);
+    const previous = input.privateState && typeof input.privateState === "object" && !Array.isArray(input.privateState)
+      ? (input.privateState as Readonly<Record<string, JsonValue>>)["digest"]
+      : undefined;
+    if (selected.length === 0) return { decision: "abstain", proposals: [], privateState: { digest } };
+    const proposals: ContextEffectForPoint<"assemble">[] = [{
+      kind: "upsert_runtime_context", key: "instructions/current", ref: { kind: "instructions", digest }, content: selected,
+      projection: { kind: "standalone_message", position: "before_history" },
+    }];
+    if (typeof previous === "string" && previous !== digest) proposals.push({
+      kind: "upsert_runtime_context",
+      key: "instructions/change",
+      ref: { kind: "instructions_change", digest },
+      content: [{ type: "text", text: "Workspace instructions changed since the previous context epoch. Use the newly supplied version." }],
+    });
+    return { decision: "propose", proposals, privateState: { digest } };
+  }
+}

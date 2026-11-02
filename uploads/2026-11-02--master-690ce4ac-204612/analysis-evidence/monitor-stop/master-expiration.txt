@@ -1,0 +1,12 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/workspace/process.ts
+  const scheduleTermination = (task: ProcessTask, timeoutMs: number): void => {
+    if (timeoutMs <= 0) return;
+    const timeoutHandle = setTimeout(() => { void terminateTaskTree(task).catch(() => undefined); }, timeoutMs);
+    timeoutHandle.unref();
+    void task.done.then(() => {
+      const processFinished = task.child !== undefined && !processGroupAlive(task);
+      const socketFinished = task.socket !== undefined && task.socket.readyState === WebSocket.CLOSED;
+      if (processFinished || socketFinished) clearTimeout(timeoutHandle);
+    });
+  };

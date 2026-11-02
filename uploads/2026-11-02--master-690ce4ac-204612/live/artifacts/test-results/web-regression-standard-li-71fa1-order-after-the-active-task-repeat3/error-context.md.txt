@@ -1,0 +1,154 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> standard.live-input-fifo >> two queued user inputs run in admission order after the active task
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: 1
+Received: 0
+
+Call Log:
+- Timeout 120000ms exceeded while waiting on the predicate
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-NmBDrh/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "请在当前工作区运行一次 node check-relea… 1分钟" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]: 请在当前工作区运行一次 node check-relea…
+          - time [ref=e59]: 1分钟
+        - button "请在当前工作区运行一次 node check-relea… 的会话操作" [ref=e60] [cursor=pointer]
+    - button "归档会话" [ref=e65] [cursor=pointer]
+    - button "设置" [ref=e69] [cursor=pointer]
+  - main [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 请在当前工作区运行一次 node check-relea…
+        - button "复制会话 ID session_7208d792-b043-4661-a062-60c7dafb2e1a" [ref=e78] [cursor=pointer]:
+          - generic [ref=e79]: session_7208d792-b043-4661-a062-60c7dafb2e1a
+      - generic [ref=e83]:
+        - button "对话" [ref=e84] [cursor=pointer]
+        - button "轨迹" [ref=e87] [cursor=pointer]
+    - generic [ref=e90]:
+      - generic [ref=e93]:
+        - generic [ref=e96]:
+          - generic [ref=e97]: 请在当前工作区运行一次 node check-release-window.mjs，前台等待检查完成，再告诉我发布窗口检查结果。不修改脚本或其他文件、不联网、不委派、不进入计划阶段。
+          - generic:
+            - time: 00:10
+            - button "复制消息"
+        - group [ref=e99]:
+          - generic "用时 不到 1 秒" [ref=e100] [cursor=pointer]
+        - generic [ref=e104]: "Provider HTTP 502: {\"error\":\"LIVE_MODEL_PROXY_INTERNAL_ERROR\"}"
+        - generic [ref=e105]: 任务执行失败
+      - generic [ref=e108]:
+        - textbox "继续输入消息" [ref=e109]
+        - generic [ref=e110]:
+          - generic [ref=e111]:
+            - button "添加" [ref=e113] [cursor=pointer]
+            - generic [ref=e116] [cursor=pointer]: 标准模式
+            - button "权限：工作区写入" [ref=e122] [cursor=pointer]:
+              - generic [ref=e125]: 工作区写入
+          - generic [ref=e128]:
+            - button "模型：LongCat-2.0" [ref=e130] [cursor=pointer]:
+              - generic [ref=e131]: LongCat-2.0
+              - generic [ref=e132]: 思考
+            - button "发送消息" [disabled] [ref=e135]
+    - generic [ref=e138]:
+      - generic [ref=e141]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e142] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  1  | import { mkdir, writeFile } from "node:fs/promises";
+  2  | import { basename, join } from "node:path";
+  3  | import { DatabaseSync } from "node:sqlite";
+  4  | import { expect } from "@playwright/test";
+  5  | import { FIFO_CHECK_SCRIPT, FIFO_PROMPTS, isFifoCheckCommand, LIVE_INPUT_FIFO_CASE as contract } from "../live-input-fifo-scenario.js";
+  6  | import { assertNoBrowserErrors, attachJson, browserDiagnostics, sessionFrom, type EvaluationCaseDriver } from "../case-driver.js";
+  7  | import { auditLiveInputFifo, assertFifoBusinessResult, assertFifoRefreshPreserved } from "../audits/live-input-fifo.js";
+  8  | import { checkLiveBusinessPage, liveBusinessAnswerText } from "./live-business-ui.js";
+  9  | 
+  10 | export const liveInputFifoDriver: EvaluationCaseDriver = {
+  11 |   caseId: contract.id, title: "two queued user inputs run in admission order after the active task", permissionMode: "workspace-write", timingBudgetKeys: ["durationMs", "refreshRecoveryMs"],
+  12 |   async prepareWorkspace({ workspace }) {
+  13 |     await writeFile(join(workspace, "check-release-window.mjs"), FIFO_CHECK_SCRIPT);
+  14 |     await mkdir(join(workspace, ".longcat-harness"));
+  15 |     await writeFile(join(workspace, ".longcat-harness/settings.local.json"), JSON.stringify({ permissions: { allow: ["Bash(node check-release-window.mjs)"] } }));
+  16 |   },
+  17 |   async run({ page, testInfo, environment: env }) {
+  18 |     const budget = contract.timingBudgetsMs["durationMs"]!, refreshBudget = contract.timingBudgetsMs["refreshRecoveryMs"]!;
+  19 |     testInfo.setTimeout(budget + refreshBudget + 30_000); const started = Date.now(), diagnostics = browserDiagnostics(page);
+  20 |     await page.goto(env.baseUrl);
+  21 |     await expect(page.getByTestId("mode-select")).toContainText("标准模式"); await expect(page.getByTestId("model-select")).toContainText(env.model.name);
+  22 |     await expect(page.getByTestId("permission-select")).toContainText("工作区写入"); await expect(page.getByTestId("workspace-select")).toContainText(basename(env.workspace));
+  23 |     const ids: string[] = [];
+  24 |     const send = async (prompt: string, url: string) => {
+  25 |       await page.getByTestId("composer-input").fill(prompt); const received = page.waitForResponse(r => r.url() === url && r.request().method() === "POST");
+  26 |       await page.getByTestId("send-message").click(); const r = await received; expect(r.ok()).toBe(true);
+  27 |       const body = r.request().postDataJSON(); expect(body.content).toBe(prompt); expect(typeof body.inputId).toBe("string"); expect(body.replyToRequestId).toBeUndefined(); ids.push(body.inputId);
+  28 |       return sessionFrom(r);
+  29 |     };
+  30 |     const session = await send(FIFO_PROMPTS[0], `${env.baseUrl}/api/sessions`);
+  31 |     const db = new DatabaseSync(join(env.stateDirectory, "event_log.sqlite"), { readOnly: true });
+  32 |     try {
+> 33 |       await expect.poll(() => db.prepare("SELECT json_extract(payload_json,'$.arguments.command') AS command FROM event_log WHERE session_id=? AND type='tool.dispatch.started' AND json_extract(payload_json,'$.name')='Bash'").all(session.id).filter(row => isFifoCheckCommand(String(row["command"]))).length, { timeout: 120_000 }).toBe(1);
+     |                                                                                                                                                                                                                                                                                                                                          ^ Error: expect(received).toBe(expected) // Object.is equality
+  34 |       for (const prompt of FIFO_PROMPTS.slice(1)) {
+  35 |         await expect(page.getByTestId("stop-task")).toBeVisible(); await expect(page.getByTestId("composer-input")).toHaveAttribute("placeholder", /追加消息/u);
+  36 |         expect((await send(prompt, `${env.baseUrl}/api/sessions/${session.id}/messages`)).id).toBe(session.id);
+  37 |         await expect(page.locator(".user-message.queued").filter({ hasText: prompt })).toBeVisible();
+  38 |       }
+  39 |       await expect.poll(() => Number(db.prepare("SELECT COUNT(*) AS n FROM turns WHERE session_id=? AND kind='completed'").get(session.id)!["n"]), { timeout: Math.max(1, budget - (Date.now() - started)) }).toBe(3);
+  40 |     } finally { db.close(); }
+  41 |     const audit = auditLiveInputFifo(env.stateDirectory, env.workspace, session.id, ids);
+  42 |     const check = async () => {
+  43 |       await checkLiveBusinessPage(page, audit); await expect(page.locator(".timeline-group .user-message")).toHaveText([...FIFO_PROMPTS]);
+  44 |       const answers = page.locator(".timeline-group > .assistant-message > .markdown"); await expect(answers).toHaveCount(3);
+  45 |       await expect(answers.nth(0)).toBeVisible();
+  46 |       assertFifoBusinessResult(await answers.nth(0).innerText());
+  47 |       await expect.poll(() => liveBusinessAnswerText(page, 1)).toBe("33"); await expect.poll(() => liveBusinessAnswerText(page, 2)).toBe("77");
+  48 |       await expect(page.locator(".user-message.queued")).toHaveCount(0);
+  49 |     };
+  50 |     await check(); const durationMs = Date.now() - started, refreshed = Date.now();
+  51 |     await page.reload({ timeout: refreshBudget }); await page.locator(".session-item:not(.provisional) > .session-row").first().click(); await check();
+  52 |     const refreshedAudit = auditLiveInputFifo(env.stateDirectory, env.workspace, session.id, ids);
+  53 |     assertFifoRefreshPreserved(audit, refreshedAudit);
+  54 |     const refreshRecoveryMs = Date.now() - refreshed; expect(durationMs).toBeLessThan(budget); expect(refreshRecoveryMs).toBeLessThan(refreshBudget);
+  55 |     assertNoBrowserErrors(diagnostics); await attachJson(testInfo, contract, "timings", { durationMs, refreshRecoveryMs }); await attachJson(testInfo, contract, "sqlite-audit", { ...refreshedAudit, model: env.model });
+  56 |   },
+  57 | };
+  58 | 
+```

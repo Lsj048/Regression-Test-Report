@@ -1,0 +1,325 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> standard.live-context-compaction >> standard mode automatically compacts a live-model conversation and preserves its facts
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+AssertionError: the second Turn must persist one compaction Policy proposal
+
+0 !== 1
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-n0jG5s/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "我正在整理结算平台的灰度发布交接。会议已经确认：灰度负责… 刚刚" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]: 我正在整理结算平台的灰度发布交接。会议已经确认：灰度负责…
+          - time [ref=e59]: 刚刚
+        - button "我正在整理结算平台的灰度发布交接。会议已经确认：灰度负责… 的会话操作" [ref=e60] [cursor=pointer]
+    - button "归档会话" [ref=e65] [cursor=pointer]
+    - button "设置" [ref=e69] [cursor=pointer]
+  - main [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 我正在整理结算平台的灰度发布交接。会议已经确认：灰度负责…
+        - button "复制会话 ID session_27419316-a8ae-4b1f-837c-9d8f09166d18" [ref=e78] [cursor=pointer]:
+          - generic [ref=e79]: session_27419316-a8ae-4b1f-837c-9d8f09166d18
+      - generic [ref=e83]:
+        - button "对话" [ref=e84] [cursor=pointer]
+        - button "轨迹" [ref=e87] [cursor=pointer]
+    - generic [ref=e90]:
+      - generic [ref=e92]:
+        - generic [ref=e93]:
+          - group [ref=e96]:
+            - generic "展开长文本" [ref=e97] [cursor=pointer]:
+              - generic [ref=e101]:
+                - strong [ref=e102]: 长文本
+                - generic [ref=e103]: 4,899 字符 · 84 行
+          - group [ref=e106]:
+            - generic "用时 3 秒" [ref=e107] [cursor=pointer]
+          - generic [ref=e111]:
+            - generic [ref=e112]:
+              - paragraph [ref=e113]: 已按交接记录逐行确认，两个中文字段及其完整值原样保留如下：
+              - paragraph [ref=e114]: 灰度负责人：周岚 异常回滚版本：2026.09.10-rc2
+              - paragraph [ref=e115]: 未访问工作区、未执行命令、未修改任何文件。监控报表正文仅作参考留存，不影响上述两项交接结论。
+            - generic:
+              - button "复制回答"
+              - button "赞"
+              - button "踩"
+              - button "从此回答分叉会话"
+        - generic [ref=e116]:
+          - group [ref=e119]:
+            - generic "展开长文本" [ref=e120] [cursor=pointer]:
+              - generic [ref=e124]:
+                - strong [ref=e125]: 长文本
+                - generic [ref=e126]: 13,175 字符 · 210 行
+          - group [ref=e129]:
+            - generic "用时 36 秒" [ref=e130] [cursor=pointer]
+          - generic [ref=e134]:
+            - paragraph [ref=e136]: 灰度负责人：周岚 异常回滚版本：2026.09.10-rc2
+            - generic:
+              - button "复制回答"
+              - button "赞"
+              - button "踩"
+              - button "从此回答分叉会话"
+      - generic [ref=e139]:
+        - textbox "继续输入消息" [ref=e140]
+        - generic [ref=e141]:
+          - generic [ref=e142]:
+            - button "添加" [ref=e144] [cursor=pointer]
+            - generic [ref=e147] [cursor=pointer]: 标准模式
+            - button "权限：只读" [ref=e153] [cursor=pointer]:
+              - generic [ref=e156]: 只读
+          - generic [ref=e159]:
+            - button "模型：LongCat-2.0" [ref=e161] [cursor=pointer]:
+              - generic [ref=e162]: LongCat-2.0
+              - generic [ref=e163]: 思考
+            - generic "模型缓存与上下文用量" [ref=e166]:
+              - meter "最近一次模型请求缓存命中 7,552 / 22,415 输入令牌（33.7%）" [ref=e167]:
+                - generic [ref=e168]: 缓存
+                - strong [ref=e169]: 34%
+              - meter "上下文已使用 22,415 / 32,768 令牌（68.4%）；最近一次模型请求" [ref=e170]:
+                - generic [ref=e171]: 令牌
+                - strong [ref=e172]: 68%
+            - button "发送消息" [disabled] [ref=e173]
+    - generic [ref=e176]:
+      - generic [ref=e179]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e180] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  95  |     assert.deepEqual(data.results, [], "the context-compaction Case must not persist business Tool results");
+  96  |     assert.deepEqual(rootEvents.filter((event) => event.type.startsWith("permission.approval.")), [],
+  97  |       "the context-compaction Case unexpectedly entered approval");
+  98  |     assert.deepEqual(
+  99  |       rootEvents.filter((event) => event.type.startsWith("ui.command.")
+  100 |         && payload(eventLogPath, event)["name"] === "compact"),
+  101 |       [],
+  102 |       "the automatic context-compaction Case used the manual compact command",
+  103 |     );
+  104 |     const forbiddenEvents = assertNoFailures(eventLogPath, data.events, data.results);
+  105 | 
+  106 |     const createdEvents = rootEvents.filter((event) => event.type === "session.created");
+  107 |     assert.equal(createdEvents.length, 1, "the context-compaction Case has no unique session creation fact");
+  108 |     const created = payload(eventLogPath, createdEvents[0]!);
+  109 |     assert.equal(created["mode"], "standard", "the context-compaction Case persisted the wrong Mode");
+  110 |     assert.equal(created["workspace"], workspace, "the context-compaction Case persisted the wrong workspace");
+  111 |     assert.equal(created["permissionMode"], "read-only", "the context-compaction Case persisted the wrong permission mode");
+  112 | 
+  113 |     const inputs = data.database.prepare(`
+  114 |       SELECT admission_seq, content, claimed_by_turn_id FROM inputs
+  115 |       WHERE session_id = ? ORDER BY admission_seq
+  116 |     `).all(rootSessionId) as unknown as readonly {
+  117 |       readonly admission_seq: number;
+  118 |       readonly content: string;
+  119 |       readonly claimed_by_turn_id: string | null;
+  120 |     }[];
+  121 |     assert.deepEqual(inputs.map(({ content }) => content), [scenario.prompts.establish, scenario.prompts.pressureRecall],
+  122 |       "the context-compaction Case must retain exactly its two Web UI inputs");
+  123 |     assert.ok(inputs.every(({ claimed_by_turn_id }) => typeof claimed_by_turn_id === "string"),
+  124 |       "one or more context-compaction inputs were not claimed by a Turn");
+  125 |     const turnIds = inputs.map(({ claimed_by_turn_id }) => claimed_by_turn_id!);
+  126 |     assert.equal(new Set(turnIds).size, 2, "the two context-compaction inputs must create distinct Turns");
+  127 |     assertRootToolScopeBindings(eventLogPath, rootEvents, turnIds, "the context-compaction Case");
+  128 |     const firstTurnId = turnIds[0]!;
+  129 |     const secondTurnId = turnIds[1]!;
+  130 |     const rounds = mainModelRounds(eventLogPath, rootEvents, rootSessionId);
+  131 |     const firstModels = rounds.businessCompletions.filter((event) => event.turn_id === firstTurnId);
+  132 |     const secondModels = rounds.businessCompletions.filter((event) => event.turn_id === secondTurnId);
+  133 |     assert.equal(firstModels.length, 1, "the first Turn has no unique normal-path completion");
+  134 |     assert.equal(secondModels.length, 1, "the recall Turn has no unique normal-path completion");
+  135 |     assert.equal(rounds.businessCompletions.length, 2, "main model completions escaped the two expected Turns");
+  136 | 
+  137 |     const turns = data.database.prepare(`
+  138 |       SELECT turn_id, kind, state_json FROM turns WHERE session_id = ? ORDER BY created_at, turn_id
+  139 |     `).all(rootSessionId) as unknown as readonly {
+  140 |       readonly turn_id: string;
+  141 |       readonly kind: string;
+  142 |       readonly state_json: string;
+  143 |     }[];
+  144 |     assert.equal(turns.length, 2, "the context-compaction Case must persist exactly two Turns");
+  145 |     assert.deepEqual(new Set(turns.map(({ turn_id }) => turn_id)), new Set(turnIds),
+  146 |       "the context-compaction inputs point at the wrong Turns");
+  147 |     for (const turn of turns) {
+  148 |       assertTurnCompleted(eventLogPath, rootEvents, turn);
+  149 |       const bindingEvent = rootEvents.find((event) => event.turn_id === turn.turn_id && event.type === "turn.binding.committed")!;
+  150 |       const material = jsonObject(payload(eventLogPath, bindingEvent)["material"], `compaction Turn ${turn.turn_id} binding material`);
+  151 |       const host = jsonObject(material["host"], `compaction Turn ${turn.turn_id} Host binding`);
+  152 |       assert.equal(host["workspaceRoot"], workspace, `compaction Turn ${turn.turn_id} bound the wrong workspace`);
+  153 |       assert.equal(host["permissionMode"], "read-only", `compaction Turn ${turn.turn_id} bound the wrong permission mode`);
+  154 |       assert.deepEqual(host["permissionRules"], [], `compaction Turn ${turn.turn_id} bound unexpected permission rules`);
+  155 |     }
+  156 | 
+  157 |     const modelServiceStarts = rootEvents.filter((event) => event.turn_id === secondTurnId
+  158 |       && event.type === "service.call.started"
+  159 |       && componentId(eventLogPath, event) === "builtin.compaction"
+  160 |       && contextPolicyAttributes(eventLogPath, event, "compaction model service start")["serviceId"] === "longcat.core.model-completion");
+  161 |     const modelServiceCompletes = rootEvents.filter((event) => event.turn_id === secondTurnId
+  162 |       && event.type === "service.call.completed"
+  163 |       && componentId(eventLogPath, event) === "builtin.compaction"
+  164 |       && contextPolicyAttributes(eventLogPath, event, "compaction model service completion")["serviceId"] === "longcat.core.model-completion");
+  165 |     assert.ok(modelServiceStarts.length > 0, "the second Turn did not call the compaction model service");
+  166 |     assert.equal(modelServiceCompletes.length, modelServiceStarts.length,
+  167 |       "one or more compaction model service calls did not complete");
+  168 |     assert.deepEqual(
+  169 |       rootEvents.filter((event) => event.turn_id === firstTurnId
+  170 |         && (event.type === "service.call.started" || event.type === "service.call.completed")
+  171 |         && componentId(eventLogPath, event) === "builtin.compaction"
+  172 |         && contextPolicyAttributes(eventLogPath, event, "first-Turn compaction service event")["serviceId"] === "longcat.core.model-completion"),
+  173 |       [],
+  174 |       "the first Turn unexpectedly summarized before it had older history",
+  175 |     );
+  176 |     const completedById = new Map(modelServiceCompletes.map((event) => {
+  177 |       const id = payload(eventLogPath, event)["serviceCallId"];
+  178 |       assert.equal(typeof id, "string", `compaction service completion #${event.seq} has no serviceCallId`);
+  179 |       return [id as string, event] as const;
+  180 |     }));
+  181 |     for (const start of modelServiceStarts) {
+  182 |       const startPayload = payload(eventLogPath, start);
+  183 |       const id = startPayload["serviceCallId"];
+  184 |       assert.equal(typeof id, "string", `compaction service start #${start.seq} has no serviceCallId`);
+  185 |       const request = jsonObject(contextPolicyAttributes(eventLogPath, start, "compaction model service start")["request"],
+  186 |         "compaction model service request");
+  187 |       assert.equal(request["purpose"], "context_compaction", "the compaction Policy used the model service for the wrong purpose");
+  188 |       const completed = completedById.get(id as string);
+  189 |       assert.ok(completed, `compaction model service call ${String(id)} has no matching completion`);
+  190 |       assert.ok(start.seq < completed.seq, `compaction model service call ${String(id)} completed before it started`);
+  191 |     }
+  192 | 
+  193 |     const compactionProposals = rootEvents.filter((event) => event.turn_id === secondTurnId
+  194 |       && event.type === "policy.proposed" && componentId(eventLogPath, event) === "builtin.compaction");
+> 195 |     assert.equal(compactionProposals.length, 1, "the second Turn must persist one compaction Policy proposal");
+      |            ^ AssertionError: the second Turn must persist one compaction Policy proposal
+  196 |     const proposalEvent = compactionProposals[0]!;
+  197 |     const proposal = selectedContextProposal(eventLogPath, proposalEvent, "compaction");
+  198 |     const selectedSummary = assertCompactionServiceAttribution(
+  199 |       eventLogPath,
+  200 |       modelServiceStarts,
+  201 |       modelServiceCompletes,
+  202 |       proposalEvent,
+  203 |       "context-pressure compaction",
+  204 |       scenario.prompts.establish,
+  205 |     );
+  206 |     const finalSummaryService = selectedSummary.completion;
+  207 |     const summaryContent = selectedSummary.content;
+  208 |     assertCompactionReleaseFacts(summaryContent, scenario.facts, "the continuation summary");
+  209 |     assert.equal(proposal.effect["kind"], "replace_range", "the compaction Policy selected the wrong effect kind");
+  210 |     assert.equal(proposal.effect["reasonCode"], "context_pressure", "the compaction Policy was not triggered by context pressure");
+  211 |     assert.ok(finalSummaryService.seq < proposalEvent.seq, "the compaction Policy proposed replacement before its summary completed");
+  212 | 
+  213 |     const replacementEvents = rootEvents.filter((event) => event.type === "message.surface.replaced");
+  214 |     assert.equal(replacementEvents.length, 1, "the context-compaction Case must commit exactly one range replacement");
+  215 |     const replacementEvent = replacementEvents[0]!;
+  216 |     assert.equal(replacementEvent.turn_id, secondTurnId, "the compaction replacement belongs to the wrong Turn");
+  217 |     const replacementFact = payload(eventLogPath, replacementEvent);
+  218 |     assert.equal(replacementFact["policyId"], "builtin.compaction", "the range replacement belongs to the wrong Policy");
+  219 |     assert.equal(replacementFact["reasonCode"], "context_pressure", "the range replacement was not caused by context pressure");
+  220 |     assert.equal(replacementFact["effectId"], proposal.appliedEffectId, "the range replacement is not linked to the selected effect");
+  221 |     assert.equal(replacementFact["startMessageId"], proposal.effect["startMessageId"], "the committed replacement changed its start boundary");
+  222 |     assert.equal(replacementFact["endMessageId"], proposal.effect["endMessageId"], "the committed replacement changed its end boundary");
+  223 |     assert.ok(proposalEvent.seq < replacementEvent.seq, "the range replacement was committed before the Policy proposal");
+  224 | 
+  225 |     const durableRows = data.messages.prepare(`
+  226 |       SELECT seq, event_id, message_id, producing_turn_id, role, message_json, source_json,
+  227 |         source_event_seq, message_token_count, placement_json
+  228 |       FROM messages WHERE session_id = ? ORDER BY seq
+  229 |     `).all(rootSessionId) as unknown as readonly DurableContextMessageRow[];
+  230 |     const durable = durableRows.map((row): ParsedDurableContextMessage => ({
+  231 |       ...row,
+  232 |       message: jsonObject(JSON.parse(row.message_json), `durable message ${row.message_id}`),
+  233 |       source: jsonObject(JSON.parse(row.source_json), `durable message ${row.message_id} source`),
+  234 |       placement: jsonObject(JSON.parse(row.placement_json), `durable message ${row.message_id} placement`),
+  235 |     }));
+  236 |     const establishMessages = durable.filter((row) => row.source["kind"] === "input"
+  237 |       && row.producing_turn_id === firstTurnId
+  238 |       && messageContent(row.message["content"]) === scenario.prompts.establish);
+  239 |     const pressureRecallMessages = durable.filter((row) => row.source["kind"] === "input"
+  240 |       && row.producing_turn_id === secondTurnId
+  241 |       && messageContent(row.message["content"]) === scenario.prompts.pressureRecall);
+  242 |     assert.equal(establishMessages.length, 1, "the immutable first Web UI input is missing from message.sqlite");
+  243 |     assert.equal(pressureRecallMessages.length, 1, "the immutable second Web UI input is missing from message.sqlite");
+  244 |     const establishMessage = establishMessages[0]!;
+  245 |     const pressureRecallMessage = pressureRecallMessages[0]!;
+  246 |     assert.equal(establishMessage.placement["kind"], "append", "the fact-establishment input is not an append fact");
+  247 |     assert.equal(pressureRecallMessage.placement["kind"], "append", "the pressure-recall input is not an append fact");
+  248 |     assert.ok(pressureRecallMessage.message_token_count > 8_000,
+  249 |       "the pressure-recall input no longer exceeds the configured recent-message preservation budget");
+  250 |     assert.ok(!scenario.prompts.pressureRecall.includes(scenario.facts.releaseOwner)
+  251 |       && !scenario.prompts.pressureRecall.includes(scenario.facts.rollbackVersion),
+  252 |     "the pressure-recall input leaked the expected answer");
+  253 | 
+  254 |     const firstAssistantRows = durable.filter((row) => row.producing_turn_id === firstTurnId
+  255 |       && row.role === "assistant" && row.source_event_seq === firstModels[0]!.seq);
+  256 |     assert.equal(firstAssistantRows.length, 1, "the fact-establishment Turn has no unique durable Assistant answer");
+  257 |     const firstAssistant = firstAssistantRows[0]!;
+  258 |     const firstAnswer = messageContent(firstAssistant.message["content"]);
+  259 |     assertCompactionReleaseFacts(firstAnswer, scenario.facts, "the first confirmation");
+  260 | 
+  261 |     const replacementMessageId = replacementFact["replacementMessageId"];
+  262 |     assert.equal(typeof replacementMessageId, "string", "the replacement event has no replacementMessageId");
+  263 |     const replacementRows = durable.filter((row) => row.message_id === replacementMessageId);
+  264 |     assert.equal(replacementRows.length, 1, "the replacement event has no unique immutable message row");
+  265 |     const replacement = replacementRows[0]!;
+  266 |     assert.equal(replacement.producing_turn_id, secondTurnId, "the replacement message belongs to the wrong Turn");
+  267 |     assert.equal(replacement.role, "user", "the continuation summary must be model-visible as a user message");
+  268 |     assert.equal(replacement.source["kind"], "policy", "the continuation summary is not Policy-owned");
+  269 |     assert.equal(replacement.source["id"], proposal.proposalId, "the continuation summary is not linked to the selected proposal");
+  270 |     assert.equal(replacement.placement["kind"], "replace", "the continuation summary is not a range replacement");
+  271 |     assert.equal(replacement.placement["policyId"], "builtin.compaction", "the continuation summary has the wrong Policy owner");
+  272 |     assert.equal(replacement.placement["reasonCode"], "context_pressure", "the continuation summary has the wrong reason code");
+  273 |     assert.equal(replacement.placement["effectId"], proposal.appliedEffectId, "the replacement message lost its effect attribution");
+  274 |     const replacementRange = jsonObject(replacement.placement["range"], "durable compaction replacement range");
+  275 |     assert.equal(replacementRange["startMessageId"], replacementFact["startMessageId"],
+  276 |       "the durable replacement changed its audited start boundary");
+  277 |     assert.equal(replacementRange["endMessageId"], replacementFact["endMessageId"],
+  278 |       "the durable replacement changed its audited end boundary");
+  279 |     assert.equal(replacement.event_id, replacementFact["eventId"], "the durable replacement and event log use different event IDs");
+  280 |     const replacementContent = messageContent(replacement.message["content"]);
+  281 |     assert.ok(replacementContent.includes(summaryContent), "the durable replacement does not contain the completed continuation summary");
+  282 |     assertNoRawCompactionProviderControlMarkers(replacementContent, "the durable continuation summary");
+  283 |     assertCompactionReleaseFacts(replacementContent, scenario.facts, "the durable continuation summary");
+  284 |     const replacedMessageIds = sourceIdsBeforeContextReplacement(durable, replacement, "compaction");
+  285 |     assert.ok(replacedMessageIds.includes(establishMessage.message_id),
+  286 |       "the context-pressure range did not replace the fact-establishment input");
+  287 |     assert.ok(replacedMessageIds.includes(firstAssistant.message_id),
+  288 |       "the context-pressure range did not replace the first answer containing the source facts");
+  289 |     assert.ok(!replacedMessageIds.includes(pressureRecallMessage.message_id),
+  290 |       "the context-pressure range replaced the current pressure-recall request");
+  291 |     assert.ok(replacedMessageIds.every((id) => durable.some(({ message_id }) => message_id === id)),
+  292 |       "a range source disappeared from the immutable message log");
+  293 |     const replacedIdSet = new Set(replacedMessageIds);
+  294 |     const replacedSourceTokenCount = durable
+  295 |       .filter(({ message_id }) => replacedIdSet.has(message_id))
+```

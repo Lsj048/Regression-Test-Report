@@ -1,0 +1,189 @@
+import { assertJsonValue, hashJson, sha256, type JsonObject, type JsonValue } from "../../api/foundation/json.js";
+import { ContractError } from "../../api/foundation/errors.js";
+import { newId } from "../../api/foundation/id.js";
+import type { ChatMessage, ImageContentBlock, ModelInputModality, ModelRequestPlan, ModelTimeouts, ToolSchema } from "../../api/model/types.js";
+
+export interface CreateModelRequestPlanInput {
+  readonly model: string;
+  readonly inputModalities?: readonly ModelInputModality[];
+  readonly messages: readonly ChatMessage[];
+  readonly tools: readonly ToolSchema[];
+  readonly appliedEffectIds: readonly string[];
+  readonly toolChoice?: ModelRequestPlan["toolChoice"];
+  readonly maxOutputTokens?: number;
+  readonly temperature?: number;
+  readonly topP?: number;
+  readonly seed?: number;
+  readonly reasoningEffort?: ModelRequestPlan["reasoningEffort"];
+  readonly providerOptions?: JsonObject;
+  readonly timeouts?: Partial<ModelTimeouts>;
+  /** Keep tool messages as given instead of repairing call/result pairing. For per-message token counting, where the paired assistant message is counted separately. */
+  readonly skipToolExchangeNormalization?: boolean;
+}
+
+const unsupportedImage = "ERROR: Cannot read image (this model does not support image input). Inform the user.";
+const extractedImages = "Images from the preceding tool results follow.";
+const interruptedToolResult = "[Tool execution was interrupted]";
+
+function inputModalities(input: readonly ModelInputModality[] | undefined): readonly ModelInputModality[] {
+  const modalities = input ?? ["text"];
+  if (modalities.length === 0 || !modalities.includes("text") || new Set(modalities).size !== modalities.length || modalities.some((item) => item !== "text" && item !== "image")) {
+    throw new ContractError("inputModalities must contain text and may contain image without duplicates", "MODEL_REQUEST_INVALID");
+  }
+  return Object.freeze([...modalities]);
+}
+
+function messagesForModalities(input: readonly ChatMessage[], modalities: readonly ModelInputModality[]): readonly ChatMessage[] {
+  const supportsImages = modalities.includes("image");
+  const messages: ChatMessage[] = [];
+  let pendingImages: ImageContentBlock[] = [];
+  const flushImages = (): void => {
+    if (pendingImages.length === 0) return;
+    messages.push({ role: "user", content: [{ type: "text", text: extractedImages }, ...pendingImages] });
+    pendingImages = [];
+  };
+
+  for (const message of input) {
+    if (message.role !== "tool") flushImages();
+    if (message.role === "user" && typeof message.content !== "string") {
+      messages.push({
+        ...message,
+        content: message.content.map((block) => block.type === "text" || supportsImages ? block : { type: "text", text: unsupportedImage }),
+      });
+      continue;
+    }
+    if (message.role !== "tool" || typeof message.content === "string") {
+      messages.push(message);
+      continue;
+    }
+    const images = message.content.filter((block): block is ImageContentBlock => block.type === "image_url");
+    if (images.length === 0) {
+      messages.push(message);
+      continue;
+    }
+    const text = message.content.filter((block) => block.type === "text").map((block) => block.text);
+    if (!supportsImages) text.push(unsupportedImage);
+    else pendingImages.push(...images);
+    messages.push({
+      ...message,
+      content: text.join("\n") || "Image read successfully; the image is attached in the following user message.",
+    });
+  }
+  flushImages();
+  return Object.freeze(messages);
+}
+
+function scrubToolCallId(value: string): string {
+  return value.replace(/[^A-Za-z0-9_-]/gu, "_") || "tool_call";
+}
+
+/** Materialize a complete, provider-independent Tool call/result sequence before the plan is persisted. */
+function normalizeToolExchanges(input: readonly ChatMessage[]): readonly ChatMessage[] {
+  const normalized: ChatMessage[] = [];
+  const pending = new Map<string, { readonly order: number }>();
+  const ids = new Map<string, string>();
+  const used = new Set<string>();
+  let order = 0;
+
+  const normalizeId = (raw: string): string => {
+    const existing = ids.get(raw);
+    if (existing !== undefined) return existing;
+    const base = scrubToolCallId(raw);
+    let candidate = base;
+    let suffix = 1;
+    while (used.has(candidate)) candidate = `${base}_${suffix++}`;
+    ids.set(raw, candidate);
+    used.add(candidate);
+    return candidate;
+  };
+  const flushInterrupted = (): void => {
+    for (const [toolCallId] of [...pending.entries()].sort((left, right) => left[1].order - right[1].order)) {
+      normalized.push({ role: "tool", toolCallId, content: interruptedToolResult });
+    }
+    pending.clear();
+  };
+
+  for (const message of input) {
+    if (message.role === "tool") {
+      const toolCallId = ids.get(message.toolCallId) ?? scrubToolCallId(message.toolCallId);
+      if (!pending.has(toolCallId)) continue;
+      pending.delete(toolCallId);
+      normalized.push({ ...message, toolCallId });
+      continue;
+    }
+    flushInterrupted();
+    if (message.role !== "assistant" || (message.toolCalls?.length ?? 0) === 0) {
+      normalized.push(message);
+      continue;
+    }
+    const toolCalls = message.toolCalls!.map((call) => {
+      const id = normalizeId(call.id);
+      pending.set(id, { order: order++ });
+      return { ...call, id };
+    });
+    normalized.push({ ...message, toolCalls });
+  }
+  flushInterrupted();
+  return Object.freeze(normalized);
+}
+
+export function createModelRequestPlan(input: CreateModelRequestPlanInput): ModelRequestPlan {
+  if (!input.model) throw new ContractError("Model name is required", "MODEL_REQUEST_INVALID");
+  const modalities = inputModalities(input.inputModalities);
+  const projected = messagesForModalities(input.messages, modalities);
+  const messages = input.skipToolExchangeNormalization === true
+    ? projected
+    : normalizeToolExchanges(projected);
+  assertJsonValue(messages as unknown, "model.messages");
+  assertJsonValue(input.tools as unknown, "model.tools");
+  if (input.providerOptions !== undefined) assertJsonValue(input.providerOptions, "model.providerOptions");
+  const timeouts: ModelTimeouts = {
+    headersMs: input.timeouts?.headersMs ?? 300_000,
+    chunkStallMs: input.timeouts?.chunkStallMs ?? 300_000,
+    absoluteMs: input.timeouts?.absoluteMs ?? 1_200_000,
+  };
+  for (const [name, value] of Object.entries(timeouts)) {
+    if (!Number.isFinite(value) || value <= 0) throw new ContractError(`${name} must be positive`, "MODEL_TIMEOUT_INVALID");
+  }
+  if (input.maxOutputTokens !== undefined && (!Number.isSafeInteger(input.maxOutputTokens) || input.maxOutputTokens < 1)) throw new ContractError("maxOutputTokens must be a positive safe integer", "MODEL_REQUEST_INVALID");
+  if (input.temperature !== undefined && (!Number.isFinite(input.temperature) || input.temperature < 0)) throw new ContractError("temperature must be a non-negative finite number", "MODEL_REQUEST_INVALID");
+  if (input.topP !== undefined && (!Number.isFinite(input.topP) || input.topP < 0 || input.topP > 1)) throw new ContractError("topP must be between 0 and 1", "MODEL_REQUEST_INVALID");
+  const requestSurface: JsonValue = {
+    model: input.model,
+    inputModalities: modalities as unknown as JsonValue,
+    messages: messages as unknown as JsonValue,
+    tools: input.tools as unknown as JsonValue,
+    toolChoice: (input.toolChoice ?? "auto") as JsonValue,
+    maxOutputTokens: input.maxOutputTokens ?? null,
+    temperature: input.temperature ?? null,
+    topP: input.topP ?? null,
+    seed: input.seed ?? null,
+    reasoningEffort: input.reasoningEffort ?? null,
+    providerOptions: input.providerOptions ?? null,
+  };
+  const system = input.messages.find((message) => message.role === "system");
+  const plan: ModelRequestPlan = {
+    planId: newId("plan"),
+    provider: "openai-chat-compatible",
+    model: input.model,
+    inputModalities: modalities,
+    messages,
+    tools: Object.freeze([...input.tools]),
+    toolChoice: input.toolChoice ?? "auto",
+    ...(input.maxOutputTokens === undefined ? {} : { maxOutputTokens: input.maxOutputTokens }),
+    ...(input.temperature === undefined ? {} : { temperature: input.temperature }),
+    ...(input.topP === undefined ? {} : { topP: input.topP }),
+    ...(input.seed === undefined ? {} : { seed: input.seed }),
+    ...(input.reasoningEffort === undefined ? {} : { reasoningEffort: input.reasoningEffort }),
+    ...(input.providerOptions === undefined ? {} : { providerOptions: input.providerOptions }),
+    timeouts,
+    requestHash: hashJson(requestSurface),
+    contextManifest: {
+      systemHash: sha256(system?.content ?? ""),
+      messagesHash: hashJson(messages as unknown as JsonValue),
+      toolsHash: hashJson(input.tools as unknown as JsonValue),
+      appliedEffectIds: Object.freeze([...input.appliedEffectIds]),
+    },
+  };
+  return Object.freeze(plan);
+}

@@ -1,0 +1,43 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/standard-live-subagent-message.ts
+export function standardLiveSubagentMessageChildBashReady(
+  eventLogPath: string,
+  events: readonly EventRow[],
+  childSessionId: string,
+  initialChildTurnId: string,
+  workspaceInput: string,
+): boolean {
+  const workspace = resolve(workspaceInput);
+  const scoped = events.filter((event) => event.session_id === childSessionId);
+  const allCalls = facts(eventLogPath, scoped, "tool.call");
+  if (allCalls.length === 0) return false;
+  // The child may run harmless read-only preparation (Read/Glob/Grep) before its
+  // release baseline Bash; only the Bash commands carry the target contract.
+  const READ_ONLY_CHILD_TOOLS = new Set(["Read", "Glob", "Grep"]);
+  assert.ok(allCalls.every(({ name, turnId }) => turnId === initialChildTurnId
+    && (name === "Bash" || name === "TaskOutput" || READ_ONLY_CHILD_TOOLS.has(name))),
+    "the child selected a non-Bash Tool or escaped its initial Turn");
+  const calls = allCalls.filter(({ name }) => name === "Bash");
+  if (calls.length === 0) return false;
+  const commands = calls.map((call) => requiredText(parsedArguments(call)["command"], "child Bash command")
+    .replace(/\s+/gu, " ").trim());
+  const targetIndexes = commands.flatMap((command, index) =>
+    isStandardLiveSubagentMessageTargetCommand(command, workspace) ? [index] : []);
+  assert.ok(targetIndexes.length <= 1, "the child selected the release baseline command more than once");
+  if (targetIndexes.length === 0) return false;
+  assert.equal(targetIndexes[0], calls.length - 1, "a preflight command ran after the release baseline command");
+  for (const [index, call] of calls.entries()) {
+    const selection = scoped.some((event) => event.type === "model.completed"
+      && modelToolCalls(eventLogPath, event).some((tool) => tool["id"] === call.callId));
+    const permission = scoped.some((event) => event.type === "permission.decision"
+      && jsonObject(payload(eventLogPath, event)["execution"], "child Bash permission")["callId"] === call.callId);
+    const dispatch = scoped.some((event) => event.type === "tool.dispatch.started"
+      && payload(eventLogPath, event)["callId"] === call.callId);
+    if (!selection || !permission || !dispatch) return false;
+    if (index < calls.length - 1 && !facts(eventLogPath, scoped, "tool.result").some(({ callId }) => callId === call.callId)) {
+      return false;
+    }
+  }
+  for (const call of allCalls.filter(call => call.name !== "Bash")) {
+    const has = (type: string) => scoped.some(event => event.type === type && (payload(eventLogPath, event)["callId"] === call.callId
+      || (payload(eventLogPath, event)["execution"] as { callId?: unknown } | undefined)?.callId === call.callId));

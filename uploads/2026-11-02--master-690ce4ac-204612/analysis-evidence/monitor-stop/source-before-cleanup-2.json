@@ -1,0 +1,15 @@
+{
+  "connections": 1,
+  "sent": 1,
+  "clientCloses": 1,
+  "paths": [
+    "/release-events"
+  ],
+  "sourceConnections": [
+    {
+      "openedAt": 1793634154893,
+      "closedAt": 1793634184859
+    }
+  ],
+  "openSockets": 0
+}

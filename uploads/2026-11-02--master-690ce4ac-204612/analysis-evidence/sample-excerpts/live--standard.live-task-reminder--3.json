@@ -1,0 +1,150 @@
+{
+  "kind": "derived-causal-event-excerpt",
+  "scope": "Selected original durable events cited by manual attribution. Reasoning text is omitted where marked. This is a readable excerpt, not a full trace or a new G1 sample.",
+  "sampleDirectory": "live/artifacts/test-results/web-regression-standard-li-bb538-er-at-production-thresholds-repeat3",
+  "sourceTrajectory": "live/artifacts/test-results/web-regression-standard-li-bb538-er-at-production-thresholds-repeat3/trajectory.jsonl.gz",
+  "sourceTrajectorySha256": "671d8a7d1f6e8d0c2cf133f7ec30e7848111d47078a92de474558f6129faadcf",
+  "manifest": {
+    "kind": "manifest",
+    "schemaVersion": 1,
+    "sample": {
+      "caseId": "standard.live-task-reminder",
+      "mode": "standard",
+      "model": {
+        "execution": "live",
+        "name": "LongCat-2.0",
+        "revision": "provider-unreported",
+        "providerBaseUrl": "https://aigc.sankuai.com/v1/openai/native",
+        "settings": {
+          "maxOutputTokens": 4096,
+          "contextWindowTokens": 1048576,
+          "temperature": 0,
+          "thinking": {
+            "enabled": true,
+            "budgetTokens": 1024
+          }
+        }
+      },
+      "repeatEachIndex": 3,
+      "retry": 0,
+      "testStatus": "failed"
+    },
+    "capturedAt": "2026-11-02T16:10:27.118Z",
+    "cleanupStartedAt": "2026-11-02T16:10:27.088Z",
+    "processesStopped": true,
+    "source": "durable SQLite facts; ordered within each table; includes cleanup events; not raw HTTP",
+    "redaction": "known credential values replaced; original payload hashes verified before redaction"
+  },
+  "complete": {
+    "kind": "complete",
+    "events": 71,
+    "turns": 1,
+    "messages": 2
+  },
+  "selectedSequences": [
+    26,
+    44,
+    62,
+    67
+  ],
+  "events": [
+    {
+      "kind": "event",
+      "seq": 26,
+      "event_id": "event_ec8f2f48-e7a3-4589-91a5-660bcd06179c",
+      "session_id": "session_0d054fcf-dfd3-4db7-a167-93cfd735165b",
+      "turn_id": "turn_94f19ea9-4c57-44bf-85e9-9ca25b4ec57d",
+      "type": "model.failed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 318,
+      "payload_sha256": "7c5530a3e2404b060c07f413ab878225ff102f7b58140f40fe34c6223ff9470c",
+      "trace_id": null,
+      "created_at": "2026-11-02T16:10:26.761Z",
+      "payload": {
+        "attempt": 0,
+        "category": "provider",
+        "code": "PROVIDER_HTTP_502",
+        "message": "Provider HTTP 502: {\"error\":\"LIVE_MODEL_PROXY_INTERNAL_ERROR\"}",
+        "outputCommitted": false,
+        "planId": "plan_2d3b6950-61f0-46b0-84a6-ccefb51ed779",
+        "recoverable": true,
+        "requestHash": "95a7b7762883993a798b8381cf13e177d439486003f65ccddbe2be543c1a4d7c"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 44,
+      "event_id": "event_007d0b32-2ff7-427b-9f4e-fd9d9bcb1371",
+      "session_id": "session_0d054fcf-dfd3-4db7-a167-93cfd735165b",
+      "turn_id": "turn_94f19ea9-4c57-44bf-85e9-9ca25b4ec57d",
+      "type": "model.failed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 318,
+      "payload_sha256": "10c9d75ec5d80088363e3e76ef3db2900a0b33bbcf7a775fada4cad45e2a973b",
+      "trace_id": null,
+      "created_at": "2026-11-02T16:10:26.848Z",
+      "payload": {
+        "attempt": 1,
+        "category": "provider",
+        "code": "PROVIDER_HTTP_502",
+        "message": "Provider HTTP 502: {\"error\":\"LIVE_MODEL_PROXY_INTERNAL_ERROR\"}",
+        "outputCommitted": false,
+        "planId": "plan_f52a90c1-eabc-4a13-a98a-4937a10260fa",
+        "recoverable": true,
+        "requestHash": "95a7b7762883993a798b8381cf13e177d439486003f65ccddbe2be543c1a4d7c"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 62,
+      "event_id": "event_4efcd5b8-ec9d-49cb-88e0-2a7632bcebcb",
+      "session_id": "session_0d054fcf-dfd3-4db7-a167-93cfd735165b",
+      "turn_id": "turn_94f19ea9-4c57-44bf-85e9-9ca25b4ec57d",
+      "type": "model.failed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 318,
+      "payload_sha256": "5ff772110cf99126023c7c832a2df2dd241779834ec71f64a3cb05a9a08be17c",
+      "trace_id": null,
+      "created_at": "2026-11-02T16:10:26.939Z",
+      "payload": {
+        "attempt": 2,
+        "category": "provider",
+        "code": "PROVIDER_HTTP_502",
+        "message": "Provider HTTP 502: {\"error\":\"LIVE_MODEL_PROXY_INTERNAL_ERROR\"}",
+        "outputCommitted": false,
+        "planId": "plan_b53bc0d8-9349-4176-bfec-8d146d99aecb",
+        "recoverable": true,
+        "requestHash": "95a7b7762883993a798b8381cf13e177d439486003f65ccddbe2be543c1a4d7c"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 67,
+      "event_id": "event_60393c20-69fe-43c5-8d04-5ffd7ddd665a",
+      "session_id": "session_0d054fcf-dfd3-4db7-a167-93cfd735165b",
+      "turn_id": "turn_94f19ea9-4c57-44bf-85e9-9ca25b4ec57d",
+      "type": "turn.failed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 206,
+      "payload_sha256": "2bb5a35b58887e01fd534207b851eb655383f011d68fab7609ce2a47671e9ce8",
+      "trace_id": null,
+      "created_at": "2026-11-02T16:10:26.959Z",
+      "payload": {
+        "cause": {
+          "category": "provider",
+          "kind": "llm_error",
+          "recoverable": true
+        },
+        "error": {
+          "code": "PROVIDER_HTTP_502",
+          "message": "Provider HTTP 502: {\"error\":\"LIVE_MODEL_PROXY_INTERNAL_ERROR\"}"
+        },
+        "kind": "fail_turn"
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/evaluation-cases.ts
+export const ASSISTANT_LIVE_CODE_REVIEW_FINDING_SCENARIO = Object.freeze({
+  sourcePath: "src/invoice-access.ts",
+  defectLine: 5,
+  defectSourceLine: "  return requestedAccountId !== signedInAccountId;",
+  findingSummary: "账户标识比较方向相反",
+  failureScenario: "requestedAccountId 与 signedInAccountId 相同时函数返回 false，拒绝合法读取。",
+  finalMarkers: Object.freeze([
+    "finding-count=1",
+    "finding-file=src/invoice-access.ts",
+    "finding-line=5",
+  ] as const),
+  prompt: [
+    "请只读审查 src/invoice-access.ts 中 canReadInvoice 的授权判断。业务规则是：只有请求账户与当前登录账户相同才允许读取。",
+    "这个文件很短，请先完整查看它；如果确认实现违反规则，请把这一项结构化代码审查发现实际登记到应用的发现记录中，不要只在回复里描述；登记时文件定位为 src/invoice-access.ts 第 5 行，摘要逐字写为「账户标识比较方向相反」，失败场景逐字写为「requestedAccountId 与 signedInAccountId 相同时函数返回 false，拒绝合法读取。」。",
+    "不要修改文件、执行终端命令、搜索或查看其他文件、联网、向我提问或启动子任务。完成后最后只输出下面三行，不加列表符号或其他文字：",
+    "finding-count=1",
+    "finding-file=src/invoice-access.ts",
+    "finding-line=5",
+  ].join("\n"),
+} as const);

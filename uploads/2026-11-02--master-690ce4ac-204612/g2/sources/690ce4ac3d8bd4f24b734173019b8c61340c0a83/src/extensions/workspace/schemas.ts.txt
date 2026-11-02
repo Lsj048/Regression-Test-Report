@@ -1,0 +1,185 @@
+import type { JsonSchema } from "../../kernel/api/foundation/schema.js";
+import type { ToolSchema } from "../../kernel/api/model/types.js";
+import { object, string, boolean, integer, array } from "../common/tool-definition/schema.js";
+
+const PIPELINE_FAILURE_GUIDANCE = "For pipelines whose upstream failures must fail the command, including tests or builds piped to tail or tee, explicitly enable pipefail in a supporting shell (for example, bash -o pipefail -c '<command>'). Handle intentionally ignored failures or expected early termination explicitly.";
+const FILE_PATH_GUIDANCE = "Relative paths use the initial workspace root, unaffected by Bash cd or EnterWorktree; use absolute paths for other worktrees.";
+
+const ALIGNED_TOOL_DESCRIPTIONS = Object.freeze({
+Bash: [
+    "Executes a shell command in the current workspace directory.",
+    "",
+    "Usage:",
+    "- Prefer a dedicated Tool when one fits. Inspect every exit status and error before continuing.",
+    `- ${PIPELINE_FAILURE_GUIDANCE}`,
+    "- Foreground commands default to a 120000ms timeout and may request at most 600000ms.",
+    "- The final working directory of a foreground command becomes the current directory for later Bash calls when it remains inside the workspace or active worktree. Shell variables and aliases do not persist, so use absolute paths for cross-command state when practical.",
+    "- Separate Bash calls execute sequentially. Put dependent steps in one command or wait for the earlier result before issuing the next call.",
+    "- run_in_background=true starts the command in the background and returns a task_id. The task_id controls the complete process group, including children started with shell '&' after their wrapper exits. Without startup_probe, verify readiness in a later Bash call.",
+    "- Before finishing, obtain the final status and exit code of every finite background job, including commands automatically moved to the background after a foreground timeout. A task_id or passing-looking output does not confirm completion. TaskOutput with block=true can still return running when its wait expires; keep waiting or report that the job is unconfirmed.",
+    "- For a background job that finishes on its own, use TaskOutput with block=true to wait for output instead of running sleep or another Bash command only to wait.",
+    "- On POSIX systems, startup_probe starts a local service in the background and returns its task_id only after one condition succeeds: tcp connects to a loopback host and port, http gets a 2xx/3xx response from a loopback URL, or log finds literal text in combined stdout/stderr. It avoids shell sleep loops but does not choose the service lifecycle for you. It is unavailable on Windows because reliable whole-process-tree cleanup is not supported there.",
+    "- A command that starts a service is rejected unless background_lifecycle says which lifecycle it has, because the runtime cannot tell from the running service whether anything still needs it. Answer one question: after this command, does anything have to reach this service? A later command of yours, a verifier, or the user reaching a named port or address means persistent. A service started only for this agent runtime means session.",
+    "- Set background_lifecycle=persistent whenever the task requires a service to stay reachable after your work is done. Persistent tasks survive agent runtime shutdown, retain output for TaskOutput, and must be stopped explicitly with TaskStop once genuinely no longer needed. Also use persistent for a long-running background worker that holds no port, since nothing else marks it as still needed.",
+    "- Keep the default session lifecycle for background work that finishes on its own, such as a build, a test run, or a log tail.",
+  ].join("\n"),
+Read: [
+    "Reads a file from the local filesystem. Assume a user-provided path is valid until the Tool reports otherwise.",
+    FILE_PATH_GUIDANCE,
+    "",
+    "Usage:",
+    "- Omit offset and limit to read the complete text file, subject to the Tool's output cap. For a large file, continue with offset and limit.",
+    "- Text results use cat -n style line numbers starting at 1. The line-number prefix is not part of the file content.",
+    "- Images are returned visually to a multimodal model.",
+    "- PDF files are rendered as images. A page or inclusive page range may contain at most twenty pages.",
+    "- Text files, including Jupyter notebooks (.ipynb), retain their original text and indentation. Remove only the line-number prefix when using the content with Edit; notebook metadata and format fields remain visible.",
+    "- Read accepts files, not directories. Use Glob to discover directory contents.",
+    "- Read an existing file before changing it with Edit or overwriting it with Write. Every successful Read returns the requested content, including repeated reads after context compaction.",
+  ].join("\n"),
+Edit: [
+    "Performs exact string replacements in an existing text file.",
+    FILE_PATH_GUIDANCE,
+    "",
+    "Usage:",
+    "- Read the file first. Edit rejects a file that has not been observed or that changed after it was read.",
+    "- Preserve the exact indentation shown after Read's line-number prefix. Never include the prefix itself in old_string or new_string.",
+    "- Prefer Edit for targeted changes to existing files; use Write only for a new file or a complete rewrite.",
+    "- old_string must match literally. Without replace_all it must occur exactly once; include more surrounding context when the match is ambiguous.",
+    "- Set replace_all=true for an intentional repository-local rename or replacement of every exact occurrence in this file.",
+    "- Do not add emoji or unrelated comments unless the user requests them.",
+  ].join("\n"),
+Write: [
+    "Creates a file or completely replaces an existing file on the local filesystem.",
+    FILE_PATH_GUIDANCE,
+    "",
+    "Usage:",
+    "- Write overwrites the entire target. Prefer Edit when only part of an existing file changes.",
+    "- Read an existing file before replacing it. Write rejects stale content when the file changed after it was read.",
+    "- Provide the complete new UTF-8 text, including an empty string to empty a file. Content is written as supplied; the result confirms creation or replacement without repeating the content.",
+    "- Create documentation files only when the user's request requires them.",
+    "- Do not add emoji unless the user explicitly requests it.",
+  ].join("\n"),
+NotebookEdit: [
+    "Inserts, replaces, or deletes one Jupyter notebook cell without rewriting notebook JSON manually.",
+    FILE_PATH_GUIDANCE,
+    "",
+    "Usage:",
+    "- Read the notebook before editing it.",
+    "- replace and delete require the target cell_id.",
+    "- insert places the new cell after the existing cell_id, or at the beginning when cell_id is omitted. The new cell receives a unique ID returned in the result; cell_id is only the insertion anchor. Existing cell IDs and metadata are preserved.",
+    "- edit_mode defaults to replace. cell_type defaults to the current cell type for replacement and to code for insertion.",
+    "- new_source is required by the Tool contract, including for delete.",
+  ].join("\n"),
+TaskOutput: [
+    "Retrieves retained output and status from a running or completed background process.",
+    "",
+    "Use task_id returned by a background Bash or Monitor call. Set block=true to wait up to timeout milliseconds, or block=false to inspect the current state without waiting. This Tool does not read durable work-task records.",
+  ].join("\n"),
+TaskStop: [
+    "Stops the complete process group for a background Bash command or Monitor by task ID, even when its wrapper has already exited. Use the returned task_id; shell_id is only a deprecated alias.",
+    "Returns an error instead of reporting success when the process group cannot be stopped.",
+  ].join("\n"),
+});
+
+const startupProbe: JsonSchema = {
+  ...object({
+    type: string("Readiness condition type.", { enum: ["log", "tcp", "http"] }),
+    contains: string("Required for type=log: literal text that must appear in the combined stdout and stderr.", { minLength: 1, maxLength: 4096 }),
+    host: string("For type=tcp, loopback host to connect to. Defaults to 127.0.0.1; localhost is normalized to it.", { minLength: 1 }),
+    port: integer("Required for type=tcp: loopback port to connect to.", { minimum: 1, maximum: 65535 }),
+    url: string("Required for type=http: loopback HTTP or HTTPS health URL. A 2xx or 3xx response is ready.", { minLength: 1 }),
+    timeout_ms: integer("Maximum startup wait in milliseconds, capped at 600000 and by the harness command limit.", { minimum: 1, maximum: 600000 }),
+  }, ["type"]),
+  description: "Optional POSIX-only readiness check for a background service. It implies run_in_background=true and requires an explicit background_lifecycle.",
+};
+
+export const workspaceToolSchemas = Object.freeze({
+  Read: {
+    name: "Read",
+    description: ALIGNED_TOOL_DESCRIPTIONS.Read,
+    parameters: object({
+      file_path: string("Absolute or initial-workspace-relative path to the file to read."),
+      offset: integer("One-based line number to start reading from. Provide it only when continuing or narrowing a large file.", { minimum: 1 }),
+      limit: integer("Maximum number of lines to return. Provide it only when the file is too large to read at once.", { minimum: 1 }),
+      pages: string("PDF page or inclusive page range such as 3 or 1-5. Maximum twenty pages per request."),
+    }, ["file_path"]),
+  },
+  LSP: {
+    name: "LSP",
+    description: "Query language-server code intelligence for definitions, references, hover information, symbols, implementations, and call hierarchy.",
+    parameters: object({
+      operation: string("Language-server operation.", { enum: ["goToDefinition", "findReferences", "hover", "documentSymbol", "workspaceSymbol", "goToImplementation", "prepareCallHierarchy", "incomingCalls", "outgoingCalls"] }),
+      filePath: string("Absolute or workspace-relative source file path."),
+      line: integer("One-based editor line.", { minimum: 1 }),
+      character: integer("One-based editor character offset.", { minimum: 1 }),
+      query: string("Symbol name or partial name for workspaceSymbol."),
+    }, ["operation", "filePath", "line", "character"]),
+  },
+  Edit: {
+    name: "Edit",
+    description: ALIGNED_TOOL_DESCRIPTIONS.Edit,
+    parameters: object({
+      file_path: string("Absolute or initial-workspace-relative path to the file to modify."),
+      old_string: string("Exact text to replace, excluding Read's line-number prefixes."),
+      new_string: string("Replacement text. It must differ from old_string."),
+      replace_all: boolean("Replace every exact occurrence of old_string. Defaults to false, which requires a unique match."),
+    }, ["file_path", "old_string", "new_string"]),
+  },
+  Write: {
+    name: "Write",
+    description: ALIGNED_TOOL_DESCRIPTIONS.Write,
+    parameters: object({
+      file_path: string("Absolute or initial-workspace-relative path of the file to create or completely replace."),
+      content: string("The complete new content of the file."),
+    }, ["file_path", "content"]),
+  },
+  NotebookEdit: {
+    name: "NotebookEdit",
+    description: ALIGNED_TOOL_DESCRIPTIONS.NotebookEdit,
+    parameters: object({
+      notebook_path: string("Absolute or initial-workspace-relative path to the Jupyter notebook file."),
+      cell_id: string("ID of the cell to edit. For insertion, the new cell is placed after this cell; omit it to insert at the beginning."),
+      new_source: string("Complete new source for the cell."),
+      cell_type: string("Cell type. For insertion, omit it only when a code cell is intended.", { enum: ["code", "markdown"] }),
+      edit_mode: string("Operation to perform. Defaults to replace.", { enum: ["replace", "insert", "delete"] }),
+    }, ["notebook_path", "new_source"]),
+  },
+  Bash: {
+    name: "Bash",
+    description: ALIGNED_TOOL_DESCRIPTIONS.Bash,
+    parameters: object({
+      command: string("Command to execute."),
+      timeout: integer("Timeout in milliseconds, capped at 600000.", { minimum: 1, maximum: 600000 }),
+      description: string("Clear active-voice description of what the command does."),
+      run_in_background: boolean("Run the command in the background."),
+      background_lifecycle: string("Background process lifecycle. session is stopped, together with everything the command started, when the agent runtime closes; persistent survives runtime shutdown for a later step or an external verifier, and implies run_in_background=true. Required for a command that starts a service or uses startup_probe.", { enum: ["session", "persistent"] }),
+      startup_probe: startupProbe,
+      dangerouslyDisableSandbox: boolean("Request execution outside the sandbox; requires explicit approval."),
+    }, ["command"]),
+  },
+  TaskOutput: {
+    name: "TaskOutput",
+    description: ALIGNED_TOOL_DESCRIPTIONS.TaskOutput,
+    parameters: object({
+      task_id: string("Background process ID returned by Bash or Monitor."),
+      block: boolean("Whether to wait for the process to settle before returning."),
+      timeout: integer("Maximum wait in milliseconds, capped at 600000.", { minimum: 1, maximum: 600000 }),
+    }, ["task_id", "block", "timeout"]),
+  },
+  TaskStop: {
+    name: "TaskStop",
+    description: ALIGNED_TOOL_DESCRIPTIONS.TaskStop,
+    parameters: object({ task_id: string("ID of the background process to stop."), shell_id: string("Deprecated alias for task_id.") }),
+  },
+  Monitor: {
+    name: "Monitor",
+    description: "Run a background command or WebSocket monitor and deliver each emitted line as an event. Before finishing, obtain the final status and exit code of finite command jobs; emitted lines or a task ID are not completion evidence. For continuous monitoring or services, verify readiness instead of waiting for them to exit.",
+    parameters: object({
+      description: string("What is being monitored."), timeout_ms: integer("Deadline in milliseconds.", { minimum: 1, maximum: 3600000 }), persistent: boolean("Run for the session lifetime."),
+      command: string(`Shell command whose stdout lines become events. ${PIPELINE_FAILURE_GUIDANCE}`),
+      ws: object({ url: string("ws or wss URL."), protocols: array("WebSocket subprotocols.", { type: "string" }) }, ["url"]),
+    }, ["description", "timeout_ms", "persistent"]),
+  },
+  EnterWorktree: { name: "EnterWorktree", description: "Create and enter an isolated Git worktree, or enter an existing worktree path.", parameters: object({ name: string("Optional worktree name."), path: string("Existing worktree path to enter.") }) },
+  ExitWorktree: { name: "ExitWorktree", description: "Return to the original workspace and keep or remove the isolated worktree.", parameters: object({ action: string("Whether to keep or remove the worktree.", { enum: ["keep", "remove"] }), discard_changes: boolean("Required to remove a worktree with uncommitted or unmerged changes.") }, ["action"]) },
+} satisfies Readonly<Record<string, ToolSchema>>);

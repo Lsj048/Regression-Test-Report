@@ -1,0 +1,18 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/cases/standard-live-web-fetch-page.ts
+
+    const finalAnswer = page.locator(".timeline-group > .assistant-message").last();
+    const unexpectedQuestion = page.getByRole("region", { name: "等待回答" });
+    const deadline = startedAt + durationBudgetMs;
+    while (Date.now() < deadline) {
+      if (await unexpectedQuestion.isVisible()) {
+        const question = (await unexpectedQuestion.innerText()).replace(/\s+/gu, " ").trim();
+        throw new Error(`WebFetch requested unexpected user input: ${question}`);
+      }
+      const observed = await sessionFrom(await fetch(`${current.baseUrl}/api/sessions/${session.id}`));
+      if (observed.status === "completed") break;
+      if (observed.status !== "running") throw new Error(`WebFetch ended with unexpected status ${observed.status}`);
+      await page.waitForTimeout(100);
+    }
+    const terminal = await sessionFrom(await fetch(`${current.baseUrl}/api/sessions/${session.id}`));
+    expect(terminal.status, "WebFetch did not complete within its duration budget").toBe("completed");

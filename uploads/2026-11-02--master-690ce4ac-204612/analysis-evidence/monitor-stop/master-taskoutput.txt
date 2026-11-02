@@ -1,0 +1,15 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/workspace/schemas.ts
+      background_lifecycle: string("Background process lifecycle. session is stopped, together with everything the command started, when the agent runtime closes; persistent survives runtime shutdown for a later step or an external verifier, and implies run_in_background=true. Required for a command that starts a service or uses startup_probe.", { enum: ["session", "persistent"] }),
+      startup_probe: startupProbe,
+      dangerouslyDisableSandbox: boolean("Request execution outside the sandbox; requires explicit approval."),
+    }, ["command"]),
+  },
+  TaskOutput: {
+    name: "TaskOutput",
+    description: ALIGNED_TOOL_DESCRIPTIONS.TaskOutput,
+    parameters: object({
+      task_id: string("Background process ID returned by Bash or Monitor."),
+      block: boolean("Whether to wait for the process to settle before returning."),
+      timeout: integer("Maximum wait in milliseconds, capped at 600000.", { minimum: 1, maximum: 600000 }),
+    }, ["task_id", "block", "timeout"]),

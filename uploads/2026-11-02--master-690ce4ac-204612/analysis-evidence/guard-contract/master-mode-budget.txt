@@ -1,0 +1,5 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: config/modes/standard/mode.yaml
+    component: builtin.max_steps
+    config: { maxSteps: 10000 }
+  - <<: *builtin_policy

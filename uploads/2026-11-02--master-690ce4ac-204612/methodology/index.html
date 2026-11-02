@@ -1,0 +1,60 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>全量回归执行与归因方法</title><style>body{font:16px/1.8 system-ui;max-width:1040px;margin:30px auto;padding:0 22px;color:#182b3b}pre{background:#edf3f7;padding:16px;overflow:auto;font-size:12px}code{overflow-wrap:anywhere;font-size:13px}a{color:#17649a}h2{margin-top:32px}.table-wrap{overscroll-behavior-x:contain}.table-wrap table{min-width:760px}</style><h1>本次全量回归的执行、归因与报告方法</h1><p class="muted">线上副本保留本次原始判分。G1/G2 报告、完整结果 JSON 和部分证据可在线查看；原始轨迹、trace 与大附件在本机封存，具体路径和 SHA-256 见 <a href="../evidence-index.html">证据目录</a>。</p>
+<p>这份说明记录本次冻结执行的方法。运行成绩、失败原因和 G2 裁判状态以<a href="../index.html">主报告</a>及其 JSON 为准。</p>
+<h2>执行范围与版本</h2>
+<p>被测 master：<code>690ce4ac3d8bd4f24b734173019b8c61340c0a83</code>。套件基线来自 devops/regression-test：<code>b706d45f9131a86caabf0553b74457bab5f4864d</code>。两路实际文件树一致：<code>e667aa16e5ed82ef9f588cb497e5bf571482c5cf</code>。</p>
+<p>周入口先 fetch origin/master 并冻结。产品 src、config、spec、package 清单与锁文件保持 master；只覆盖冻结套件的 test/e2e、scripts/evaluation 和 suite-companions.json 明确登记的自检文件。主工作区的未提交内容不进入实验。</p>
+<p>本次选择 87 个确定性 Case、70 个真实模型 Case，均为五个原始样本、单 worker、零 Playwright retry。自动与手动 Compaction 各预登记第六样本，共 787 个原始样本。第六样本影响所属 Case，不增加独立 Case 数，也不抵消前五轮失败。</p>
+<h2>复现入口</h2>
+<p>先把已提交套件中的 scripts/evaluation 导出到仓库外，再运行导出的入口。以下 ROOT 必须是新的仓库外空目录；评测密钥由入口从日常设置中仅映射 baseUrl/apiKey 到隔离环境，不能写入命令或报告。</p>
+<pre>node /absolute/frozen-runner/run-weekly.mjs \
+  --repository /absolute/longcat-harness \
+  --suite-ref b706d45f9131a86caabf0553b74457bab5f4864d \
+  --root /absolute/new-empty-run</pre>
+<p>若只对当前可信候选代码做单路完整评测，使用仓库提供的入口；它与“纯 master 加套件”的周入口含义不同：</p>
+<pre>LCH_EVAL_PROFILE=deterministic LCH_EVAL_REPEAT_EACH=5 npm run evaluate:local
+
+# live 还需要显式允许、Provider 地址和受限密钥；不要把密钥提交到文件。
+LCH_EVAL_PROFILE=live LCH_EVAL_ALLOW_LIVE=1 \
+LCH_EVAL_LIVE_MODEL=LongCat-2.0 LCH_EVAL_LIVE_MODEL_REVISION=provider-unreported \
+npm run evaluate:local</pre>
+<p>七步为：准备源码、准备固定工具链、安装锁定依赖与浏览器、类型检查、Playwright 与项目测试、合格外因有界补样、产物和资格校验。周入口另先运行 Core/Web 预检，再完成两路取样与 Compaction 第六样本，最后运行 G2。G1 失败仍保留后续 Case 和 G2；准备失败不得冒称执行了业务用例。</p>
+<p>本次固定 Node 24.12.0、npm 11.6.2、Bun 1.4.2。真实模型 LongCat-2.0，revision 为 provider-unreported；默认 maxOutputTokens=4096、contextWindowTokens=1048576、temperature=0、thinking=true、thinkingBudget=1024。自动压缩覆盖为 32768/8192，手动为 32768/16384。HOME、设置、状态库、工作区、端口均隔离，日常 8088 实例不参与。</p>
+<h2>证据结构和判分</h2>
+<pre>run/
+  plan.json / progress.json
+  runner/ / master-source.tar.gz / suite-source.tar.gz
+  deterministic/ 或 live/ 或 compaction-sixth/
+    source/ / toolchain/ / metadata/ / logs/
+    artifacts/
+      evaluation-run-contract.json
+      junit/playwright.xml
+      evaluation-summary.json        # 仅正式校验成功时才存在
+      external-invalid.json / external-retries/
+      test-results/&lt;sample&gt;/
+        *-sqlite-audit.json / *-timings.json / isolated-service.log
+        failure-diagnostics.json / trace.zip / 截图与专属附件
+        trajectory.jsonl.gz / attachments/
+  analysis.json / analysis-evidence/
+  g2/report.html / report.json / request-checks.jsonl / judgment.json
+  retained-evidence-verification.json / report.html / report.json</pre>
+<p>轨迹由 manifest、event/turn/message 和 complete 构成；核对样本身份、原始序号、retry=0、记录计数、外置内容、附件副本哈希和 processesStopped。SQLite 逐库导出不是跨库原子快照。成功样本必须满足本次 Contract 的 audit、timings 和日志要求；缺失证据不能按通过计算。</p>
+<p>Case 的原始成功要求全部预登记样本通过。正式门禁还要求有效样本、全部附件与项目测试满足冻结验证器。归因、外部替补、诊断回放和历史 PASS 均不重写本轮原始成绩。</p>
+<h2>失败归因</h2>
+<ol><li>从本次冻结题面、Contract、Driver、audit 和独立真值重建用户要求。先问硬断言删除后会放过什么具体错误，不能因旧断言存在便视为必要要求。</li>
+<li>沿上下文计划、模型输出、动作提交、权限、实际派发、raw/final 工具结果、耐久消息、后续实际消费、领域状态、业务文件、UI 和刷新查第一处分歧。最终文本或数据库中存在正确值不能单独证明机制成功。</li>
+<li>逐失败样本选一个主因：题面/夹具设计、断言/Driver、产品或 master 集成缺口、上游模型/服务、外部条件、runner/证据，或待复核。一个 Case 可有混合原因。无害只读变体、合法参数修复和有据的失败开放应按实际契约复核；不能宽泛吞掉工具或服务错误。</li>
+<li>把外部现象、直接失败原因、补样资格分别判断。恢复过的超时、清理后的取消、HTTP200 空输出、非法参数和计划内注入故障不能冒充网络作废。只有冻结分类器准入的直接未恢复外因才能有界补样，原样本与替补映射全保留。</li>
+<li>在 suite 查 Case 来源，在 master 查真实产品实现；分别记录最早设计、当前行作者、疑似缺陷引入和已有修复。保留完整 SHA、作者原始邮箱和时间。没有二分不声称最早缺陷引入，Git 作者不是已确认的组织责任人。</li>
+<li>每个失败 Case 一条 finding，每份失败样本有独立类别、分歧、事件链、证据和限制。旧审计提前退出时，后续 UI/刷新未执行就明确保留；不能由分析补判通过。</li></ol>
+<h2>G2 与报告发布</h2>
+<p>G2 复用本次 G1 轨迹，以冻结的 37 条规则分析 canonical 主请求与代码变化，然后进行一次 Codex 裁判。规则基线待人工确认；没有触发不等于违反，辅助模型请求正文未保留时记 NEEDS_EVIDENCE。canonical 计划不是原始 Provider HTTP 抓包。G2 不改变 G1 判分。</p>
+<pre>node /absolute/frozen-runner/g2/analyze.mjs \
+  --repository /absolute/longcat-harness --run /absolute/run \
+  --out /absolute/new-g2-analysis
+
+node /absolute/frozen-runner/g2/judge.mjs --bundle /absolute/new-g2-analysis</pre>
+<p>分析退出 2 可能表示已生成待审报告，不能用只接受退出 0 的 &amp;&amp; 阻止裁判。裁判只尝试一次；认证、超时或验证失败原样保留，不自动换模型重试。已封存旧实验只读，独立复核使用新目录。</p>
+<p>本次在分析与逐附件核对完成后，用本次 runner/weekly-report.mjs 生成最终报告，生成 SHA-256 清单封存。线上静态目录包含主报告、G2、结构化 JSON、源码片段和可分享的小附件；原始轨迹、trace 与大附件留在本机，线上目录明确列出路径、大小与哈希。发布副本只改相对链接和呈现路径，保留原判分及源/发布哈希。</p>
+<p>发布使用现有 Regression-Test-Report 的目录包与 sidecar 元数据，先构建校验，再提交到 GitHub Pages。核对部署的是本次精确提交，验证报告、G2、JSON、latest 和全部发布文件。在线报告发布成功后，才将本地 regression-test 分支 rebase 到本次被测 master；不自动 force-push 回归分支。</p>
+<h2>本次冻结材料</h2><p>spec 是产品规范入口，以下规范快照来自被测 master；docs/testing 与脚本说明来自冻结套件，不增减产品规范。master 新行为在各失败项另附实际版本源码和 bugfix 说明。</p><ul><li><a href="spec--README.md.txt">spec/README.md</a> · 690ce4ac</li><li><a href="spec--conformance.md.txt">spec/conformance.md</a> · 690ce4ac</li><li><a href="docs--testing--README.md.txt">docs/testing/README.md</a> · b706d45f</li><li><a href="docs--testing--case-design.md.txt">docs/testing/case-design.md</a> · b706d45f</li><li><a href="docs--testing--failure-attribution.md.txt">docs/testing/failure-attribution.md</a> · b706d45f</li><li><a href="docs--testing--harness-evaluation.md.txt">docs/testing/harness-evaluation.md</a> · b706d45f</li><li><a href="docs--testing--web-regression.md.txt">docs/testing/web-regression.md</a> · b706d45f</li><li><a href="docs--testing--test-selection.md.txt">docs/testing/test-selection.md</a> · b706d45f</li><li><a href="docs--testing--new-playwright-case-sop.md.txt">docs/testing/new-playwright-case-sop.md</a> · b706d45f</li><li><a href="scripts--evaluation--README.md.txt">scripts/evaluation/README.md</a> · b706d45f</li><li><a href="scripts--evaluation--g2--README.md.txt">scripts/evaluation/g2/README.md</a> · b706d45f</li><li><a href="scripts--evaluation--g2--rules.md.txt">scripts/evaluation/g2/rules.md</a> · b706d45f</li><li><a href="test--e2e--suite-companions.json.txt">test/e2e/suite-companions.json</a> · b706d45f</li><li><a href="spec--acceptance.md.txt">spec/acceptance.md</a> · 690ce4ac</li><li><a href="spec--boundaries.md.txt">spec/boundaries.md</a> · 690ce4ac</li><li><a href="spec--compatibility.md.txt">spec/compatibility.md</a> · 690ce4ac</li><li><a href="spec--context.md.txt">spec/context.md</a> · 690ce4ac</li><li><a href="spec--execution.md.txt">spec/execution.md</a> · 690ce4ac</li><li><a href="spec--interfaces.md.txt">spec/interfaces.md</a> · 690ce4ac</li><li><a href="spec--lifecycle.md.txt">spec/lifecycle.md</a> · 690ce4ac</li><li><a href="spec--persistence.md.txt">spec/persistence.md</a> · 690ce4ac</li><li><a href="spec--policies.md.txt">spec/policies.md</a> · 690ce4ac</li></ul><p><a href="sources.json">来源版本清单</a></p>
+</html>

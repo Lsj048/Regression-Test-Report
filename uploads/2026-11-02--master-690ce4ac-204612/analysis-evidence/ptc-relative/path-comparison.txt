@@ -1,0 +1,12 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/ptc-live-file-handoff-summary.ts
+  assert.ok(nested.length > 0, "a recoverable RunCode failure did not perform its intended read-only work");
+  assert.ok(nested.every((nestedCall) => nestedCall.name === "Read"),
+    "a failed RunCode program invoked a mutating, terminal, or unrelated nested Tool");
+  for (const read of nested) {
+    assert.equal(read.turnId, turnId);
+    const path = jsonObject(read.payload["arguments"], "failed PTC Read arguments")["file_path"];
+    assert.ok(path === inputPath || (writtenOutput !== undefined && path === writtenOutput.path && read.seq > writtenOutput.resultSeq),
+      "a failed RunCode program read an unrelated file or the output before its successful creation");
+    successfulResult(resultsById, read);
+  }

@@ -1,0 +1,320 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> assistant.live-project-search >> assistant live project-search preserves durable business truth
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+AssertionError: task left project management and accessed workspace tools
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-uJuQyL/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "我忘了长期项目资料中哪份文件记录了鹈鹕结算迁移，请按“鹈… 刚刚" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]: 我忘了长期项目资料中哪份文件记录了鹈鹕结算迁移，请按“鹈…
+          - time [ref=e59]: 刚刚
+        - button "我忘了长期项目资料中哪份文件记录了鹈鹕结算迁移，请按“鹈… 的会话操作" [ref=e60] [cursor=pointer]
+    - button "归档会话" [ref=e65] [cursor=pointer]
+    - button "设置" [ref=e69] [cursor=pointer]
+  - main [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 我忘了长期项目资料中哪份文件记录了鹈鹕结算迁移，请按“鹈…
+        - button "复制会话 ID session_1b162f60-3234-44da-a12c-e5707a507d51" [ref=e78] [cursor=pointer]:
+          - generic [ref=e79]: session_1b162f60-3234-44da-a12c-e5707a507d51
+      - generic [ref=e83]:
+        - button "对话" [ref=e84] [cursor=pointer]
+        - button "轨迹" [ref=e87] [cursor=pointer]
+    - generic [ref=e90]:
+      - generic [ref=e93]:
+        - generic [ref=e96]:
+          - generic [ref=e97]: 我忘了长期项目资料中哪份文件记录了鹈鹕结算迁移，请按“鹈鹕结算迁移”搜索资料正文，列出匹配的资料路径和其中的联系人。不要修改资料、执行命令或联网。
+          - generic:
+            - time: 00:00
+            - button "复制消息"
+        - group [ref=e99]:
+          - generic "用时 15 秒" [ref=e100] [cursor=pointer]
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - paragraph [ref=e106]: 搜索完成，匹配结果如下：
+            - paragraph [ref=e107]:
+              - strong [ref=e108]: 匹配资料路径：
+              - generic "文件不存在" [ref=e109]:
+                - code [ref=e110]: migrations/settlement.txt
+            - paragraph [ref=e111]:
+              - strong [ref=e112]: 资料正文：
+              - text: 鹈鹕结算迁移：联系人陈禾，周二交接。
+            - paragraph [ref=e113]:
+              - strong [ref=e114]: 联系人：
+              - text: 陈禾
+            - separator [ref=e115]
+            - paragraph [ref=e116]:
+              - text: 另外，工作区中还有一份相关目录下的
+              - generic "文件不存在" [ref=e117]:
+                - code [ref=e118]: migrations/archive.txt
+              - text: ，但它的内容是"旧计费平台升级：联系人顾宁，已归档"，与鹈鹕结算迁移无关。
+          - generic:
+            - button "复制回答"
+            - button "赞"
+            - button "踩"
+            - button "从此回答分叉会话"
+      - generic [ref=e121]:
+        - textbox "继续输入消息" [ref=e122]
+        - generic [ref=e123]:
+          - generic [ref=e124]:
+            - button "添加" [ref=e126] [cursor=pointer]
+            - generic [ref=e129] [cursor=pointer]: 个人助理
+            - button "权限：只读" [ref=e135] [cursor=pointer]:
+              - generic [ref=e138]: 只读
+          - generic [ref=e141]:
+            - button "模型：LongCat-2.0" [ref=e143] [cursor=pointer]:
+              - generic [ref=e144]: LongCat-2.0
+              - generic [ref=e145]: 思考
+            - generic "模型缓存与上下文用量" [ref=e148]:
+              - meter "最近一次模型请求缓存命中 11,136 / 11,562 输入令牌（96.3%）" [ref=e149]:
+                - generic [ref=e150]: 缓存
+                - strong [ref=e151]: 96%
+              - meter "上下文已使用 11,562 / 1,048,576 令牌（1.1%）；最近一次模型请求" [ref=e152]:
+                - generic [ref=e153]: 令牌
+                - strong [ref=e154]: 1%
+            - button "发送消息" [disabled] [ref=e155]
+    - generic [ref=e158]:
+      - generic [ref=e161]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e162] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  18  |   assert.equal(saved.activeMemories[0]!.sourceSessionId, sessionId);
+  19  | }
+  20  | 
+  21  | export function assertMemoryChange(kind: "memory-update" | "memory-delete", saved: AssistantMemoryStoreSnapshot, changed: AssistantMemoryStoreSnapshot, sessionId: string): void {
+  22  |   assert.equal(saved.activeMemories.length, 1);
+  23  |   const original = saved.activeMemories[0]!;
+  24  |   const history = changed.history.filter(x => x.event === (kind === "memory-delete" ? "DELETE" : "UPDATE") && x.sourceSessionId === sessionId);
+  25  |   assert.ok(history.length > 0, "memory change did not commit");
+  26  |   assert.ok(history.every(x => x.memoryId === original.id), "mutation changed another preference");
+  27  |   if (kind === "memory-delete") assert.deepEqual(changed.activeMemories, [], "deleted preference remains active");
+  28  | }
+  29  | 
+  30  | export function assertMemoryMutation(kind: "memory-update" | "memory-delete", snapshots: readonly AssistantMemoryStoreSnapshot[], sessionIds: readonly string[]): void {
+  31  |   assert.equal(snapshots.length, 3);
+  32  |   const [saved, changed, recalled] = snapshots;
+  33  |   assertMemorySave(kind, saved!, sessionIds[0]!);
+  34  |   const original = saved!.activeMemories[0]!;
+  35  |   assertMemoryChange(kind, saved!, changed!, sessionIds[1]!);
+  36  |   const mutation = kind === "memory-update" ? "UPDATE" : "DELETE";
+  37  |   const history = changed!.history.filter(x => x.event === mutation && x.sourceSessionId === sessionIds[1]);
+  38  |   assert.ok(history.length > 0, `no real ${mutation} from the change session`);
+  39  |   for (const entry of history) {
+  40  |     assert.equal(entry.memoryId, original.id, "mutation changed another preference");
+  41  |     assert.ok(entry.evidence.length > 0 && scenarios[kind].change.normalize("NFKC").toLocaleLowerCase().includes(entry.evidence.normalize("NFKC").toLocaleLowerCase()), "mutation has no user evidence");
+  42  |   }
+  43  |   for (const snapshot of [changed!, recalled!]) {
+  44  |     if (kind === "memory-delete") assert.deepEqual(snapshot.activeMemories, [], "deleted preference remains active or was recreated");
+  45  |     else {
+  46  |       assert.equal(snapshot.activeMemories.length, 1, "update duplicated the preference");
+  47  |       const active = snapshot.activeMemories[0]!;
+  48  |       assert.equal(active.id, original.id, "update replaced rather than updated the existing record");
+  49  |       assert.ok(active.value.includes(scenarios[kind].marker), "new value was not saved");
+  50  |       assert.ok(!active.value.includes(scenarios[kind].oldValue) && !active.text.includes(scenarios[kind].oldValue), "old value remains current");
+  51  |     }
+  52  |   }
+  53  |   assert.ok(recalled!.history.every(x => x.memoryId === original.id || x.event === "NONE"), "unrelated memory mutation");
+  54  |   assert.ok(recalled!.history.filter(x => x.sourceSessionId === sessionIds[2]).every(x => x.event === "NONE"), "recall changed memory instead of reading it");
+  55  | }
+  56  | 
+  57  | export function assertProjectFiles(workspace: string, documents: Readonly<Record<string, string>>, deleted?: string): void {
+  58  |   const root = join(workspace, ".longcat-harness", "tools", "projects");
+  59  |   const found: string[] = [];
+  60  |   const visit = (dir: string, prefix = ""): void => {
+  61  |     for (const entry of readdirSync(dir, { withFileTypes: true })) {
+  62  |       const path = prefix + entry.name;
+  63  |       if (entry.isDirectory()) visit(join(dir, entry.name), path + "/");
+  64  |       else { assert.ok(entry.isFile(), "unexpected non-file project entry"); found.push(path); }
+  65  |     }
+  66  |   };
+  67  |   visit(root);
+  68  |   assert.deepEqual(found.sort(), Object.keys(documents).filter(x => x !== deleted).sort(), "project file set changed unexpectedly");
+  69  |   for (const [path, content] of Object.entries(documents)) {
+  70  |     if (path === deleted) assert.equal(existsSync(join(root, path)), false);
+  71  |     else assert.equal(readFileSync(join(root, path), "utf8"), content, `unrelated document changed: ${path}`);
+  72  |   }
+  73  | }
+  74  | 
+  75  | export function auditAssistantMaintenance(kind: AssistantMaintenanceKind, stateDirectory: string, workspace: string, sessionIds: readonly string[], checkpoints: readonly AssistantMemoryStoreSnapshot[] = []) {
+  76  |   const scenario = scenarios[kind];
+  77  |   const contract = ASSISTANT_MAINTENANCE_CASES.find(x => x.id === `assistant.live-${kind}`)!;
+  78  |   const eventPath = join(stateDirectory, "event_log.sqlite");
+  79  |   const data = commonAudit(eventPath, join(stateDirectory, "message.sqlite"), sessionIds[0]!, sessionIds.slice(1));
+  80  |   try {
+  81  |     assert.deepEqual(data.childSessionIds, []);
+  82  |     const prompts = "change" in scenario ? [scenario.prompt, scenario.change, scenario.recall] : [scenario.prompt];
+  83  |     assert.equal(sessionIds.length, prompts.length);
+  84  |     const forbidden = assertNoFailures(eventPath, data.events, data.results);
+  85  |     const turnEvidence = sessionIds.map((id, stage) => {
+  86  |       const events = data.events.filter(e => e.session_id === id);
+  87  |       const inputs = data.database.prepare("SELECT content, claimed_by_turn_id FROM inputs WHERE session_id=? ORDER BY admission_seq").all(id);
+  88  |       assert.equal(inputs.length, 1, "each new session must contain only its submitted task");
+  89  |       assert.equal(inputs[0]!["content"], prompts[stage]);
+  90  |       const turnId = String(inputs[0]!["claimed_by_turn_id"]);
+  91  |       const turns = data.database.prepare("SELECT turn_id FROM turns WHERE session_id=?").all(id);
+  92  |       assert.deepEqual(turns.map(x => x["turn_id"]), [turnId], "unexpected additional turn");
+  93  |       const rounds = mainModelRounds(eventPath, events, id, turnId);
+  94  |       for (const { event, plan } of rounds.plans) assertTurnInputOverlay(eventPath, events, event, plan, prompts[stage]!, "maintenance input");
+  95  |       const final = rounds.completions.at(-1)!;
+  96  |       const outcome = payload(eventPath, final);
+  97  |       assert.equal(outcome["finishReason"], "stop");
+  98  |       assert.deepEqual(outcome["toolCalls"], []);
+  99  |       const finalAnswer = messageContent(outcome["content"]);
+  100 |       assert.ok(finalAnswer.trim(), "empty final answer");
+  101 |       const messages = data.messages.prepare("SELECT role, message_json, source_event_seq FROM messages WHERE session_id=? ORDER BY seq").all(id)
+  102 |         .map(row => ({ role: String(row["role"]), source_event_seq: row["source_event_seq"], message: jsonObject(JSON.parse(String(row["message_json"])), "durable message") }));
+  103 |       assert.deepEqual(messages.filter(x => x["role"] === "user").map(x => messageContent(x.message["content"])), [prompts[stage]], "persisted input or cross-session history changed");
+  104 |       const assistant = messages.filter(x => x["role"] === "assistant");
+  105 |       assert.equal(assistant.length, rounds.completions.length, "model/assistant message set mismatch");
+  106 |       for (const row of assistant) {
+  107 |         const source = rounds.completions.find(e => e.seq === row["source_event_seq"]);
+  108 |         assert.ok(source, "assistant message has no model source");
+  109 |         const original = payload(eventPath, source);
+  110 |         for (const field of ["content", "reasoningContent", "toolCalls"]) assert.deepEqual(row.message[field] ?? (field === "toolCalls" ? [] : undefined), original[field], `durable assistant ${field} changed`);
+  111 |       }
+  112 |       assert.equal(messageContent(assistant.at(-1)!.message["content"]), finalAnswer);
+  113 |       const request = jsonObject(outcome["request"], "final request");
+  114 |       const finalPlan = rounds.plans.find(x => x.plan["planId"] === request["planId"])!;
+  115 |       return { sessionId: id, turnId, prompt: prompts[stage]!, finalAnswer, finalSeq: final.seq, plans: rounds.plans, messages, finalPlan };
+  116 |     });
+  117 |     const calls = data.calls;
+> 118 |     if ("documents" in scenario) assert.ok(calls.every(c => c.name === "Projects"), "task left project management and accessed workspace tools");
+      |                                         ^ AssertionError: task left project management and accessed workspace tools
+  119 |     else assert.deepEqual(calls, [], "memory task used unrelated tools despite the user scope");
+  120 |     assert.equal(new Set(calls.map(c => c.callId)).size, calls.length);
+  121 |     assert.deepEqual(data.results.map(r => r.callId).sort(), calls.map(c => c.callId).sort());
+  122 |     const modelCalls = data.events.filter(e => e.type === "model.completed").flatMap(event => objects(payload(eventPath, event)["toolCalls"]).map(value => ({ event, value })));
+  123 |     assert.deepEqual(modelCalls.map(x => x.value["id"]).sort(), calls.map(c => c.callId).sort(), "model and execution call identities differ");
+  124 |     const actionPlans = data.events.filter(e => e.type === "action.plan.committed" && typeof payload(eventPath, e)["traceEventId"] !== "string");
+  125 |     const actions = actionPlans.flatMap(event => objects(payload(eventPath, event)["actions"]).map(action => ({ event, action, intent: jsonObject(action["intent"], "intent") })));
+  126 |     assert.deepEqual(actions.map(x => x.intent["callId"]).sort(), calls.map(c => c.callId).sort(), "unplanned or missing execution");
+  127 |     for (const call of calls) {
+  128 |       const model = modelCalls.find(x => x.value["id"] === call.callId)!;
+  129 |       const action = actions.find(x => x.intent["callId"] === call.callId)!;
+  130 |       assert.equal(model.value["name"], call.name);
+  131 |       const modelArgs = typeof model.value["arguments"] === "string" ? JSON.parse(model.value["arguments"]) : model.value["arguments"];
+  132 |       assert.deepEqual(modelArgs, call.payload["arguments"]);
+  133 |       assert.deepEqual(action.intent, { kind: "invoke_tool", actionId: call.payload["actionId"], name: call.name, callId: call.callId, arguments: modelArgs });
+  134 |       assert.equal(payload(eventPath, action.event)["planId"], call.payload["actionPlanId"]);
+  135 |       assert.equal(action.action["actionId"], call.payload["actionId"]);
+  136 |       assert.equal(action.action["concurrency"], "exclusive");
+  137 |       const groups = objects(payload(eventPath, action.event)["executionGroups"]);
+  138 |       const group = groups.filter(g => Array.isArray(g["actionIds"]) && g["actionIds"].includes(call.payload["actionId"]));
+  139 |       assert.equal(group.length, 1); assert.deepEqual(group[0], { kind: "exclusive", actionIds: [call.payload["actionId"]] });
+  140 |       assert.equal(call.payload["nestingDepth"], 0); assert.equal(call.payload["parentCallId"], undefined);
+  141 |       assert.ok(model.event.seq < action.event.seq && action.event.seq < call.seq);
+  142 |     }
+  143 |     const toolDetails: { name: string; argumentsJson: string; renderedResult: string; approved: boolean }[] = [];
+  144 |     if ("documents" in scenario) {
+  145 |       assert.ok(calls.length > 0, "project mechanism not invoked");
+  146 |       const documents: Readonly<Record<string, string>> = scenario.documents;
+  147 |       let targetCalls = 0, deleted = false;
+  148 |       for (const call of calls) {
+  149 |         assert.equal(call.name, "Projects");
+  150 |         assert.equal(call.sessionId, sessionIds[0]);
+  151 |         assert.equal(call.turnId, turnEvidence[0]!.turnId);
+  152 |         const args = jsonObject(call.payload["arguments"], "project args");
+  153 |         const method = args["method"];
+  154 |         assert.ok(["project_info", "project_read", "project_search", ...(kind === "project-delete" ? ["project_delete"] : [])].includes(String(method)), "out-of-scope project operation");
+  155 |         const path = String(args["path"] ?? "");
+  156 |         const result = data.results.find(r => r.callId === call.callId)!;
+  157 |         const events = (type: string) => data.events.filter(e => e.type === type && payload(eventPath, e)["callId"] === call.callId);
+  158 |         const dispatch = events("tool.dispatch.started"), raw = events("tool.raw_result");
+  159 |         assert.equal(dispatch.length, 1); assert.equal(raw.length, 1);
+  160 |         assert.deepEqual(payload(eventPath, dispatch[0]!), call.payload, "dispatch changed arguments/identity");
+  161 |         const rawPayload = payload(eventPath, raw[0]!);
+  162 |         for (const field of ["callId", "actionPlanId", "name", "ordinal", "status", "isError", "content", "canonicalValue"]) assert.deepEqual(rawPayload[field], result.payload[field], `project result changed ${field}`);
+  163 |         assert.ok(call.seq < dispatch[0]!.seq && dispatch[0]!.seq < raw[0]!.seq && raw[0]!.seq < result.seq);
+  164 |         const permission = data.events.filter(e => e.type === "permission.decision" && jsonObject(payload(eventPath, e)["execution"], "permission")["callId"] === call.callId);
+  165 |         assert.equal(permission.length, 1);
+  166 |         const decision = payload(eventPath, permission[0]!);
+  167 |         const execution = jsonObject(decision["execution"], "permission execution");
+  168 |         for (const field of ["sessionId", "turnId", "actionId", "callId", "name", "arguments", "ordinal", "nestingDepth"]) assert.deepEqual(execution[field], call.payload[field]);
+  169 |         assert.equal(decision["allowed"], true);
+  170 |         assert.ok(permission[0]!.seq < dispatch[0]!.seq);
+  171 |         assert.deepEqual(decision["target"], { action: "Projects", resource: path || "*", mutates: method === "project_delete", permissionRequired: method === "project_delete" });
+  172 |         let expected: unknown;
+  173 |         if (method === "project_read") {
+  174 |           assert.ok(Object.hasOwn(documents, path) && !(deleted && "target" in scenario && path === scenario.target));
+  175 |           expected = { path, content: documents[path] };
+  176 |           if (kind === "project-read" && path === scenarios["project-read"].target) targetCalls++;
+  177 |         } else if (method === "project_info") {
+  178 |           const value = jsonObject(result.payload["canonicalValue"], "project listing");
+  179 |           const paths: string[] = Object.keys(documents).filter(x => !(deleted && "target" in scenario && x === scenario.target));
+  180 |           assert.deepEqual([...(value["documents"] as string[])].sort(), paths.sort());
+  181 |           expected = { root: join(workspace, ".longcat-harness", "tools", "projects"), documents: value["documents"], count: paths.length };
+  182 |         } else if (method === "project_search") {
+  183 |           assert.equal(typeof args["query"], "string");
+  184 |           const query = (args["query"] as string).toLowerCase();
+  185 |           const candidates: [string, string][] = Object.entries(documents).filter(([p, text]) => text.toLowerCase().includes(query) && !(deleted && "target" in scenario && p === scenario.target));
+  186 |           const value = jsonObject(result.payload["canonicalValue"], "search result");
+  187 |           const hits = objects(value["hits"]);
+  188 |           const limit = Math.min(100, Math.max(1, Math.floor(Number(args["n"] ?? 5))));
+  189 |           assert.equal(hits.length, Math.min(limit, candidates.length));
+  190 |           assert.equal(new Set(hits.map(x => x["path"])).size, hits.length);
+  191 |           for (const hit of hits) {
+  192 |             const found = candidates.find(([p]) => p === hit["path"]); assert.ok(found);
+  193 |             const index = found[1].toLowerCase().indexOf(query);
+  194 |             assert.equal(hit["snippet"], found[1].slice(Math.max(0, index - 120), index + query.length + 240));
+  195 |           }
+  196 |           expected = { query, hits };
+  197 |           if (kind === "project-search" && query.trim() && hits.some(hit => hit["path"] === "migrations/settlement.txt")) targetCalls++;
+  198 |         } else {
+  199 |           assert.equal(kind, "project-delete"); assert.equal(path, scenarios["project-delete"].target);
+  200 |           assert.equal(deleted, false, "duplicate deletion");
+  201 |           const requested = data.events.filter(e => e.type === "permission.approval.requested" && jsonObject(payload(eventPath, e)["execution"], "approval execution")["callId"] === call.callId);
+  202 |           assert.equal(requested.length, 1);
+  203 |           const requestId = payload(eventPath, requested[0]!)["requestId"];
+  204 |           const responded = data.events.filter(e => e.type === "permission.approval.responded" && payload(eventPath, e)["requestId"] === requestId);
+  205 |           assert.equal(responded.length, 1); assert.deepEqual(payload(eventPath, responded[0]!)["response"], { allowed: true });
+  206 |           const answers = data.events.filter(e => e.type === "host.question.answered" && payload(eventPath, e)["requestId"] === requestId);
+  207 |           assert.equal(answers.length, 1); assert.equal(answers[0]!.turn_id, call.turnId);
+  208 |           assert.ok(requested[0]!.seq < answers[0]!.seq && answers[0]!.seq < dispatch[0]!.seq);
+  209 |           assert.ok(requested[0]!.seq < responded[0]!.seq && responded[0]!.seq < dispatch[0]!.seq, "deletion preceded approval");
+  210 |           expected = { path, deleted: true }; deleted = true; targetCalls++;
+  211 |         }
+  212 |         assert.deepEqual(result.payload["canonicalValue"], expected);
+  213 |         assert.deepEqual(JSON.parse(messageContent(result.payload["content"])), expected);
+  214 |         const linked = turnEvidence[0]!.messages.filter(m => m["role"] === "tool" && m.message["toolCallId"] === call.callId);
+  215 |         assert.equal(linked.length, 1); assert.equal(linked[0]!["source_event_seq"], result.seq);
+  216 |         assert.equal(messageContent(linked[0]!.message["content"]), messageContent(result.payload["content"]));
+  217 |         const consumed = objects(turnEvidence[0]!.finalPlan.plan["messages"]).filter(m => m["role"] === "tool" && m["toolCallId"] === call.callId);
+  218 |         assert.equal(consumed.length, 1); assert.equal(messageContent(consumed[0]!["content"]), messageContent(result.payload["content"]));
+```

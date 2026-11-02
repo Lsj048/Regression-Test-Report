@@ -1,0 +1,1664 @@
+{
+  "schemaVersion": 3,
+  "kind": "lch-evaluation-failure-diagnostics",
+  "caseId": "assistant.live-memory-update",
+  "mode": "assistant",
+  "repeatEachIndex": 0,
+  "retry": 0,
+  "testStatus": "failed",
+  "expectedStatus": "passed",
+  "failureMessages": [
+    "AssertionError: The expression evaluated to a falsy value:\n\n  assert.ok(checkpoints[stage].captures.some(c => c.outcomeId === payload(eventPath, models[index])[\"outcomeId\"] && c.sourceSessionId === turn.sessionId && c.sourceTurnId === turn.turnId))\n"
+  ],
+  "storageSnapshot": {
+    "capturedAt": "2026-11-02T14:21:13.228Z",
+    "eventLog": {
+      "available": true,
+      "integrity": "ok",
+      "turns": [
+        {
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "kind": "completed",
+          "createdAt": "2026-11-02T14:20:54.908Z",
+          "updatedAt": "2026-11-02T14:21:01.428Z",
+          "policyState": {
+            "builtin.time_context": {
+              "sampleKey": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+              "sampledAt": "2026-11-02T14:20:55.218Z"
+            },
+            "builtin.agent_instructions": {
+              "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            "builtin.skills": {
+              "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            "builtin.repeat_tool_reminder": {
+              "lastInputId": "input_web_d5d38cb4-4d79-449c-9931-d83f543975da"
+            },
+            "builtin.subagent_context": {}
+          }
+        },
+        {
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "kind": "completed",
+          "createdAt": "2026-11-02T14:21:01.743Z",
+          "updatedAt": "2026-11-02T14:21:09.081Z",
+          "policyState": {
+            "builtin.time_context": {
+              "sampleKey": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+              "sampledAt": "2026-11-02T14:21:01.802Z"
+            },
+            "builtin.agent_instructions": {
+              "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            "builtin.skills": {
+              "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            "builtin.repeat_tool_reminder": {
+              "lastInputId": "input_web_464d6474-cf5a-4b9b-9f1c-76364d3bcb6f"
+            },
+            "builtin.subagent_context": {}
+          }
+        },
+        {
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "kind": "completed",
+          "createdAt": "2026-11-02T14:21:09.366Z",
+          "updatedAt": "2026-11-02T14:21:13.116Z",
+          "policyState": {
+            "builtin.time_context": {
+              "sampleKey": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+              "sampledAt": "2026-11-02T14:21:09.424Z"
+            },
+            "builtin.agent_instructions": {
+              "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            "builtin.skills": {
+              "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            "builtin.repeat_tool_reminder": {
+              "lastInputId": "input_web_ae964cba-35b4-4b73-81b7-5c9cb334acce"
+            },
+            "builtin.subagent_context": {}
+          }
+        }
+      ],
+      "eventCount": 112,
+      "eventCountsByType": {
+        "action.plan.committed": 6,
+        "binding.completed": 3,
+        "binding.started": 3,
+        "context.plan.committed": 6,
+        "input.promoted": 3,
+        "message.appended": 9,
+        "model.completed": 3,
+        "policy.binding.compiled": 3,
+        "policy.proposed": 11,
+        "service.call.completed": 6,
+        "service.call.started": 6,
+        "session.created": 3,
+        "state.committed": 21,
+        "state.transition.committed": 3,
+        "state.transition.requested": 6,
+        "system_message.seeded": 3,
+        "tool.scope.bound": 3,
+        "turn.binding.committed": 3,
+        "turn.completed": 3,
+        "turn.created": 3,
+        "ui.session.status.changed": 3,
+        "workspace.registered": 1,
+        "workspace.selected": 1
+      },
+      "recentEvents": [
+        {
+          "seq": 13,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "binding.started",
+          "createdAt": "2026-11-02T14:20:55.190Z"
+        },
+        {
+          "seq": 14,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:20:55.190Z"
+        },
+        {
+          "seq": 15,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "binding.completed",
+          "createdAt": "2026-11-02T14:20:55.209Z"
+        },
+        {
+          "seq": 16,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:20:55.209Z"
+        },
+        {
+          "seq": 17,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "service.call.started",
+          "createdAt": "2026-11-02T14:20:55.274Z"
+        },
+        {
+          "seq": 18,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "service.call.completed",
+          "createdAt": "2026-11-02T14:20:55.303Z"
+        },
+        {
+          "seq": 19,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T14:20:55.303Z"
+        },
+        {
+          "seq": 20,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T14:20:55.304Z"
+        },
+        {
+          "seq": 21,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T14:20:55.304Z"
+        },
+        {
+          "seq": 22,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "context.plan.committed",
+          "createdAt": "2026-11-02T14:20:55.321Z"
+        },
+        {
+          "seq": 23,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "context.plan.committed",
+          "createdAt": "2026-11-02T14:20:55.322Z"
+        },
+        {
+          "seq": 24,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:20:55.333Z"
+        },
+        {
+          "seq": 25,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "model.completed",
+          "createdAt": "2026-11-02T14:20:57.689Z"
+        },
+        {
+          "seq": 26,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:20:57.690Z"
+        },
+        {
+          "seq": 27,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "message.appended",
+          "createdAt": "2026-11-02T14:20:57.706Z"
+        },
+        {
+          "seq": 28,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "action.plan.committed",
+          "createdAt": "2026-11-02T14:20:57.713Z"
+        },
+        {
+          "seq": 29,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "action.plan.committed",
+          "createdAt": "2026-11-02T14:20:57.714Z"
+        },
+        {
+          "seq": 30,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:20:57.714Z"
+        },
+        {
+          "seq": 31,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "service.call.started",
+          "createdAt": "2026-11-02T14:20:57.727Z"
+        },
+        {
+          "seq": 32,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "service.call.completed",
+          "createdAt": "2026-11-02T14:21:01.426Z"
+        },
+        {
+          "seq": 33,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "state.transition.requested",
+          "createdAt": "2026-11-02T14:21:01.427Z"
+        },
+        {
+          "seq": 34,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "turn.completed",
+          "createdAt": "2026-11-02T14:21:01.427Z"
+        },
+        {
+          "seq": 35,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "state.transition.requested",
+          "createdAt": "2026-11-02T14:21:01.428Z"
+        },
+        {
+          "seq": 36,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:21:01.428Z"
+        },
+        {
+          "seq": 37,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "state.transition.committed",
+          "createdAt": "2026-11-02T14:21:01.437Z"
+        },
+        {
+          "seq": 38,
+          "sessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+          "turnId": null,
+          "type": "ui.session.status.changed",
+          "createdAt": "2026-11-02T14:21:01.447Z"
+        },
+        {
+          "seq": 39,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": null,
+          "type": "session.created",
+          "createdAt": "2026-11-02T14:21:01.710Z"
+        },
+        {
+          "seq": 40,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:21:01.743Z"
+        },
+        {
+          "seq": 41,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "message.appended",
+          "createdAt": "2026-11-02T14:21:01.746Z"
+        },
+        {
+          "seq": 42,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "message.appended",
+          "createdAt": "2026-11-02T14:21:01.747Z"
+        },
+        {
+          "seq": 43,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "turn.created",
+          "createdAt": "2026-11-02T14:21:01.747Z"
+        },
+        {
+          "seq": 44,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "turn.binding.committed",
+          "createdAt": "2026-11-02T14:21:01.749Z"
+        },
+        {
+          "seq": 45,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "tool.scope.bound",
+          "createdAt": "2026-11-02T14:21:01.768Z"
+        },
+        {
+          "seq": 46,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "input.promoted",
+          "createdAt": "2026-11-02T14:21:01.768Z"
+        },
+        {
+          "seq": 47,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "system_message.seeded",
+          "createdAt": "2026-11-02T14:21:01.768Z"
+        },
+        {
+          "seq": 48,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "policy.binding.compiled",
+          "createdAt": "2026-11-02T14:21:01.780Z"
+        },
+        {
+          "seq": 49,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "binding.started",
+          "createdAt": "2026-11-02T14:21:01.780Z"
+        },
+        {
+          "seq": 50,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:21:01.780Z"
+        },
+        {
+          "seq": 51,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "binding.completed",
+          "createdAt": "2026-11-02T14:21:01.792Z"
+        },
+        {
+          "seq": 52,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:21:01.792Z"
+        },
+        {
+          "seq": 53,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "service.call.started",
+          "createdAt": "2026-11-02T14:21:01.807Z"
+        },
+        {
+          "seq": 54,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "service.call.completed",
+          "createdAt": "2026-11-02T14:21:01.835Z"
+        },
+        {
+          "seq": 55,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T14:21:01.836Z"
+        },
+        {
+          "seq": 56,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T14:21:01.837Z"
+        },
+        {
+          "seq": 57,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T14:21:01.837Z"
+        },
+        {
+          "seq": 58,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T14:21:01.838Z"
+        },
+        {
+          "seq": 59,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "context.plan.committed",
+          "createdAt": "2026-11-02T14:21:01.857Z"
+        },
+        {
+          "seq": 60,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "context.plan.committed",
+          "createdAt": "2026-11-02T14:21:01.858Z"
+        },
+        {
+          "seq": 61,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:21:01.871Z"
+        },
+        {
+          "seq": 62,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "model.completed",
+          "createdAt": "2026-11-02T14:21:06.270Z"
+        },
+        {
+          "seq": 63,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:21:06.271Z"
+        },
+        {
+          "seq": 64,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "message.appended",
+          "createdAt": "2026-11-02T14:21:06.284Z"
+        },
+        {
+          "seq": 65,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "action.plan.committed",
+          "createdAt": "2026-11-02T14:21:06.289Z"
+        },
+        {
+          "seq": 66,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "action.plan.committed",
+          "createdAt": "2026-11-02T14:21:06.290Z"
+        },
+        {
+          "seq": 67,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:21:06.290Z"
+        },
+        {
+          "seq": 68,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "service.call.started",
+          "createdAt": "2026-11-02T14:21:06.301Z"
+        },
+        {
+          "seq": 69,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "service.call.completed",
+          "createdAt": "2026-11-02T14:21:09.079Z"
+        },
+        {
+          "seq": 70,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "state.transition.requested",
+          "createdAt": "2026-11-02T14:21:09.080Z"
+        },
+        {
+          "seq": 71,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "turn.completed",
+          "createdAt": "2026-11-02T14:21:09.081Z"
+        },
+        {
+          "seq": 72,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "state.transition.requested",
+          "createdAt": "2026-11-02T14:21:09.081Z"
+        },
+        {
+          "seq": 73,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:21:09.081Z"
+        },
+        {
+          "seq": 74,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "state.transition.committed",
+          "createdAt": "2026-11-02T14:21:09.087Z"
+        },
+        {
+          "seq": 75,
+          "sessionId": "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e",
+          "turnId": null,
+          "type": "ui.session.status.changed",
+          "createdAt": "2026-11-02T14:21:09.098Z"
+        },
+        {
+          "seq": 76,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": null,
+          "type": "session.created",
+          "createdAt": "2026-11-02T14:21:09.331Z"
+        },
+        {
+          "seq": 77,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:21:09.366Z"
+        },
+        {
+          "seq": 78,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "message.appended",
+          "createdAt": "2026-11-02T14:21:09.370Z"
+        },
+        {
+          "seq": 79,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "message.appended",
+          "createdAt": "2026-11-02T14:21:09.371Z"
+        },
+        {
+          "seq": 80,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "turn.created",
+          "createdAt": "2026-11-02T14:21:09.372Z"
+        },
+        {
+          "seq": 81,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "turn.binding.committed",
+          "createdAt": "2026-11-02T14:21:09.373Z"
+        },
+        {
+          "seq": 82,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "tool.scope.bound",
+          "createdAt": "2026-11-02T14:21:09.395Z"
+        },
+        {
+          "seq": 83,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "input.promoted",
+          "createdAt": "2026-11-02T14:21:09.395Z"
+        },
+        {
+          "seq": 84,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "system_message.seeded",
+          "createdAt": "2026-11-02T14:21:09.395Z"
+        },
+        {
+          "seq": 85,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "policy.binding.compiled",
+          "createdAt": "2026-11-02T14:21:09.405Z"
+        },
+        {
+          "seq": 86,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "binding.started",
+          "createdAt": "2026-11-02T14:21:09.405Z"
+        },
+        {
+          "seq": 87,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:21:09.405Z"
+        },
+        {
+          "seq": 88,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "binding.completed",
+          "createdAt": "2026-11-02T14:21:09.416Z"
+        },
+        {
+          "seq": 89,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:21:09.416Z"
+        },
+        {
+          "seq": 90,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "service.call.started",
+          "createdAt": "2026-11-02T14:21:09.453Z"
+        },
+        {
+          "seq": 91,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "service.call.completed",
+          "createdAt": "2026-11-02T14:21:09.469Z"
+        },
+        {
+          "seq": 92,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T14:21:09.469Z"
+        },
+        {
+          "seq": 93,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T14:21:09.470Z"
+        },
+        {
+          "seq": 94,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T14:21:09.470Z"
+        },
+        {
+          "seq": 95,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T14:21:09.470Z"
+        },
+        {
+          "seq": 96,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "context.plan.committed",
+          "createdAt": "2026-11-02T14:21:09.486Z"
+        },
+        {
+          "seq": 97,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "context.plan.committed",
+          "createdAt": "2026-11-02T14:21:09.486Z"
+        },
+        {
+          "seq": 98,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:21:09.499Z"
+        },
+        {
+          "seq": 99,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "model.completed",
+          "createdAt": "2026-11-02T14:21:11.302Z"
+        },
+        {
+          "seq": 100,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:21:11.302Z"
+        },
+        {
+          "seq": 101,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "message.appended",
+          "createdAt": "2026-11-02T14:21:11.315Z"
+        },
+        {
+          "seq": 102,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "action.plan.committed",
+          "createdAt": "2026-11-02T14:21:11.320Z"
+        },
+        {
+          "seq": 103,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "action.plan.committed",
+          "createdAt": "2026-11-02T14:21:11.320Z"
+        },
+        {
+          "seq": 104,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:21:11.321Z"
+        },
+        {
+          "seq": 105,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "service.call.started",
+          "createdAt": "2026-11-02T14:21:11.332Z"
+        },
+        {
+          "seq": 106,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "service.call.completed",
+          "createdAt": "2026-11-02T14:21:13.115Z"
+        },
+        {
+          "seq": 107,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "state.transition.requested",
+          "createdAt": "2026-11-02T14:21:13.116Z"
+        },
+        {
+          "seq": 108,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "turn.completed",
+          "createdAt": "2026-11-02T14:21:13.116Z"
+        },
+        {
+          "seq": 109,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "state.transition.requested",
+          "createdAt": "2026-11-02T14:21:13.116Z"
+        },
+        {
+          "seq": 110,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T14:21:13.116Z"
+        },
+        {
+          "seq": 111,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "state.transition.committed",
+          "createdAt": "2026-11-02T14:21:13.123Z"
+        },
+        {
+          "seq": 112,
+          "sessionId": "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386",
+          "turnId": null,
+          "type": "ui.session.status.changed",
+          "createdAt": "2026-11-02T14:21:13.132Z"
+        }
+      ],
+      "modelOutcomes": [
+        {
+          "seq": 25,
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "model.completed",
+          "payload": {
+            "attemptId": "attempt_4d84af8a-1ee6-43be-9b0c-b4a99dd2a289",
+            "content": "已记住：你的工作周报固定标题为**海棠周报**。",
+            "finishReason": "stop",
+            "outcomeId": "outcome_cfc12784-b3fd-4374-99d4-d3a3b5611e8c",
+            "reasoningContent": "\nThe user wants me to remember that their work weekly report has a fixed title \"海棠周报\" (Haitang Weekly Report). They want a short confirmation only, no file operations or other actions.\n\nThis is a simple memory request. I should acknowledge it briefly.\n",
+            "request": {
+              "attempt": 0,
+              "planId": "plan_da06dbfa-2cf7-4f00-abe9-6e2f501aeaf5",
+              "requestHash": "a366add1167fb973692df769db637eae3c571f046ecab40cc92a6380ac14c675"
+            },
+            "responseMetadata": {
+              "responseId": "bd30381d81bb4a4f9f9d9556329cf6b0"
+            },
+            "toolCalls": [],
+            "usage": {
+              "cachedTokens": 10240,
+              "completionTokens": 71,
+              "promptTokens": 10863,
+              "reasoningTokens": 54,
+              "totalTokens": 10934
+            }
+          }
+        },
+        {
+          "seq": 28,
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "action.plan.committed",
+          "payload": {
+            "attributes": {
+              "actionCount": 0,
+              "planId": "plan_11e0ac91-df79-4130-b6aa-2318a72fc650",
+              "rejectedCount": 0
+            },
+            "parentIds": [],
+            "traceEventId": "trace_73df78f8-5a93-44e2-a4c4-92398b5078a7"
+          }
+        },
+        {
+          "seq": 29,
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "action.plan.committed",
+          "payload": {
+            "actions": [],
+            "appliedEffects": [],
+            "concurrencyCeiling": 8,
+            "dependencies": [],
+            "executionGroups": [],
+            "failureMode": "settle_all",
+            "planId": "plan_11e0ac91-df79-4130-b6aa-2318a72fc650",
+            "rejectedCandidates": {},
+            "resolution": {
+              "algebra": "action.merge/v1",
+              "appliedEffectIds": [],
+              "inputProposalIds": [],
+              "output": {
+                "actionIds": [],
+                "concurrencyCeiling": 8,
+                "executionConstraints": [],
+                "failureMode": "settle_all",
+                "groups": [],
+                "outputHash": "0a38a22c5a94a707346d3f403904198d740708e6ad80392bbdcd7f80b19c108b",
+                "permissionDefaults": [],
+                "rejectedCandidateIds": []
+              },
+              "rejected": [],
+              "resolutionId": "resolution_f7677d21-8ae2-4fd1-917a-fef750cffea7"
+            }
+          }
+        },
+        {
+          "seq": 34,
+          "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+          "type": "turn.completed",
+          "payload": {
+            "outcome": {
+              "content": "已记住：你的工作周报固定标题为**海棠周报**。",
+              "reason": "assistant_stop"
+            }
+          }
+        },
+        {
+          "seq": 62,
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "model.completed",
+          "payload": {
+            "attemptId": "attempt_9c35ec2c-b2da-4fc0-944d-48a30c4fcf97",
+            "content": "已确认变更：工作周报固定标题从「海棠周报」改为「白鹭周报」。\n\n记忆系统会在本轮结束后自动更新并长期保留这一偏好。",
+            "finishReason": "stop",
+            "outcomeId": "outcome_3a275572-84bf-4676-ac9e-d07e38fc969a",
+            "reasoningContent": "\nThe user wants to change their work weekly report title from \"海棠周报\" to \"白鹭周报\" and have it remembered long-term. They explicitly said to only confirm the change, not to operate on files or other materials.\n\nThis is a memory update request. I need to update the long-term memory record for the work weekly report title. Let me check what tools are available for this.\n\nLooking at the available tools, I don't see a direct \"memory update\" tool in the current request. However, the system message mentions \"A dedicated memory Policy may recall and reconcile explicit durable preferences across sessions.\" \n\nSince I don't have a specific memory-writing tool available in this request, I should acknowledge the user's request and confirm that I understand they want to change the title. The memory reconciliation happens automatically after the turn according to the system instructions.\n\nLet me just confirm the change clearly.",
+            "request": {
+              "attempt": 0,
+              "planId": "plan_4bedcde6-a5c2-49fa-a66c-f8ebed21a02c",
+              "requestHash": "da776661e7ae846b73200950982ae81b45accc4312a8181446f7508828431e70"
+            },
+            "responseMetadata": {
+              "responseId": "95d8e679ab2540809f682347a446c31e"
+            },
+            "toolCalls": [],
+            "usage": {
+              "cachedTokens": 10240,
+              "completionTokens": 215,
+              "promptTokens": 10937,
+              "reasoningTokens": 180,
+              "totalTokens": 11152
+            }
+          }
+        },
+        {
+          "seq": 65,
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "action.plan.committed",
+          "payload": {
+            "attributes": {
+              "actionCount": 0,
+              "planId": "plan_c92ea34a-c9d5-40ca-a71e-1a104da0aec1",
+              "rejectedCount": 0
+            },
+            "parentIds": [],
+            "traceEventId": "trace_58c8d6cf-6997-4a50-87b1-9a96317a4228"
+          }
+        },
+        {
+          "seq": 66,
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "action.plan.committed",
+          "payload": {
+            "actions": [],
+            "appliedEffects": [],
+            "concurrencyCeiling": 8,
+            "dependencies": [],
+            "executionGroups": [],
+            "failureMode": "settle_all",
+            "planId": "plan_c92ea34a-c9d5-40ca-a71e-1a104da0aec1",
+            "rejectedCandidates": {},
+            "resolution": {
+              "algebra": "action.merge/v1",
+              "appliedEffectIds": [],
+              "inputProposalIds": [],
+              "output": {
+                "actionIds": [],
+                "concurrencyCeiling": 8,
+                "executionConstraints": [],
+                "failureMode": "settle_all",
+                "groups": [],
+                "outputHash": "0a38a22c5a94a707346d3f403904198d740708e6ad80392bbdcd7f80b19c108b",
+                "permissionDefaults": [],
+                "rejectedCandidateIds": []
+              },
+              "rejected": [],
+              "resolutionId": "resolution_4ea84013-9093-46e6-bd9b-a3e86a97cd31"
+            }
+          }
+        },
+        {
+          "seq": 71,
+          "turnId": "turn_e8fdbf79-7da5-4c1a-a863-acda5c0c785c",
+          "type": "turn.completed",
+          "payload": {
+            "outcome": {
+              "content": "已确认变更：工作周报固定标题从「海棠周报」改为「白鹭周报」。\n\n记忆系统会在本轮结束后自动更新并长期保留这一偏好。",
+              "reason": "assistant_stop"
+            }
+          }
+        },
+        {
+          "seq": 99,
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "model.completed",
+          "payload": {
+            "attemptId": "attempt_4531551f-d9c5-4a28-9d23-20a2cd7b7836",
+            "content": "您每周工作周报的固定标题是：**白鹭周报**。",
+            "finishReason": "stop",
+            "outcomeId": "outcome_e6c5c7f4-e176-4092-a153-8f8d04006306",
+            "reasoningContent": "\nThe user asks a simple question about their saved preference for the weekly report title. The memory record clearly states it. I should answer directly without any tool calls, as requested.",
+            "request": {
+              "attempt": 0,
+              "planId": "plan_e57b5b09-a5a9-4071-b26c-a991367058af",
+              "requestHash": "791b02e351ef40e6d3d96656053e2a5df67992f15cf578febda93bfc3094dd76"
+            },
+            "responseMetadata": {
+              "responseId": "493f55b44204403191703a4ff7364f43"
+            },
+            "toolCalls": [],
+            "usage": {
+              "cachedTokens": 9472,
+              "completionTokens": 53,
+              "promptTokens": 10946,
+              "reasoningTokens": 36,
+              "totalTokens": 10999
+            }
+          }
+        },
+        {
+          "seq": 102,
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "action.plan.committed",
+          "payload": {
+            "attributes": {
+              "actionCount": 0,
+              "planId": "plan_d079b855-d44b-4327-9446-40ef61d822b7",
+              "rejectedCount": 0
+            },
+            "parentIds": [],
+            "traceEventId": "trace_77df5cc8-a560-4ecd-a1ab-baa48cd24517"
+          }
+        },
+        {
+          "seq": 103,
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "action.plan.committed",
+          "payload": {
+            "actions": [],
+            "appliedEffects": [],
+            "concurrencyCeiling": 8,
+            "dependencies": [],
+            "executionGroups": [],
+            "failureMode": "settle_all",
+            "planId": "plan_d079b855-d44b-4327-9446-40ef61d822b7",
+            "rejectedCandidates": {},
+            "resolution": {
+              "algebra": "action.merge/v1",
+              "appliedEffectIds": [],
+              "inputProposalIds": [],
+              "output": {
+                "actionIds": [],
+                "concurrencyCeiling": 8,
+                "executionConstraints": [],
+                "failureMode": "settle_all",
+                "groups": [],
+                "outputHash": "0a38a22c5a94a707346d3f403904198d740708e6ad80392bbdcd7f80b19c108b",
+                "permissionDefaults": [],
+                "rejectedCandidateIds": []
+              },
+              "rejected": [],
+              "resolutionId": "resolution_937d4b08-9cfc-4500-b992-c004d3dc8167"
+            }
+          }
+        },
+        {
+          "seq": 108,
+          "turnId": "turn_476e54c8-8411-4f90-85eb-17e234971545",
+          "type": "turn.completed",
+          "payload": {
+            "outcome": {
+              "content": "您每周工作周报的固定标题是：**白鹭周报**。",
+              "reason": "assistant_stop"
+            }
+          }
+        }
+      ],
+      "policyDiagnostics": [
+        {
+          "seq": 19,
+          "diagnostics": []
+        },
+        {
+          "seq": 20,
+          "diagnostics": []
+        },
+        {
+          "seq": 21,
+          "diagnostics": []
+        },
+        {
+          "seq": 55,
+          "diagnostics": []
+        },
+        {
+          "seq": 56,
+          "diagnostics": []
+        },
+        {
+          "seq": 57,
+          "diagnostics": []
+        },
+        {
+          "seq": 58,
+          "diagnostics": []
+        },
+        {
+          "seq": 92,
+          "diagnostics": []
+        },
+        {
+          "seq": 93,
+          "diagnostics": []
+        },
+        {
+          "seq": 94,
+          "diagnostics": []
+        },
+        {
+          "seq": 95,
+          "diagnostics": []
+        }
+      ],
+      "rejectedContexts": [],
+      "compactionSummaries": [
+        {
+          "seq": 18,
+          "evaluationId": "evaluation_567669c1-10b9-43fb-b73b-4e5b35026008",
+          "serviceOrdinal": 0,
+          "finishReason": null,
+          "contentUtf8Bytes": 0,
+          "content": null
+        },
+        {
+          "seq": 54,
+          "evaluationId": "evaluation_822cf88d-ca7b-431c-a982-c948ee66624b",
+          "serviceOrdinal": 0,
+          "finishReason": null,
+          "contentUtf8Bytes": 0,
+          "content": null
+        },
+        {
+          "seq": 91,
+          "evaluationId": "evaluation_4f1ce874-8082-4093-94c6-525a84df96ec",
+          "serviceOrdinal": 0,
+          "finishReason": null,
+          "contentUtf8Bytes": 0,
+          "content": null
+        }
+      ],
+      "selectedCompactionSummary": null,
+      "pendingInputCount": 0,
+      "pendingMessageWriteCount": 0
+    },
+    "messages": {
+      "available": true,
+      "integrity": "ok",
+      "messageCount": 9,
+      "messageCountsByRole": {
+        "assistant": 3,
+        "system": 3,
+        "user": 3
+      },
+      "messageCountsBySession": {
+        "session_0317bf66-ebae-4f6a-bb2a-873c64dc2386": 3,
+        "session_49cd3a4a-8669-46ac-9a05-0f2be96c353e": 3,
+        "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294": 3
+      },
+      "toolMessageRows": []
+    },
+    "consistency": "Each database uses one read transaction; the two database snapshots are captured consecutively."
+  },
+  "proxyEvents": [
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "1",
+      "phase": "request_accepted",
+      "at": "2026-11-02T14:20:55.349Z",
+      "elapsedMs": 0
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "1",
+      "phase": "upstream_request_started",
+      "at": "2026-11-02T14:20:55.350Z",
+      "elapsedMs": 1,
+      "requestBytes": 48784,
+      "messageCount": 2,
+      "toolCount": 44,
+      "maxTokens": 4096,
+      "thinkingBudget": 1024,
+      "thinkingEnabled": true
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "1",
+      "phase": "upstream_headers_received",
+      "at": "2026-11-02T14:20:56.692Z",
+      "elapsedMs": 1344,
+      "status": 200
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "1",
+      "phase": "first_response_chunk_received",
+      "at": "2026-11-02T14:20:56.694Z",
+      "elapsedMs": 1345,
+      "status": 200
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "1",
+      "phase": "stream_completed",
+      "at": "2026-11-02T14:20:57.689Z",
+      "elapsedMs": 2341,
+      "status": 200,
+      "responseBytes": 6876,
+      "modelResponse": {
+        "verified": true,
+        "responseId": "bd30381d81bb4a4f9f9d9556329cf6b0",
+        "finishReason": "stop",
+        "emptyContent": false,
+        "toolCallsPresent": false,
+        "contentSha256": "aa0d2f4bc65f4a7bafb07c38df4ecae746eb29a8a9a2b3d4ca3af2477c60b655",
+        "reasoningSha256": "132379bbd907e539964e7ed8d9f2efe2e2f47f2dd46a196101998d28db0e1e41"
+      },
+      "wireDiagnostics": {
+        "schemaVersion": 1,
+        "bytes": 6876,
+        "complete": true,
+        "utf8Lossless": true,
+        "wireSha256": "a94b22bb7a6c97cca4f7f2a4c5611816edf76f8aabed63d016dc49d93f426828",
+        "frames": 23,
+        "doneMarkers": 1,
+        "malformedFrames": 0,
+        "finishReasons": [
+          "stop"
+        ],
+        "toolCalls": [],
+        "wireBody": "data: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629256,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629256,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"\\n\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"The\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" user wants me\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" to remember that their\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" work weekly report has\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" a fixed title \\\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"海棠周报\\\" (\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"Hait\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"ang Weekly Report).\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" They want a\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" short confirmation only\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\", no file operations\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" or other actions\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\".\\n\\nThis\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" is a simple memory\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" request. I should\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" acknowledge it briefly.\\n\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"已记住\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"：你的工作周报\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"固定标题为**\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"海棠周报**。\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"bd30381d81bb4a4f9f9d9556329cf6b0\",\"object\":\"chat.completion.chunk\",\"created\":1793629257,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\",\"matched_stop\":2,\"logprobs\":null}],\"content\":\"\",\"usage\":{\"effectiveCachedTokens\":10240,\"completion_tokens\":71,\"prompt_tokens\":10863,\"total_tokens\":10934,\"completion_tokens_details\":{\"reasoning_tokens\":54},\"prompt_tokens_details\":{\"cached_tokens\":10240,\"audio_tokens\":0,\"image_tokens\":0,\"video_tokens\":0,\"text_tokens\":0,\"cache_write_tokens\":0},\"cache_write_tokens\":0,\"cache_read_tokens\":0,\"input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":null,\"cached_tokens\":0},\"lastOne\":true}\n\ndata: [DONE]\n\n",
+        "redacted": false
+      },
+      "responseChunks": 33,
+      "lastChunkElapsedMs": 2338
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "2",
+      "phase": "request_accepted",
+      "at": "2026-11-02T14:20:57.730Z",
+      "elapsedMs": 0
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "2",
+      "phase": "upstream_request_started",
+      "at": "2026-11-02T14:20:57.730Z",
+      "elapsedMs": 0,
+      "requestBytes": 2291,
+      "messageCount": 2,
+      "toolCount": 0,
+      "maxTokens": 1024,
+      "thinkingBudget": 1024,
+      "thinkingEnabled": true
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "2",
+      "phase": "upstream_headers_received",
+      "at": "2026-11-02T14:20:59.106Z",
+      "elapsedMs": 1376,
+      "status": 200
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "2",
+      "phase": "first_response_chunk_received",
+      "at": "2026-11-02T14:20:59.106Z",
+      "elapsedMs": 1376,
+      "status": 200
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "2",
+      "phase": "stream_completed",
+      "at": "2026-11-02T14:21:01.426Z",
+      "elapsedMs": 3697,
+      "status": 200,
+      "responseBytes": 16100,
+      "modelResponse": {
+        "verified": true,
+        "responseId": "24c02ca9fb1f42278a6fbe3a5fd5610c",
+        "finishReason": "stop",
+        "emptyContent": false,
+        "toolCallsPresent": false,
+        "contentSha256": "1f41d360f96ccd989ac64b0bde5351da74ebce682322442c8994f1b31df256fc",
+        "reasoningSha256": "b94fa5cffc80da594ef804e30867cf12dab7126d42c3799ff4de0a3b620d942a"
+      },
+      "wireDiagnostics": {
+        "schemaVersion": 1,
+        "bytes": 16100,
+        "complete": true,
+        "utf8Lossless": true,
+        "wireSha256": "c809f7098a8cb871d315ec3930ba228afe521c8ebe92c494d9fcecd7e3a768e7",
+        "frames": 56,
+        "doneMarkers": 1,
+        "malformedFrames": 0,
+        "finishReasons": [
+          "stop"
+        ],
+        "toolCalls": [],
+        "wireBody": "data: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"\\n\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"The\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" user is\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" asking me to remember\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" a durable\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" preference: their work\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" weekly report has\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" a fixed title \\\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"海棠周报\\\" (\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"Hait\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"ang Weekly Report).\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" They want me to\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" confirm briefly\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" without\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" operating on files or\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629259,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" other materials\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\".\\n\\nThis\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" is an explicit request\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" to remember something\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" across\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" conversations,\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" so I should create\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" an ADD operation.\\n\\n\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"Key\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\": work\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\".\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"weekly_report\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\".title\\n\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"Value: \"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"海棠周报\\nText\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\": 用户\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"的工作周报固定标题\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"为\\\"海棠周报\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"\\\"。\\nEvidence\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\": 请长期\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"记住：我的工作\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"周报固定标题为\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"海棠周报。\\n\\n\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"Let me format\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" this properly.\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629260,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"{\\\"operations\\\":\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629261,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"[{\\\"action\\\":\\\"ADD\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629261,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"\\\",\\\"key\\\":\\\"work\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629261,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\".weekly_report\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629261,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\".title\\\",\\\"value\\\":\\\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629261,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"海棠周报\\\",\\\"text\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629261,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"\\\":\\\"用户的工作周报\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629261,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"固定标题为\\\\\\\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629261,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"海棠周报\\\\\\\"。\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629261,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"\\\",\\\"evidence\\\":\\\"请\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629261,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"长期记住：我的\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629261,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"工作周报固定标题\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629261,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"为海棠周报。\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629261,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"\\\"}]}\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"24c02ca9fb1f42278a6fbe3a5fd5610c\",\"object\":\"chat.completion.chunk\",\"created\":1793629261,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\",\"matched_stop\":2,\"logprobs\":null}],\"content\":\"\",\"usage\":{\"effectiveCachedTokens\":0,\"completion_tokens\":170,\"prompt_tokens\":376,\"total_tokens\":546,\"completion_tokens_details\":{\"reasoning_tokens\":116},\"prompt_tokens_details\":{\"cached_tokens\":0,\"audio_tokens\":0,\"image_tokens\":0,\"video_tokens\":0,\"text_tokens\":0,\"cache_write_tokens\":0},\"cache_write_tokens\":0,\"cache_read_tokens\":0,\"input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":null,\"cached_tokens\":0},\"lastOne\":true}\n\ndata: [DONE]\n\n",
+        "redacted": false
+      },
+      "responseChunks": 67,
+      "lastChunkElapsedMs": 3695
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "3",
+      "phase": "request_accepted",
+      "at": "2026-11-02T14:21:01.885Z",
+      "elapsedMs": 0
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "3",
+      "phase": "upstream_request_started",
+      "at": "2026-11-02T14:21:01.885Z",
+      "elapsedMs": 0,
+      "requestBytes": 49247,
+      "messageCount": 3,
+      "toolCount": 44,
+      "maxTokens": 4096,
+      "thinkingBudget": 1024,
+      "thinkingEnabled": true
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "3",
+      "phase": "upstream_headers_received",
+      "at": "2026-11-02T14:21:03.074Z",
+      "elapsedMs": 1189,
+      "status": 200
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "3",
+      "phase": "first_response_chunk_received",
+      "at": "2026-11-02T14:21:03.074Z",
+      "elapsedMs": 1189,
+      "status": 200
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "3",
+      "phase": "stream_completed",
+      "at": "2026-11-02T14:21:06.270Z",
+      "elapsedMs": 4385,
+      "status": 200,
+      "responseBytes": 22839,
+      "modelResponse": {
+        "verified": true,
+        "responseId": "95d8e679ab2540809f682347a446c31e",
+        "finishReason": "stop",
+        "emptyContent": false,
+        "toolCallsPresent": false,
+        "contentSha256": "4a4957dbbef83335826a55ac3d923bfc9e3ecffb826746382455f5c33386cdf4",
+        "reasoningSha256": "4fae0f3598c7e291cc8c351583c5e42d25636ca8e2b6edbad13eeacd46cfc097"
+      },
+      "wireDiagnostics": {
+        "schemaVersion": 1,
+        "bytes": 22839,
+        "complete": true,
+        "utf8Lossless": true,
+        "wireSha256": "d74595393e1c91d279cda3f8d98a25e2eccc628efc43fcf246658a3d817aff16",
+        "frames": 80,
+        "doneMarkers": 1,
+        "malformedFrames": 0,
+        "finishReasons": [
+          "stop"
+        ],
+        "toolCalls": [],
+        "wireBody": "data: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"\\n\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"The\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" user wants to change\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" their work weekly report\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" title from \\\"海棠\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"周报\\\" to \\\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"白鹭周报\\\" and\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" have\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" it remembered long\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"-term. They explicitly\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" said to only confirm\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" the change,\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" not to operate on\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" files or other materials\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\".\\n\\nThis is a\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629263,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" memory update\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" request\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\". I\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" need to update the\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" long-term memory record\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" for the\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" work weekly report title\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\". Let\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" me check\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" what\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" tools are available for\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" this\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\".\\n\\nLooking at the\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" available tools, I\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" don't see a\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" direct \\\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"memory update\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"\\\" tool in\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" the current request.\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" However, the system\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" message\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" mentions\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" \\\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"A dedicated memory Policy\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" may recall and reconcile\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" explicit durable preferences across\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629264,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" sessions.\\\" \\n\\nSince\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" I don't have\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" a specific memory-w\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"riting tool available in\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" this request\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\", I should acknowledge\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" the user\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"'s request and confirm\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" that I understand\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" they\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" want to change the\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" title. The\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" memory\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" reconciliation\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" happens\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" automatically\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" after the turn\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" according to the system\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" instructions.\\n\\nLet me\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" just\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" confirm the change clearly\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\".\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"已\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"确认\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"变更：工作周报\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"固定标题从「\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629265,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"海棠周报」改为\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629266,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"「白鹭周报」。\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629266,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"\\n\\n\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629266,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"记忆系统\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629266,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"会在\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629266,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"本轮\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629266,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"结束后自动更新并\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629266,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"长期\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629266,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"保留\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629266,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"这一偏好\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629266,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"。\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"95d8e679ab2540809f682347a446c31e\",\"object\":\"chat.completion.chunk\",\"created\":1793629266,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\",\"matched_stop\":2,\"logprobs\":null}],\"content\":\"\",\"usage\":{\"effectiveCachedTokens\":10240,\"completion_tokens\":215,\"prompt_tokens\":10937,\"total_tokens\":11152,\"completion_tokens_details\":{\"reasoning_tokens\":180},\"prompt_tokens_details\":{\"cached_tokens\":10240,\"audio_tokens\":0,\"image_tokens\":0,\"video_tokens\":0,\"text_tokens\":0,\"cache_write_tokens\":0},\"cache_write_tokens\":0,\"cache_read_tokens\":0,\"input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":null,\"cached_tokens\":0},\"lastOne\":true}\n\ndata: [DONE]\n\n",
+        "redacted": false
+      },
+      "responseChunks": 92,
+      "lastChunkElapsedMs": 4384
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "4",
+      "phase": "request_accepted",
+      "at": "2026-11-02T14:21:06.303Z",
+      "elapsedMs": 0
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "4",
+      "phase": "upstream_request_started",
+      "at": "2026-11-02T14:21:06.303Z",
+      "elapsedMs": 0,
+      "requestBytes": 2489,
+      "messageCount": 2,
+      "toolCount": 0,
+      "maxTokens": 1024,
+      "thinkingBudget": 1024,
+      "thinkingEnabled": true
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "4",
+      "phase": "upstream_headers_received",
+      "at": "2026-11-02T14:21:07.282Z",
+      "elapsedMs": 980,
+      "status": 200
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "4",
+      "phase": "first_response_chunk_received",
+      "at": "2026-11-02T14:21:07.283Z",
+      "elapsedMs": 980,
+      "status": 200
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "4",
+      "phase": "stream_completed",
+      "at": "2026-11-02T14:21:09.079Z",
+      "elapsedMs": 2776,
+      "status": 200,
+      "responseBytes": 11984,
+      "modelResponse": {
+        "verified": true,
+        "responseId": "373a64a0637c414fba09b3bee3206fb0",
+        "finishReason": "stop",
+        "emptyContent": false,
+        "toolCallsPresent": false,
+        "contentSha256": "c1ee18ac084c9ca3be45370bef1cd4b64a9e99ac842951bf1bdeb50474c872a1",
+        "reasoningSha256": "d60ef390538970aabbc263d84213927eaca4c356c388ed4edaa911bec77fd229"
+      },
+      "wireDiagnostics": {
+        "schemaVersion": 1,
+        "bytes": 11984,
+        "complete": true,
+        "utf8Lossless": true,
+        "wireSha256": "bb93f55744d1f35c5abc0790ae368a42952a2f9ae94a78a4a5d4bf957ff75cd3",
+        "frames": 42,
+        "doneMarkers": 1,
+        "malformedFrames": 0,
+        "finishReasons": [
+          "stop"
+        ],
+        "toolCalls": [],
+        "wireBody": "data: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629267,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629267,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"\\n\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629267,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"The\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629267,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" user wants\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629267,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" to update\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629267,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" their\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629267,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" work weekly report title\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629267,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" from \\\"海棠周报\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629267,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"\\\" to \\\"白鹭\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629267,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"周报\\\". This is\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629267,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" an explicit request to\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629267,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" change\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" a durable preference.\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" I need to UPDATE\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" the existing memory with\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" the new value\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\".\\n\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"{\\\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"operations\\\":[{\\\"action\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"\\\":\\\"UPDATE\\\",\\\"key\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"\\\":\\\"work.weekly\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"_report.title\\\",\\\"value\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"\\\":\\\"白鹭周报\\\",\\\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"text\\\":\\\"用户的工作\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"周报固定标题为\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"\\\\\\\"白鹭周报\\\\\\\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"。\\\",\\\"memoryId\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"\\\":\\\"e49\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"4b6f\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"1-b56\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"5-41\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"18-8\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"b91-\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"8a39\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"5718\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629268,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"fb7d\\\",\\\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629269,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"evidence\\\":\\\"把我的工作\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629269,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"周报固定标题改为\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629269,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"白鹭周报，替换\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629269,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"旧标题并长期\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629269,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"记住。\\\"}]}\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"373a64a0637c414fba09b3bee3206fb0\",\"object\":\"chat.completion.chunk\",\"created\":1793629269,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\",\"matched_stop\":2,\"logprobs\":null}],\"content\":\"\",\"usage\":{\"effectiveCachedTokens\":0,\"completion_tokens\":140,\"prompt_tokens\":441,\"total_tokens\":581,\"completion_tokens_details\":{\"reasoning_tokens\":44},\"prompt_tokens_details\":{\"cached_tokens\":0,\"audio_tokens\":0,\"image_tokens\":0,\"video_tokens\":0,\"text_tokens\":0,\"cache_write_tokens\":0},\"cache_write_tokens\":0,\"cache_read_tokens\":0,\"input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":null,\"cached_tokens\":0},\"lastOne\":true}\n\ndata: [DONE]\n\n",
+        "redacted": false
+      },
+      "responseChunks": 51,
+      "lastChunkElapsedMs": 2775
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "5",
+      "phase": "request_accepted",
+      "at": "2026-11-02T14:21:09.509Z",
+      "elapsedMs": 0
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "5",
+      "phase": "upstream_request_started",
+      "at": "2026-11-02T14:21:09.509Z",
+      "elapsedMs": 0,
+      "requestBytes": 49253,
+      "messageCount": 3,
+      "toolCount": 44,
+      "maxTokens": 4096,
+      "thinkingBudget": 1024,
+      "thinkingEnabled": true
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "5",
+      "phase": "upstream_headers_received",
+      "at": "2026-11-02T14:21:10.487Z",
+      "elapsedMs": 978,
+      "status": 200
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "5",
+      "phase": "first_response_chunk_received",
+      "at": "2026-11-02T14:21:10.488Z",
+      "elapsedMs": 979,
+      "status": 200
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "5",
+      "phase": "stream_completed",
+      "at": "2026-11-02T14:21:11.301Z",
+      "elapsedMs": 1792,
+      "status": 200,
+      "responseBytes": 7590,
+      "modelResponse": {
+        "verified": true,
+        "responseId": "493f55b44204403191703a4ff7364f43",
+        "finishReason": "stop",
+        "emptyContent": false,
+        "toolCallsPresent": false,
+        "contentSha256": "c4088f16df8d4b28e1f51cab4099e1d026d71ec7945fd1a6a86073e747b13e5d",
+        "reasoningSha256": "76af62b8f941c22d7147661b01b61c028d9eced2dfedc6afb82df188eb5ea5e2"
+      },
+      "wireDiagnostics": {
+        "schemaVersion": 1,
+        "bytes": 7590,
+        "complete": true,
+        "utf8Lossless": true,
+        "wireSha256": "d49470b4144f430e9e83558f1e7a1d43ca26233d782794825eccca0b4038ff76",
+        "frames": 26,
+        "doneMarkers": 1,
+        "malformedFrames": 0,
+        "finishReasons": [
+          "stop"
+        ],
+        "toolCalls": [],
+        "wireBody": "data: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629270,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629270,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"\\n\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629270,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"The\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629270,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" user asks\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629270,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" a\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629270,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" simple question about\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629270,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" their\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629270,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" saved preference\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629270,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" for\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" the weekly report title\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\". The memory\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" record\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" clearly\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" states it\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\". I\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" should answer directly without\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" any\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" tool calls,\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" as requested\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\".\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"您\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"每周工作周报的\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"固定标题是：\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"**白鹭周报**\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"。\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"493f55b44204403191703a4ff7364f43\",\"object\":\"chat.completion.chunk\",\"created\":1793629271,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\",\"matched_stop\":2,\"logprobs\":null}],\"content\":\"\",\"usage\":{\"effectiveCachedTokens\":9472,\"completion_tokens\":53,\"prompt_tokens\":10946,\"total_tokens\":10999,\"completion_tokens_details\":{\"reasoning_tokens\":36},\"prompt_tokens_details\":{\"cached_tokens\":9472,\"audio_tokens\":0,\"image_tokens\":0,\"video_tokens\":0,\"text_tokens\":0,\"cache_write_tokens\":0},\"cache_write_tokens\":0,\"cache_read_tokens\":0,\"input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":null,\"cached_tokens\":0},\"lastOne\":true}\n\ndata: [DONE]\n\n",
+        "redacted": false
+      },
+      "responseChunks": 34,
+      "lastChunkElapsedMs": 1792
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "6",
+      "phase": "request_accepted",
+      "at": "2026-11-02T14:21:11.333Z",
+      "elapsedMs": 0
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "6",
+      "phase": "upstream_request_started",
+      "at": "2026-11-02T14:21:11.334Z",
+      "elapsedMs": 0,
+      "requestBytes": 2495,
+      "messageCount": 2,
+      "toolCount": 0,
+      "maxTokens": 1024,
+      "thinkingBudget": 1024,
+      "thinkingEnabled": true
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "6",
+      "phase": "upstream_headers_received",
+      "at": "2026-11-02T14:21:12.315Z",
+      "elapsedMs": 982,
+      "status": 200
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "6",
+      "phase": "first_response_chunk_received",
+      "at": "2026-11-02T14:21:12.316Z",
+      "elapsedMs": 982,
+      "status": 200
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "6",
+      "phase": "stream_completed",
+      "at": "2026-11-02T14:21:13.115Z",
+      "elapsedMs": 1782,
+      "status": 200,
+      "responseBytes": 7062,
+      "modelResponse": {
+        "verified": true,
+        "responseId": "c5746473cf8349ad932314db44f677c6",
+        "finishReason": "stop",
+        "emptyContent": false,
+        "toolCallsPresent": false,
+        "contentSha256": "af0e35a2f2fa99536d336596dd9344c8a221fa07ed826cb5b65925fadcb1a9ea",
+        "reasoningSha256": "4214dbd66988442786d610fdb62c28355b275992da08db6cc0b92e2102d07222"
+      },
+      "wireDiagnostics": {
+        "schemaVersion": 1,
+        "bytes": 7062,
+        "complete": true,
+        "utf8Lossless": true,
+        "wireSha256": "3dac7899fb6ebf317c30330aa015c18adc9ceb569cf6ac4110fadd4412833ca1",
+        "frames": 24,
+        "doneMarkers": 1,
+        "malformedFrames": 0,
+        "finishReasons": [
+          "stop"
+        ],
+        "toolCalls": [],
+        "wireBody": "data: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629272,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629272,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"\\n\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629272,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"The\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629272,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" user is asking what\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629272,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" their saved\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629272,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" weekly report title is\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629272,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\". They\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629272,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" explicitly\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629272,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" say not\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629272,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" to operate\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629272,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" on\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629272,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" project materials\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629272,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" or files,\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629272,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" just answer.\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629273,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" The\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629273,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" existing memory says the\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629273,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" title is \\\"白鹭\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629273,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\"周报\\\". I should\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629273,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" answer\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629273,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\" directly\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629273,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"reasoning_content\":\".\\n\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629273,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"白鹭\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629273,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{\"content\":\"周报\"},\"index\":0,\"finish_reason\":null,\"matched_stop\":null,\"logprobs\":null}],\"content\":\"\",\"lastOne\":false}\n\ndata: {\"id\":\"c5746473cf8349ad932314db44f677c6\",\"object\":\"chat.completion.chunk\",\"created\":1793629273,\"model\":\"LongCat-2.0\",\"choices\":[{\"delta\":{},\"index\":0,\"finish_reason\":\"stop\",\"matched_stop\":2,\"logprobs\":null}],\"content\":\"\",\"usage\":{\"effectiveCachedTokens\":256,\"completion_tokens\":49,\"prompt_tokens\":443,\"total_tokens\":492,\"completion_tokens_details\":{\"reasoning_tokens\":44},\"prompt_tokens_details\":{\"cached_tokens\":256,\"audio_tokens\":0,\"image_tokens\":0,\"video_tokens\":0,\"text_tokens\":0,\"cache_write_tokens\":0},\"cache_write_tokens\":0,\"cache_read_tokens\":0,\"input_tokens\":0,\"output_tokens\":0,\"output_tokens_details\":null,\"cached_tokens\":0},\"lastOne\":true}\n\ndata: [DONE]\n\n",
+        "redacted": false
+      },
+      "responseChunks": 28,
+      "lastChunkElapsedMs": 1782
+    }
+  ],
+  "externalCondition": {
+    "external": false,
+    "evidence": [],
+    "candidateEvidence": [],
+    "decision": "no gateway or network failure evidence"
+  },
+  "artifactAttachments": {
+    "attempted": false,
+    "startedAt": null,
+    "completedAt": null,
+    "error": null
+  },
+  "cleanup": {
+    "startedAt": "2026-11-02T14:21:13.230Z",
+    "completedAt": "2026-11-02T14:21:13.264Z",
+    "results": [
+      {
+        "name": "LongCat Web UI",
+        "outcome": "graceful",
+        "exitCode": 0,
+        "signalCode": null
+      },
+      {
+        "name": "live model credential proxy",
+        "outcome": "graceful",
+        "exitCode": 0,
+        "signalCode": null
+      }
+    ],
+    "error": null
+  }
+}

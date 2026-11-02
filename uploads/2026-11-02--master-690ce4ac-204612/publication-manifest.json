@@ -1,0 +1,2972 @@
+{
+  "kind": "public-report-portability-manifest",
+  "masterSha": "690ce4ac3d8bd4f24b734173019b8c61340c0a83",
+  "suiteSha": "b706d45f9131a86caabf0553b74457bab5f4864d",
+  "verdict": "FAIL",
+  "files": [
+    {
+      "source": "report.json",
+      "published": "report.json",
+      "sourceSha256": "5574dc74d08a8c64f853bbd60d0e52360cc034465b146583111073e06205fe7d",
+      "publishedSha256": "8aa75475c9846c6ab794c231b6e3343ed784d48ce3314743cc6b7ba2e69c98a3",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/config/modes/evaluation/mode.yaml.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/config/modes/evaluation/mode.yaml.txt",
+      "sourceSha256": "6f76e95aafa582a122e33b58c5260d30020a69ed2e8716ab74424e73d675aec2",
+      "publishedSha256": "6f76e95aafa582a122e33b58c5260d30020a69ed2e8716ab74424e73d675aec2",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/spec/acceptance.md.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/spec/acceptance.md.txt",
+      "sourceSha256": "2aff87bbfafdb5743f1e6fa2034fbec9090c78d8bc52747d925235bae3e71099",
+      "publishedSha256": "2aff87bbfafdb5743f1e6fa2034fbec9090c78d8bc52747d925235bae3e71099",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/spec/acceptance.md.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/spec/acceptance.md.txt",
+      "sourceSha256": "c8de3b4b49570ea374a14ff4b6dd286554f9a217ce3590ede49bc4fa8b32d669",
+      "publishedSha256": "c8de3b4b49570ea374a14ff4b6dd286554f9a217ce3590ede49bc4fa8b32d669",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/spec/conformance.md.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/spec/conformance.md.txt",
+      "sourceSha256": "786de57bacbebb1c03e6bb1f71661efd67394f4d7219bcf1f0e91ec9642dd977",
+      "publishedSha256": "786de57bacbebb1c03e6bb1f71661efd67394f4d7219bcf1f0e91ec9642dd977",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/spec/conformance.md.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/spec/conformance.md.txt",
+      "sourceSha256": "0c8c526272e7dc1e17f19debc317d2702df866fa046c2dd9b89cdf77ce3ddd0b",
+      "publishedSha256": "0c8c526272e7dc1e17f19debc317d2702df866fa046c2dd9b89cdf77ce3ddd0b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/spec/interfaces.md.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/spec/interfaces.md.txt",
+      "sourceSha256": "d2f3a993047c3fa42a695be74696b8cf228167bb28d2ba01fda0dbc43230f4af",
+      "publishedSha256": "d2f3a993047c3fa42a695be74696b8cf228167bb28d2ba01fda0dbc43230f4af",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/spec/interfaces.md.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/spec/interfaces.md.txt",
+      "sourceSha256": "db58580d0524267f8b1ad30dc45bb7ad4027d08f96213a1aa7cd61a6a58829b2",
+      "publishedSha256": "db58580d0524267f8b1ad30dc45bb7ad4027d08f96213a1aa7cd61a6a58829b2",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/spec/lifecycle.md.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/spec/lifecycle.md.txt",
+      "sourceSha256": "ec2c1a955c6ce81e63073847c6afa609dd7a35b7233e20098c6e632a93f55fb1",
+      "publishedSha256": "ec2c1a955c6ce81e63073847c6afa609dd7a35b7233e20098c6e632a93f55fb1",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/spec/lifecycle.md.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/spec/lifecycle.md.txt",
+      "sourceSha256": "2516f21d3366baa0ea99e80a173c96f6260de5232e3c245e6961a1e93e1b0d9e",
+      "publishedSha256": "2516f21d3366baa0ea99e80a173c96f6260de5232e3c245e6961a1e93e1b0d9e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/spec/persistence.md.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/spec/persistence.md.txt",
+      "sourceSha256": "8f72f336f0cb661a21dbace3a6bce56fc361cca81b028a3d52a8a2815a40b641",
+      "publishedSha256": "8f72f336f0cb661a21dbace3a6bce56fc361cca81b028a3d52a8a2815a40b641",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/spec/persistence.md.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/spec/persistence.md.txt",
+      "sourceSha256": "6433b47e18f7d299f3fa070509e9816aa00522a2296db98ecbf39f7f0dcbf386",
+      "publishedSha256": "6433b47e18f7d299f3fa070509e9816aa00522a2296db98ecbf39f7f0dcbf386",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/agent-context/standard-system-prompt.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/agent-context/standard-system-prompt.ts.txt",
+      "sourceSha256": "8bee87674bbcdf73af59df7ce8d5faa903cbecd86893ebb52c127a6d7568440b",
+      "publishedSha256": "8bee87674bbcdf73af59df7ce8d5faa903cbecd86893ebb52c127a6d7568440b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/agent-context/standard-system-prompt.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/agent-context/standard-system-prompt.ts.txt",
+      "sourceSha256": "3f7ceb8822aa88c684f7619cd54def8a46e331c79a06bf21ae385bd5e8b0a13c",
+      "publishedSha256": "3f7ceb8822aa88c684f7619cd54def8a46e331c79a06bf21ae385bd5e8b0a13c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/compaction/compaction-policy.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/compaction/compaction-policy.ts.txt",
+      "sourceSha256": "c529e1e294d416075c071aa764bac80333275de29be108ee0a2bf6155af1adaa",
+      "publishedSha256": "c529e1e294d416075c071aa764bac80333275de29be108ee0a2bf6155af1adaa",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/compaction/compaction-policy.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/compaction/compaction-policy.ts.txt",
+      "sourceSha256": "3afaf97a46a53c901fd4d89c7fb64cf610305d18bf7082fd496a11d9e5623f03",
+      "publishedSha256": "3afaf97a46a53c901fd4d89c7fb64cf610305d18bf7082fd496a11d9e5623f03",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/workspace/filesystem.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/workspace/filesystem.ts.txt",
+      "sourceSha256": "407937a698514ec5c71204b19782934f28b3cbac382a2756c8a48f9df359571c",
+      "publishedSha256": "407937a698514ec5c71204b19782934f28b3cbac382a2756c8a48f9df359571c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/workspace/filesystem.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/workspace/filesystem.ts.txt",
+      "sourceSha256": "e2ba43376a9de394bb8aeb28368f7d6fce0a807baf1a0de56d132b7d9685be42",
+      "publishedSha256": "e2ba43376a9de394bb8aeb28368f7d6fce0a807baf1a0de56d132b7d9685be42",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/workspace/lsp/index.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/workspace/lsp/index.ts.txt",
+      "sourceSha256": "9803f171cfe2f8e789c7fb7f450b64949adb6ad4d631a25fbbab687e821c716b",
+      "publishedSha256": "9803f171cfe2f8e789c7fb7f450b64949adb6ad4d631a25fbbab687e821c716b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/workspace/lsp/index.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/workspace/lsp/index.ts.txt",
+      "sourceSha256": "fa49a67cc41b7c6f5a204e4bfc9a68216c7a9a9d7806bacdacbb014624ffffe7",
+      "publishedSha256": "fa49a67cc41b7c6f5a204e4bfc9a68216c7a9a9d7806bacdacbb014624ffffe7",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/workspace/schemas.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/workspace/schemas.ts.txt",
+      "sourceSha256": "3ac715b49a2eff2fca6f25baf3043b17cf23f7a82141ed8d0c3ad43e584f6263",
+      "publishedSha256": "3ac715b49a2eff2fca6f25baf3043b17cf23f7a82141ed8d0c3ad43e584f6263",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/workspace/schemas.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/workspace/schemas.ts.txt",
+      "sourceSha256": "168b6f6199bea13ba70d11723579116dca43fbaee9a53d4c3e84e84f0f2f4512",
+      "publishedSha256": "168b6f6199bea13ba70d11723579116dca43fbaee9a53d4c3e84e84f0f2f4512",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/workspace/search/package.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/workspace/search/package.ts.txt",
+      "sourceSha256": "eaddf3298370757364c72b3ccd2fdb617bbb951310160b875eb489e37ffdab50",
+      "publishedSha256": "eaddf3298370757364c72b3ccd2fdb617bbb951310160b875eb489e37ffdab50",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/workspace/search/package.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/workspace/search/package.ts.txt",
+      "sourceSha256": "882e86bbe3b2ede279b0d5208afde34b73380914a8213902d5bc4b143b08b18f",
+      "publishedSha256": "882e86bbe3b2ede279b0d5208afde34b73380914a8213902d5bc4b143b08b18f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/workspace/search/schemas.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/workspace/search/schemas.ts.txt",
+      "sourceSha256": "4590a76239f1adec4f06306019ac11a702c02e4080cb51a7ee9392213f6aa46c",
+      "publishedSha256": "4590a76239f1adec4f06306019ac11a702c02e4080cb51a7ee9392213f6aa46c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/workspace/search/schemas.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/workspace/search/schemas.ts.txt",
+      "sourceSha256": "1cdb1cf21fecddaec65ef3f3c715435bfe8548e6aaeaa67a77bbd1360c840079",
+      "publishedSha256": "1cdb1cf21fecddaec65ef3f3c715435bfe8548e6aaeaa67a77bbd1360c840079",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/api/session/protocol.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/api/session/protocol.ts.txt",
+      "sourceSha256": "b2f65d2534f4f42328039248ff1c2c9b5950552a144f9e6c3f5b82fc910cae63",
+      "publishedSha256": "b2f65d2534f4f42328039248ff1c2c9b5950552a144f9e6c3f5b82fc910cae63",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/api/session/protocol.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/api/session/protocol.ts.txt",
+      "sourceSha256": "b86821b4cac97090b521bc4cde826b0b877968b2e9985e878fb78fa0c1922066",
+      "publishedSha256": "b86821b4cac97090b521bc4cde826b0b877968b2e9985e878fb78fa0c1922066",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/host/runtime/scheduler-service-provider.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/host/runtime/scheduler-service-provider.ts.txt",
+      "sourceSha256": "a91c98b73c6d677023c869bdc9872f037a94bdfe01f5d0f895d4a95fa8ce7f94",
+      "publishedSha256": "a91c98b73c6d677023c869bdc9872f037a94bdfe01f5d0f895d4a95fa8ce7f94",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/host/runtime/scheduler-service-provider.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/host/runtime/scheduler-service-provider.ts.txt",
+      "sourceSha256": "e75c9b867027d048849b4751be9da86b5fbd7c50867504a99c2eb9e0474149f8",
+      "publishedSha256": "e75c9b867027d048849b4751be9da86b5fbd7c50867504a99c2eb9e0474149f8",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/host/session/session-catalog.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/host/session/session-catalog.ts.txt",
+      "sourceSha256": "89cee1154c3730fe8dcdb94acfac86637a25983abe2e79a1e9ca4f6139005899",
+      "publishedSha256": "89cee1154c3730fe8dcdb94acfac86637a25983abe2e79a1e9ca4f6139005899",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/host/session/session-catalog.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/host/session/session-catalog.ts.txt",
+      "sourceSha256": "509adf965db5d37718fd5fbfe1fbaa9713b1d1720a696efabbff6ed887cb1c91",
+      "publishedSha256": "509adf965db5d37718fd5fbfe1fbaa9713b1d1720a696efabbff6ed887cb1c91",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/host/session/session-manager.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/host/session/session-manager.ts.txt",
+      "sourceSha256": "5ed50fe87941e370da81aa74041e02b25cf279a20db1101d7864202d7cac38d2",
+      "publishedSha256": "5ed50fe87941e370da81aa74041e02b25cf279a20db1101d7864202d7cac38d2",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/host/session/session-manager.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/host/session/session-manager.ts.txt",
+      "sourceSha256": "8eecae55f59393f25bfc8c5de6d845cba8b591ab8bb28aa7839702ee17de55aa",
+      "publishedSha256": "8eecae55f59393f25bfc8c5de6d845cba8b591ab8bb28aa7839702ee17de55aa",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/runtime/agent/agent-kernel.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/runtime/agent/agent-kernel.ts.txt",
+      "sourceSha256": "415cf76f4fb5d3df2f80c36d100b94221920f0d80880da9d7a70d14cd451b3d2",
+      "publishedSha256": "415cf76f4fb5d3df2f80c36d100b94221920f0d80880da9d7a70d14cd451b3d2",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/runtime/agent/agent-kernel.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/runtime/agent/agent-kernel.ts.txt",
+      "sourceSha256": "dc056967d6494d3e1e342b6cf046bd5895b898f6b2568e18fed69e6d9e164472",
+      "publishedSha256": "dc056967d6494d3e1e342b6cf046bd5895b898f6b2568e18fed69e6d9e164472",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/runtime/agent/types.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/runtime/agent/types.ts.txt",
+      "sourceSha256": "e50f7a34d8bfe2ee405422f8ac4d993584adfc07ae3fdf6056a28deba7952e0f",
+      "publishedSha256": "e50f7a34d8bfe2ee405422f8ac4d993584adfc07ae3fdf6056a28deba7952e0f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/runtime/agent/types.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/runtime/agent/types.ts.txt",
+      "sourceSha256": "47f19630f74b174395360dcb5719c7de607cd648f218dba00d752f49dcd014ac",
+      "publishedSha256": "47f19630f74b174395360dcb5719c7de607cd648f218dba00d752f49dcd014ac",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/ui/tui/main.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/ui/tui/main.ts.txt",
+      "sourceSha256": "66baf069294fce1edb4c54ab35bf91c3b6ad93bff559a2f5411b86b7f84ea82c",
+      "publishedSha256": "66baf069294fce1edb4c54ab35bf91c3b6ad93bff559a2f5411b86b7f84ea82c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/tui/main.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/tui/main.ts.txt",
+      "sourceSha256": "9b8438e6b6739defee74abfb43fed81a5ab05bde73f256ccd61b589e528a6074",
+      "publishedSha256": "9b8438e6b6739defee74abfb43fed81a5ab05bde73f256ccd61b589e528a6074",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/ui/web-ui/client/App.tsx.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/ui/web-ui/client/App.tsx.txt",
+      "sourceSha256": "92a3f5a68fa84e86e34a8eb62b23d9c5b1f0c8061e701e82f88460fbdb99f7c4",
+      "publishedSha256": "92a3f5a68fa84e86e34a8eb62b23d9c5b1f0c8061e701e82f88460fbdb99f7c4",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/web-ui/client/App.tsx.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/web-ui/client/App.tsx.txt",
+      "sourceSha256": "6b962fea35bfa0a047689f0907f78aea3e8a9e05b9ede3926e921951a85264d4",
+      "publishedSha256": "6b962fea35bfa0a047689f0907f78aea3e8a9e05b9ede3926e921951a85264d4",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/ui/web-ui/client/Markdown.tsx.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/ui/web-ui/client/Markdown.tsx.txt",
+      "sourceSha256": "12725d685d50e5d173385764f3a1d240627f1afda1e4f3a7a299057f8adf805c",
+      "publishedSha256": "12725d685d50e5d173385764f3a1d240627f1afda1e4f3a7a299057f8adf805c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/web-ui/client/Markdown.tsx.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/web-ui/client/Markdown.tsx.txt",
+      "sourceSha256": "1f015157d42bc11a122fadb250592895966d65014331366b9951b66ac627a20a",
+      "publishedSha256": "1f015157d42bc11a122fadb250592895966d65014331366b9951b66ac627a20a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/web-ui/client/markdown-math.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/web-ui/client/markdown-math.ts.txt",
+      "sourceSha256": "211f76783611c0c752f1abe77a964f44ddb7e371f7bf3be16ed26e9ed77a9c84",
+      "publishedSha256": "211f76783611c0c752f1abe77a964f44ddb7e371f7bf3be16ed26e9ed77a9c84",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/ui/web-ui/server/http-server.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/ui/web-ui/server/http-server.ts.txt",
+      "sourceSha256": "a430a3f951187870510ca0a375c670ae5f06a9cb38c179fc2b3793d2a894ed7b",
+      "publishedSha256": "a430a3f951187870510ca0a375c670ae5f06a9cb38c179fc2b3793d2a894ed7b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/web-ui/server/http-server.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/web-ui/server/http-server.ts.txt",
+      "sourceSha256": "ea48c7c959ede604a516a21fa735bd8526d7b58a1d3bf0372f2d73aed38d4474",
+      "publishedSha256": "ea48c7c959ede604a516a21fa735bd8526d7b58a1d3bf0372f2d73aed38d4474",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/ui/web-ui/tests/markdown.test.tsx.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/ui/web-ui/tests/markdown.test.tsx.txt",
+      "sourceSha256": "6eed33f4c064d38771e0f7c1b2e6f07d05ade96e2c1ef81ccd6d6eed4ab63924",
+      "publishedSha256": "6eed33f4c064d38771e0f7c1b2e6f07d05ade96e2c1ef81ccd6d6eed4ab63924",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/web-ui/tests/markdown.test.tsx.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/web-ui/tests/markdown.test.tsx.txt",
+      "sourceSha256": "4d67b8a19b4c0bbc1c98e9580a1ba632074ea0124f04927aeaf19fc1a1429e39",
+      "publishedSha256": "4d67b8a19b4c0bbc1c98e9580a1ba632074ea0124f04927aeaf19fc1a1429e39",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/ui/web-ui/tests/project-session.test.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/ui/web-ui/tests/project-session.test.ts.txt",
+      "sourceSha256": "ec4c4419e200dcc7001313f1ff0bbfc42b34148fb9286a9e75b46893bb274a1e",
+      "publishedSha256": "ec4c4419e200dcc7001313f1ff0bbfc42b34148fb9286a9e75b46893bb274a1e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/web-ui/tests/project-session.test.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/web-ui/tests/project-session.test.ts.txt",
+      "sourceSha256": "d6f1ee3145f3fa5d9559cf0f17eb5c81c490629559d050fd31d3e99d0c634a4a",
+      "publishedSha256": "d6f1ee3145f3fa5d9559cf0f17eb5c81c490629559d050fd31d3e99d0c634a4a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/ui/web-ui/tests/session-lifecycle-ui.test.tsx.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/ui/web-ui/tests/session-lifecycle-ui.test.tsx.txt",
+      "sourceSha256": "a8c1e1f0986e1cdf63c39886c11fa9381057a30753b04ff1d56725122bbf9c55",
+      "publishedSha256": "a8c1e1f0986e1cdf63c39886c11fa9381057a30753b04ff1d56725122bbf9c55",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/web-ui/tests/session-lifecycle-ui.test.tsx.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/ui/web-ui/tests/session-lifecycle-ui.test.tsx.txt",
+      "sourceSha256": "b1fbdf047895e71dfbdaaa7f5ced2370ce5ae7254f77004559e0b7eafc35eb91",
+      "publishedSha256": "b1fbdf047895e71dfbdaaa7f5ced2370ce5ae7254f77004559e0b7eafc35eb91",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/judge-run.json",
+      "published": "g2/judge-run.json",
+      "sourceSha256": "f9b0b7b6b7127c3c167647f069218619a56042dbf339fad73b17c4cbfd4c5093",
+      "publishedSha256": "1a75aa1b36864e7a662f6987c0b7501fb89e471432d4c81ba7980943162dc0d5",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "g2/rules.md",
+      "published": "g2/rules.md.txt",
+      "sourceSha256": "a4ac5879e97674ac2d9da09182182ef49279b21c44ac396adf7f92b8102c6ffd",
+      "publishedSha256": "a4ac5879e97674ac2d9da09182182ef49279b21c44ac396adf7f92b8102c6ffd",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/report.json",
+      "published": "g2/report.json",
+      "sourceSha256": "0f5c29864c51973778ffc2c2bae485921509ce1608f7b8337a880d4c28fbeda9",
+      "publishedSha256": "a6fa44700df24b737f6374529d8a1bf290d136d8b31f2bfe376983b5456072c8",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "g2/request-checks.jsonl",
+      "published": "g2/request-checks.zip",
+      "sourceSha256": "e91ffcb916259d2eb16b39152e5e1bf15c83106c14b4c1b8c09ae59c1df194fa",
+      "publishedSha256": "532c32bcc34416819e7e7657ea274f5adf66d9cdfcd3c169ba84c01b59fbbb57",
+      "adaptation": "ZIP attachment"
+    },
+    {
+      "source": "g2/review-items.json",
+      "published": "g2/review-items.json",
+      "sourceSha256": "17bb86c43e30ce872ca3aa2148445705e1b33f1a757220d5b28a7c4f563a0d72",
+      "publishedSha256": "17bb86c43e30ce872ca3aa2148445705e1b33f1a757220d5b28a7c4f563a0d72",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/report.html",
+      "published": "g2/report.html",
+      "sourceSha256": "0e71ec25d745c4dac2a41ce5dbead5e3896cf1d135433540c727b71258e3e0bc",
+      "publishedSha256": "b9b098ea0edb65d2387d576e0674e7df1102850f7a34885eb9aadf4f90e4f2c8",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "analysis-evidence/guard-contract/suite-driver.txt",
+      "published": "analysis-evidence/guard-contract/suite-driver.txt",
+      "sourceSha256": "3b9cc5672649df53c777711fb61d418aba0b21cbd3ec136f01de646db1901a94",
+      "publishedSha256": "3b9cc5672649df53c777711fb61d418aba0b21cbd3ec136f01de646db1901a94",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/guard-contract/suite-fixture.txt",
+      "published": "analysis-evidence/guard-contract/suite-fixture.txt",
+      "sourceSha256": "b0ef31868daa2a438129a85523ffe43b107d51f6de58547b926835f97dcaf7b1",
+      "publishedSha256": "b0ef31868daa2a438129a85523ffe43b107d51f6de58547b926835f97dcaf7b1",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/guard-contract/master-kernel.txt",
+      "published": "analysis-evidence/guard-contract/master-kernel.txt",
+      "sourceSha256": "6b0aded5ca317d6bcd138a1fedc9f7ad90adb0517bd068907307937ec1a563e9",
+      "publishedSha256": "6b0aded5ca317d6bcd138a1fedc9f7ad90adb0517bd068907307937ec1a563e9",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/guard-contract/master-spec.txt",
+      "published": "analysis-evidence/guard-contract/master-spec.txt",
+      "sourceSha256": "c367ea9126729f8d649fb80fc40bfbcefb68b79669f058f6fda4df78a3b673d7",
+      "publishedSha256": "c367ea9126729f8d649fb80fc40bfbcefb68b79669f058f6fda4df78a3b673d7",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/guard-contract/master-change-note.txt",
+      "published": "analysis-evidence/guard-contract/master-change-note.txt",
+      "sourceSha256": "5f2ad296b694cbb67f137f4750380a8ef97821142b9e11f16f62771a821813c3",
+      "publishedSha256": "5f2ad296b694cbb67f137f4750380a8ef97821142b9e11f16f62771a821813c3",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/guard-contract/master-mode-budget.txt",
+      "published": "analysis-evidence/guard-contract/master-mode-budget.txt",
+      "sourceSha256": "d5e1d2eb1b1a64898c99f2342083de5bc5352c9b11f782902ef72f95762ee318",
+      "publishedSha256": "d5e1d2eb1b1a64898c99f2342083de5bc5352c9b11f782902ef72f95762ee318",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit/failure-diagnostics.json",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit/failure-diagnostics.json",
+      "sourceSha256": "f0eaa2ebc38d8a059f361b7e5747378591780beaee29f7c2a02f9a68acbbde43",
+      "publishedSha256": "f0eaa2ebc38d8a059f361b7e5747378591780beaee29f7c2a02f9a68acbbde43",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat1/failure-diagnostics.json",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat1/failure-diagnostics.json",
+      "sourceSha256": "483776a1f64c4ddd5278a83bccba21fd0c8baf550c4a76a2f56a64cd128373dc",
+      "publishedSha256": "483776a1f64c4ddd5278a83bccba21fd0c8baf550c4a76a2f56a64cd128373dc",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat2/failure-diagnostics.json",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat2/failure-diagnostics.json",
+      "sourceSha256": "690b4f9203b3ce2a189e44ac98e91ae7f46c319b5258d7f2212c1811ea7d6f45",
+      "publishedSha256": "690b4f9203b3ce2a189e44ac98e91ae7f46c319b5258d7f2212c1811ea7d6f45",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat3/failure-diagnostics.json",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat3/failure-diagnostics.json",
+      "sourceSha256": "d2269626419c9dc032030c46d92b8f8637d9a2f695fd3dda1730a3756186bfbf",
+      "publishedSha256": "d2269626419c9dc032030c46d92b8f8637d9a2f695fd3dda1730a3756186bfbf",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat4/failure-diagnostics.json",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat4/failure-diagnostics.json",
+      "sourceSha256": "a165076f64b950fcd5dfcea8d61b37f322cdfe1d1bd2d87817103118790d8c22",
+      "publishedSha256": "a165076f64b950fcd5dfcea8d61b37f322cdfe1d1bd2d87817103118790d8c22",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/deterministic--standard.deterministic-guard-drain-limit--0.json",
+      "published": "analysis-evidence/sample-excerpts/deterministic--standard.deterministic-guard-drain-limit--0.json",
+      "sourceSha256": "144cf94211a511468c70ba27620b28d25e1c52540e712ea4827bbf73b09ea59c",
+      "publishedSha256": "144cf94211a511468c70ba27620b28d25e1c52540e712ea4827bbf73b09ea59c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/deterministic--standard.deterministic-guard-drain-limit--1.json",
+      "published": "analysis-evidence/sample-excerpts/deterministic--standard.deterministic-guard-drain-limit--1.json",
+      "sourceSha256": "363f47cea1bdc21df48a8a4e9ac45bc981dcb5ab0698e2d79217fd791e73c080",
+      "publishedSha256": "363f47cea1bdc21df48a8a4e9ac45bc981dcb5ab0698e2d79217fd791e73c080",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/deterministic--standard.deterministic-guard-drain-limit--2.json",
+      "published": "analysis-evidence/sample-excerpts/deterministic--standard.deterministic-guard-drain-limit--2.json",
+      "sourceSha256": "0d93e396b91244f5d638a39ce0162b59d4c0f1d3efbca8c198d26f0b8fc52250",
+      "publishedSha256": "0d93e396b91244f5d638a39ce0162b59d4c0f1d3efbca8c198d26f0b8fc52250",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/deterministic--standard.deterministic-guard-drain-limit--3.json",
+      "published": "analysis-evidence/sample-excerpts/deterministic--standard.deterministic-guard-drain-limit--3.json",
+      "sourceSha256": "eb8537a6434b7e1bdf7fa1f69269a0755bea7fae27fb59a47df2539840f89906",
+      "publishedSha256": "eb8537a6434b7e1bdf7fa1f69269a0755bea7fae27fb59a47df2539840f89906",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/deterministic--standard.deterministic-guard-drain-limit--4.json",
+      "published": "analysis-evidence/sample-excerpts/deterministic--standard.deterministic-guard-drain-limit--4.json",
+      "sourceSha256": "948e25bb3b394a8434c22c62a9d9a0d8192491d59da626c114372d2f6b0d2627",
+      "publishedSha256": "948e25bb3b394a8434c22c62a9d9a0d8192491d59da626c114372d2f6b0d2627",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/memory-update/suite-scenarios.txt",
+      "published": "analysis-evidence/memory-update/suite-scenarios.txt",
+      "sourceSha256": "8d91f07dbd9cc1a035c72e1fb5dbbbabb302e6c5893d8e3712fc8e4e76496985",
+      "publishedSha256": "8d91f07dbd9cc1a035c72e1fb5dbbbabb302e6c5893d8e3712fc8e4e76496985",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/memory-update/suite-capture-assertion.txt",
+      "published": "analysis-evidence/memory-update/suite-capture-assertion.txt",
+      "sourceSha256": "3dff88608ea03b254ee10e9aefbe2a615178e6d60010ddca0200087d1e1c72bf",
+      "publishedSha256": "3dff88608ea03b254ee10e9aefbe2a615178e6d60010ddca0200087d1e1c72bf",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/memory-update/master-parser.txt",
+      "published": "analysis-evidence/memory-update/master-parser.txt",
+      "sourceSha256": "c8908b02b2775841e1fae39793d0b6fa0a5a28ab8333acf74810fc763b8bd056",
+      "publishedSha256": "c8908b02b2775841e1fae39793d0b6fa0a5a28ab8333acf74810fc763b8bd056",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/memory-update/master-capture-fail-open.txt",
+      "published": "analysis-evidence/memory-update/master-capture-fail-open.txt",
+      "sourceSha256": "cfa74e8b218976e5bc94c3e32e1a695152acdaefee05f596cc42b67b8cac0b2f",
+      "publishedSha256": "cfa74e8b218976e5bc94c3e32e1a695152acdaefee05f596cc42b67b8cac0b2f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/memory-update/master-capture-protocol.txt",
+      "published": "analysis-evidence/memory-update/master-capture-protocol.txt",
+      "sourceSha256": "2aa181a60485ee1e4406da2acc9917d76d683e00dd13dde1f6bc33d5f096da7d",
+      "publishedSha256": "2aa181a60485ee1e4406da2acc9917d76d683e00dd13dde1f6bc33d5f096da7d",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/memory-stage-0.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/memory-stage-0.json",
+      "sourceSha256": "1e12195664f4b1c723496724ae209691e79b9a2efdbe3f79eaf95ebeb2d3aae5",
+      "publishedSha256": "24020d6f028d44a0fe37d7d540cb60df9d54a3da85ceb626b966b084aaf2c848",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/memory-stage-1.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/memory-stage-1.json",
+      "sourceSha256": "3286ce7e9b7029ffb883479f7e48eefd0a15b9aa89728f9258ac6749cc195671",
+      "publishedSha256": "52955bbd85bd922e1eb9e131c9f9bb1776e9ae03f8ea92b130968e936d79ccd7",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/memory-stage-2.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/memory-stage-2.json",
+      "sourceSha256": "00e0bc60e6ae7783b2f7d365a059cb2b6b00f9c7402012820da349aa79b614d0",
+      "publishedSha256": "17b36894a5437137f6e7d29dadf94cd5b7b1b811c65874cc5ecd7c70379eeb91",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/failure-diagnostics.json",
+      "sourceSha256": "b41af10355a3df35390482cf088977519b475c35090c2a31267ed1844f4d4455",
+      "publishedSha256": "b41af10355a3df35390482cf088977519b475c35090c2a31267ed1844f4d4455",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--assistant.live-memory-update--0.json",
+      "published": "analysis-evidence/sample-excerpts/live--assistant.live-memory-update--0.json",
+      "sourceSha256": "e96ea67b13e02becffc03313af6561efbf8f0b5c8b2dcb6da5e2cb42400b9c0a",
+      "publishedSha256": "e96ea67b13e02becffc03313af6561efbf8f0b5c8b2dcb6da5e2cb42400b9c0a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/ptc-output/suite-task.txt",
+      "published": "analysis-evidence/ptc-output/suite-task.txt",
+      "sourceSha256": "8012018d216ff3e9c1ce88014f4778c2c8bda09f82203ffc527381c71fe4bd2f",
+      "publishedSha256": "8012018d216ff3e9c1ce88014f4778c2c8bda09f82203ffc527381c71fe4bd2f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/ptc-output/suite-page-oracle.txt",
+      "published": "analysis-evidence/ptc-output/suite-page-oracle.txt",
+      "sourceSha256": "9dc99172f3f2ca112176da9901d4e40a08aeda4fc12995a03d5c4458956adf9b",
+      "publishedSha256": "9dc99172f3f2ca112176da9901d4e40a08aeda4fc12995a03d5c4458956adf9b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/ptc-output/master-sandbox-contract.txt",
+      "published": "analysis-evidence/ptc-output/master-sandbox-contract.txt",
+      "sourceSha256": "1c36c674c77c07a414a84c50ed6df762d5a06a3f1b8ced6bfb45050e539b554f",
+      "publishedSha256": "1c36c674c77c07a414a84c50ed6df762d5a06a3f1b8ced6bfb45050e539b554f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/ptc-output/master-mode-prompt.txt",
+      "published": "analysis-evidence/ptc-output/master-mode-prompt.txt",
+      "sourceSha256": "7764c241e4375e2335c6aaa09ef31dc5ecbd489312903379713484ac5b53bd56",
+      "publishedSha256": "7764c241e4375e2335c6aaa09ef31dc5ecbd489312903379713484ac5b53bd56",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/ptc-relative/path-comparison.txt",
+      "published": "analysis-evidence/ptc-relative/path-comparison.txt",
+      "sourceSha256": "7b6be6effe2af46497ec0eeb0adcf28e190d6250b3ad478ff065e7011f689445",
+      "publishedSha256": "7b6be6effe2af46497ec0eeb0adcf28e190d6250b3ad478ff065e7011f689445",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/ptc-relative/recovery-path-comparison.txt",
+      "published": "analysis-evidence/ptc-relative/recovery-path-comparison.txt",
+      "sourceSha256": "0401b3abfb30c2efbf80620d9a09888e31a4d91a264b63bb9304c3b5d22a4f5e",
+      "publishedSha256": "0401b3abfb30c2efbf80620d9a09888e31a4d91a264b63bb9304c3b5d22a4f5e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/ptc-relative/split-source-proof.txt",
+      "published": "analysis-evidence/ptc-relative/split-source-proof.txt",
+      "sourceSha256": "dca9c15482356d6f327487f55e67c28de7dcbd43b42c9e3eb878b433e1056fe2",
+      "publishedSha256": "dca9c15482356d6f327487f55e67c28de7dcbd43b42c9e3eb878b433e1056fe2",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/ptc-relative/master-relative-contract.txt",
+      "published": "analysis-evidence/ptc-relative/master-relative-contract.txt",
+      "sourceSha256": "468b402fe99bfbb900a04b576f29d1d187ee970b3171cdded47f4d00d55ba04d",
+      "publishedSha256": "468b402fe99bfbb900a04b576f29d1d187ee970b3171cdded47f4d00d55ba04d",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/ptc-relative/master-read-guidance.txt",
+      "published": "analysis-evidence/ptc-relative/master-read-guidance.txt",
+      "sourceSha256": "67ead6ff5239ebe4c92924e7e0c30c185aed616707db427fe08b6ae73a78d3be",
+      "publishedSha256": "67ead6ff5239ebe4c92924e7e0c30c185aed616707db427fe08b6ae73a78d3be",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/ptc-shell/task-and-mechanism.txt",
+      "published": "analysis-evidence/ptc-shell/task-and-mechanism.txt",
+      "sourceSha256": "9a49899f6ab887e5a80baa537d77d5ea732fdac9524fc20c270a286cb25490b5",
+      "publishedSha256": "9a49899f6ab887e5a80baa537d77d5ea732fdac9524fc20c270a286cb25490b5",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services/ptc-file-handoff-evidence.json",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services/ptc-file-handoff-evidence.json",
+      "sourceSha256": "e46a9b05d37db063c747176d297c57c522c19932d9c61ca96176537106693117",
+      "publishedSha256": "e46a9b05d37db063c747176d297c57c522c19932d9c61ca96176537106693117",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services/failure-diagnostics.json",
+      "sourceSha256": "8834e9ae4609d8e2c5a2c52f0ff8391efc2571dcac0b20a15004cf542fbad2be",
+      "publishedSha256": "8834e9ae4609d8e2c5a2c52f0ff8391efc2571dcac0b20a15004cf542fbad2be",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services/test-failed-1.png",
+      "sourceSha256": "d89d6fc68bd222f95db76654322968b1e2e2f2a2dcc3f014ad3b59f31f29f80b",
+      "publishedSha256": "d89d6fc68bd222f95db76654322968b1e2e2f2a2dcc3f014ad3b59f31f29f80b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/ptc-relative/source-channel-replay-1.json",
+      "published": "analysis-evidence/ptc-relative/source-channel-replay-1.json",
+      "sourceSha256": "c58648bef45079f820446c89ce74e2ae40a997ce89ff97aa8a8d240adb44f13b",
+      "publishedSha256": "c58648bef45079f820446c89ce74e2ae40a997ce89ff97aa8a8d240adb44f13b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat1/ptc-file-handoff-evidence.json",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat1/ptc-file-handoff-evidence.json",
+      "sourceSha256": "045cfd87c026e2670f1a894b06d56cf29a398db79e535a83b0e2d883afd10439",
+      "publishedSha256": "045cfd87c026e2670f1a894b06d56cf29a398db79e535a83b0e2d883afd10439",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat1/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat1/failure-diagnostics.json",
+      "sourceSha256": "59b417ca500c1fdc11621094741236542024aa7aab6630da55ad45867e9302bf",
+      "publishedSha256": "59b417ca500c1fdc11621094741236542024aa7aab6630da55ad45867e9302bf",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat4/ptc-file-handoff-evidence.json",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat4/ptc-file-handoff-evidence.json",
+      "sourceSha256": "0ccc6685d646fbb837b1ae08208beeb2d45c0db678c7dfeba2a78fc3648c4d26",
+      "publishedSha256": "0ccc6685d646fbb837b1ae08208beeb2d45c0db678c7dfeba2a78fc3648c4d26",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat4/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat4/failure-diagnostics.json",
+      "sourceSha256": "1116535d178f16f58a0aa83a187964d49deb057b239992f13086a775f3ca393f",
+      "publishedSha256": "1116535d178f16f58a0aa83a187964d49deb057b239992f13086a775f3ca393f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat4/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat4/test-failed-1.png",
+      "sourceSha256": "f60522559ee0080c3f013e21b2dc30e45fb4eda890582ead3d55119f3a770917",
+      "publishedSha256": "f60522559ee0080c3f013e21b2dc30e45fb4eda890582ead3d55119f3a770917",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--ptc.live-file-handoff-summary--0.json",
+      "published": "analysis-evidence/sample-excerpts/live--ptc.live-file-handoff-summary--0.json",
+      "sourceSha256": "1ca6aaf03ad22fd966febf09c140142b098f502d6a7e168cd285c9fd18d143fd",
+      "publishedSha256": "1ca6aaf03ad22fd966febf09c140142b098f502d6a7e168cd285c9fd18d143fd",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--ptc.live-file-handoff-summary--1.json",
+      "published": "analysis-evidence/sample-excerpts/live--ptc.live-file-handoff-summary--1.json",
+      "sourceSha256": "0637740a8940fd3f8310978164fec67a1602e17affcdd8844e6a340d8e4f185e",
+      "publishedSha256": "0637740a8940fd3f8310978164fec67a1602e17affcdd8844e6a340d8e4f185e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--ptc.live-file-handoff-summary--4.json",
+      "published": "analysis-evidence/sample-excerpts/live--ptc.live-file-handoff-summary--4.json",
+      "sourceSha256": "08dc6f6990a83630554ad09f169e1bbf94ffbbff4a68bad49c5687db255e8b61",
+      "publishedSha256": "08dc6f6990a83630554ad09f169e1bbf94ffbbff4a68bad49c5687db255e8b61",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat1/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat1/test-failed-1.png",
+      "sourceSha256": "6d75b57f3ad79be8258284f6c68962b7cef6bd936feade0dbd7309acc53ce0a2",
+      "publishedSha256": "6d75b57f3ad79be8258284f6c68962b7cef6bd936feade0dbd7309acc53ce0a2",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/ptc-relative/replay-diagnostic.mjs.txt",
+      "published": "analysis-evidence/ptc-relative/replay-diagnostic.mjs.txt",
+      "sourceSha256": "b1a1e77d4b42bf56c5fa35b80b042e3c34860a5c47e247ada03f1ebed5a3324f",
+      "publishedSha256": "b1a1e77d4b42bf56c5fa35b80b042e3c34860a5c47e247ada03f1ebed5a3324f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/ptc-relative/replay-input-1.json",
+      "published": "analysis-evidence/ptc-relative/replay-input-1.json",
+      "sourceSha256": "d36dd3bb4c921586f772b8046a337d95dcb58ae06584a8fc725d710748c33831",
+      "publishedSha256": "3e812e0cc1a81be125cf9d61c127f9359e3e525395454b2203b7690fd2de4129",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "analysis-evidence/review-recovery/suite-task.txt",
+      "published": "analysis-evidence/review-recovery/suite-task.txt",
+      "sourceSha256": "f4edf0057e32e45370891bbfb682ed17badadff7da61ea6bcdf897ed999cbc89",
+      "publishedSha256": "f4edf0057e32e45370891bbfb682ed17badadff7da61ea6bcdf897ed999cbc89",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/review-recovery/suite-rejection.txt",
+      "published": "analysis-evidence/review-recovery/suite-rejection.txt",
+      "sourceSha256": "5b0d32acb97672aee6b861cf76e67638358114979f92ef53fbb33b09e64f3e77",
+      "publishedSha256": "5b0d32acb97672aee6b861cf76e67638358114979f92ef53fbb33b09e64f3e77",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/review-recovery/suite-driver-boundary.txt",
+      "published": "analysis-evidence/review-recovery/suite-driver-boundary.txt",
+      "sourceSha256": "8858e9775a6d7276981a3dac45da4f5ff78233b5725056220976f4afd240dc07",
+      "publishedSha256": "8858e9775a6d7276981a3dac45da4f5ff78233b5725056220976f4afd240dc07",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/review-recovery/master-schema.txt",
+      "published": "analysis-evidence/review-recovery/master-schema.txt",
+      "sourceSha256": "02758631bfb76b5084502b6bd67ea2873a2c4181a0157de6748059fa33f206b0",
+      "publishedSha256": "02758631bfb76b5084502b6bd67ea2873a2c4181a0157de6748059fa33f206b0",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/review-recovery/master-recording.txt",
+      "published": "analysis-evidence/review-recovery/master-recording.txt",
+      "sourceSha256": "230f392f0348c3d9b56dae75e93de956d16d2ec4c1998baf2a772da86c9bc5da",
+      "publishedSha256": "230f392f0348c3d9b56dae75e93de956d16d2ec4c1998baf2a772da86c9bc5da",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-5b320-one-verified-review-finding-repeat1/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-5b320-one-verified-review-finding-repeat1/failure-diagnostics.json",
+      "sourceSha256": "41ae10960bfadee7f417ddd90b804f23b7c8bb3471217bfbeb11bd2f21e6eecd",
+      "publishedSha256": "41ae10960bfadee7f417ddd90b804f23b7c8bb3471217bfbeb11bd2f21e6eecd",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-5b320-one-verified-review-finding-repeat1/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-5b320-one-verified-review-finding-repeat1/error-context.md.txt",
+      "sourceSha256": "270af89f478a01fdc801b4a807f8d1c7f415f105eb801b69f4d2f3f177ed498b",
+      "publishedSha256": "270af89f478a01fdc801b4a807f8d1c7f415f105eb801b69f4d2f3f177ed498b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-5b320-one-verified-review-finding-repeat1/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-5b320-one-verified-review-finding-repeat1/test-failed-1.png",
+      "sourceSha256": "295345b8b2b7c13a102564e339363be9e0e52ab9b1a51f6c8feaeb8f5937a2c7",
+      "publishedSha256": "295345b8b2b7c13a102564e339363be9e0e52ab9b1a51f6c8feaeb8f5937a2c7",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--assistant.live-code-review-finding--1.json",
+      "published": "analysis-evidence/sample-excerpts/live--assistant.live-code-review-finding--1.json",
+      "sourceSha256": "7ac8b8c5c0df61cbe8e7c58af8e6c20fdbd923a2e10620b3d08c9e19500e85bf",
+      "publishedSha256": "7ac8b8c5c0df61cbe8e7c58af8e6c20fdbd923a2e10620b3d08c9e19500e85bf",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/interrupt-routing/task.txt",
+      "published": "analysis-evidence/interrupt-routing/task.txt",
+      "sourceSha256": "4368c71afa5d6df6a09c9cd4387fef883e1b172ecf7df215360419f276cd8c88",
+      "publishedSha256": "4368c71afa5d6df6a09c9cd4387fef883e1b172ecf7df215360419f276cd8c88",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/interrupt-routing/driver-window.txt",
+      "published": "analysis-evidence/interrupt-routing/driver-window.txt",
+      "sourceSha256": "f3971f28ac57ac325cd3cfbe3d75103dcea892df04e8415f6ecbbe90f4f09e89",
+      "publishedSha256": "f3971f28ac57ac325cd3cfbe3d75103dcea892df04e8415f6ecbbe90f4f09e89",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/interrupt-routing/driver-selection.txt",
+      "published": "analysis-evidence/interrupt-routing/driver-selection.txt",
+      "sourceSha256": "b9d3ed70abe2266c10af1a96ceb1b41c95ff1a3317787814417f4c7b8e1e860c",
+      "publishedSha256": "b9d3ed70abe2266c10af1a96ceb1b41c95ff1a3317787814417f4c7b8e1e860c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-675e2-running-background-observer-repeat1/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-675e2-running-background-observer-repeat1/failure-diagnostics.json",
+      "sourceSha256": "9bb332a6e9ee42c2023ce0437e0a301f1b2496c571519234edf0910a17aded94",
+      "publishedSha256": "9bb332a6e9ee42c2023ce0437e0a301f1b2496c571519234edf0910a17aded94",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-675e2-running-background-observer-repeat1/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-675e2-running-background-observer-repeat1/error-context.md.txt",
+      "sourceSha256": "5ca4b73f1f8d36dbf7360e92c85e9cb0a9eeb7c64393019d8b0e3001adb863eb",
+      "publishedSha256": "5ca4b73f1f8d36dbf7360e92c85e9cb0a9eeb7c64393019d8b0e3001adb863eb",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-675e2-running-background-observer-repeat1/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-675e2-running-background-observer-repeat1/test-failed-1.png",
+      "sourceSha256": "ca01ebc5cf8373aa1147b08f18872790b104f473506201241bddf6c44530aec1",
+      "publishedSha256": "ca01ebc5cf8373aa1147b08f18872790b104f473506201241bddf6c44530aec1",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-subagent-interrupt--1.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-subagent-interrupt--1.json",
+      "sourceSha256": "db3f23c2821836acc0b01e94758b0fc77d44301cc592bed5daec9d30cd8c4707",
+      "publishedSha256": "db3f23c2821836acc0b01e94758b0fc77d44301cc592bed5daec9d30cd8c4707",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/goal-cancel-recovery/filter.txt",
+      "published": "analysis-evidence/goal-cancel-recovery/filter.txt",
+      "sourceSha256": "ab4ab50c81a830a67f814ff1d9654db86046152c6d442140ed018626f0301aa6",
+      "publishedSha256": "ab4ab50c81a830a67f814ff1d9654db86046152c6d442140ed018626f0301aa6",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/goal-cancel-recovery/driver-boundary.txt",
+      "published": "analysis-evidence/goal-cancel-recovery/driver-boundary.txt",
+      "sourceSha256": "c5061728d622b80a73fb816292891892afc74e4440194715ff7801ac07938f34",
+      "publishedSha256": "c5061728d622b80a73fb816292891892afc74e4440194715ff7801ac07938f34",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/goal-cancel-recovery/policy-denial.txt",
+      "published": "analysis-evidence/goal-cancel-recovery/policy-denial.txt",
+      "sourceSha256": "8a93f466741f007bd8612143e89c55d822edc592a5605fea85244fcd9ad51648",
+      "publishedSha256": "8a93f466741f007bd8612143e89c55d822edc592a5605fea85244fcd9ad51648",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-c05c1-ss-question-without-writing-repeat1/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-c05c1-ss-question-without-writing-repeat1/failure-diagnostics.json",
+      "sourceSha256": "41bd6b672ff05cb44df9496e38bd086a9ed601cb387cc10dbe19b3304d42c92f",
+      "publishedSha256": "41bd6b672ff05cb44df9496e38bd086a9ed601cb387cc10dbe19b3304d42c92f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-c05c1-ss-question-without-writing-repeat1/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-c05c1-ss-question-without-writing-repeat1/error-context.md.txt",
+      "sourceSha256": "41fec8fdfe6b71ac18fd24845c56475b5b4bd78d9f3ac9558bea21d6e2532593",
+      "publishedSha256": "41fec8fdfe6b71ac18fd24845c56475b5b4bd78d9f3ac9558bea21d6e2532593",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--goal.live-cancel--1.json",
+      "published": "analysis-evidence/sample-excerpts/live--goal.live-cancel--1.json",
+      "sourceSha256": "cd21ba3a760e2ad98cb009095ff0faa12567acc0a4320e027582c41b5af356b8",
+      "publishedSha256": "cd21ba3a760e2ad98cb009095ff0faa12567acc0a4320e027582c41b5af356b8",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/goal-recovery/suite-contract.txt",
+      "published": "analysis-evidence/goal-recovery/suite-contract.txt",
+      "sourceSha256": "929cdb215fba435e364ed03717d040a545027640efdf4fea450d9cb3e1252e5d",
+      "publishedSha256": "929cdb215fba435e364ed03717d040a545027640efdf4fea450d9cb3e1252e5d",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/goal-recovery/suite-recovery-filter.txt",
+      "published": "analysis-evidence/goal-recovery/suite-recovery-filter.txt",
+      "sourceSha256": "3f177930db539e88bef1f9db6cb5920e373af0f6235767fda2ce518d323fa2d5",
+      "publishedSha256": "3f177930db539e88bef1f9db6cb5920e373af0f6235767fda2ce518d323fa2d5",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/goal-recovery/suite-no-failures.txt",
+      "published": "analysis-evidence/goal-recovery/suite-no-failures.txt",
+      "sourceSha256": "14bdb9ed83e15397b01f7096d6cf52ec20e3eec2d7204f142812ed90f551bc9b",
+      "publishedSha256": "14bdb9ed83e15397b01f7096d6cf52ec20e3eec2d7204f142812ed90f551bc9b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/goal-recovery/master-service-authorization.txt",
+      "published": "analysis-evidence/goal-recovery/master-service-authorization.txt",
+      "sourceSha256": "19b676b471595b3693c9938c3405350a640d6811b7161bad609d958d0524bb41",
+      "publishedSha256": "19b676b471595b3693c9938c3405350a640d6811b7161bad609d958d0524bb41",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/goal-recovery/master-real-evidence.txt",
+      "published": "analysis-evidence/goal-recovery/master-real-evidence.txt",
+      "sourceSha256": "1a54e61fd935bfbac353f5de5afd9c5e229d2862fac805e6fad75c387b03a72c",
+      "publishedSha256": "1a54e61fd935bfbac353f5de5afd9c5e229d2862fac805e6fad75c387b03a72c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion/failure-diagnostics.json",
+      "sourceSha256": "714a62a337ddf101fc4923ee8b3c15454398956d423d12580a11fbd47964a81e",
+      "publishedSha256": "714a62a337ddf101fc4923ee8b3c15454398956d423d12580a11fbd47964a81e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat1/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat1/failure-diagnostics.json",
+      "sourceSha256": "507d7a5a489c54d4c616e2effd4762e4cc581554a6efd24c2265ecbd5aaa10b9",
+      "publishedSha256": "507d7a5a489c54d4c616e2effd4762e4cc581554a6efd24c2265ecbd5aaa10b9",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat2/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat2/failure-diagnostics.json",
+      "sourceSha256": "f4198ff27c36fc35acc68d53348ddb8e7875fc5533dfb8e6267079304d78403e",
+      "publishedSha256": "f4198ff27c36fc35acc68d53348ddb8e7875fc5533dfb8e6267079304d78403e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--goal.live-complete--0.json",
+      "published": "analysis-evidence/sample-excerpts/live--goal.live-complete--0.json",
+      "sourceSha256": "261de6b7d9500295ad8e0192de90c954741294d61081f8b72d632585fc57b6d8",
+      "publishedSha256": "261de6b7d9500295ad8e0192de90c954741294d61081f8b72d632585fc57b6d8",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--goal.live-complete--1.json",
+      "published": "analysis-evidence/sample-excerpts/live--goal.live-complete--1.json",
+      "sourceSha256": "ba159fe59b98b73295abc615e127a7f135961884151145847b1d8c5b8ad92622",
+      "publishedSha256": "ba159fe59b98b73295abc615e127a7f135961884151145847b1d8c5b8ad92622",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--goal.live-complete--2.json",
+      "published": "analysis-evidence/sample-excerpts/live--goal.live-complete--2.json",
+      "sourceSha256": "746135a7699671642b9a7949371244561537c8e7380b42b136c77bb2a9f07487",
+      "publishedSha256": "746135a7699671642b9a7949371244561537c8e7380b42b136c77bb2a9f07487",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/monitor-stop/task.txt",
+      "published": "analysis-evidence/monitor-stop/task.txt",
+      "sourceSha256": "cce2e7b4ed8d9d486c877a12eb160bb3a0f5630ba680e5390411b5cade5132ae",
+      "publishedSha256": "cce2e7b4ed8d9d486c877a12eb160bb3a0f5630ba680e5390411b5cade5132ae",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/monitor-stop/active-stop-oracle.txt",
+      "published": "analysis-evidence/monitor-stop/active-stop-oracle.txt",
+      "sourceSha256": "e41d8eef7ba3472790023facac0d0fd8369543979ef52dc298c22c0d121efd19",
+      "publishedSha256": "e41d8eef7ba3472790023facac0d0fd8369543979ef52dc298c22c0d121efd19",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/monitor-stop/continuous-source.txt",
+      "published": "analysis-evidence/monitor-stop/continuous-source.txt",
+      "sourceSha256": "9b1482c498d40667074ac512f47deac7ed629fab37c7e668056c6e4047649d21",
+      "publishedSha256": "9b1482c498d40667074ac512f47deac7ed629fab37c7e668056c6e4047649d21",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/monitor-stop/master-taskoutput.txt",
+      "published": "analysis-evidence/monitor-stop/master-taskoutput.txt",
+      "sourceSha256": "2216e56b2ccac01144524709c0f9e001406d5fa293ea167686289995b517ae85",
+      "publishedSha256": "2216e56b2ccac01144524709c0f9e001406d5fa293ea167686289995b517ae85",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/monitor-stop/master-expiration.txt",
+      "published": "analysis-evidence/monitor-stop/master-expiration.txt",
+      "sourceSha256": "7164e1038a3d4c091bf5ad4ce1b784a4537c2fd00f3a316d1485a344119f8099",
+      "publishedSha256": "7164e1038a3d4c091bf5ad4ce1b784a4537c2fd00f3a316d1485a344119f8099",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/monitor-stop/master-websocket-stop.txt",
+      "published": "analysis-evidence/monitor-stop/master-websocket-stop.txt",
+      "sourceSha256": "fb24c85d507fcfbe8e15dce6f1f57541874b9c846a4548656dea1fe5b44497b5",
+      "publishedSha256": "fb24c85d507fcfbe8e15dce6f1f57541874b9c846a4548656dea1fe5b44497b5",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/monitor-stop/source-before-cleanup-2.json",
+      "published": "analysis-evidence/monitor-stop/source-before-cleanup-2.json",
+      "sourceSha256": "356b47051a289ef7ce0a10bfdcf4bf2c0502446161c33921e48034695e224c90",
+      "publishedSha256": "6f9b4aadb56e568f5d44b86b85a3198b6eea49585b990d7a8c347a773dc52e1a",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "analysis-evidence/monitor-stop/source-provenance-2.json",
+      "published": "analysis-evidence/monitor-stop/source-provenance-2.json",
+      "sourceSha256": "2160a839793a42aa1f0518ccbd628fa6877f52b1a003ac06249f316f83824fa0",
+      "publishedSha256": "2160a839793a42aa1f0518ccbd628fa6877f52b1a003ac06249f316f83824fa0",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-851e8-ming-its-first-real-message-repeat2/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-851e8-ming-its-first-real-message-repeat2/failure-diagnostics.json",
+      "sourceSha256": "67a59f91b73377db0f97e74a04b50a2b0882c41736fd1d62a8a650328d9f669b",
+      "publishedSha256": "67a59f91b73377db0f97e74a04b50a2b0882c41736fd1d62a8a650328d9f669b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--assistant.live-monitor-stop--2.json",
+      "published": "analysis-evidence/sample-excerpts/live--assistant.live-monitor-stop--2.json",
+      "sourceSha256": "814f5c34add5a9d196c50be607bc32f04bee378b734e2bb2a43c846fc3df1f34",
+      "publishedSha256": "814f5c34add5a9d196c50be607bc32f04bee378b734e2bb2a43c846fc3df1f34",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/task-detail/task.txt",
+      "published": "analysis-evidence/task-detail/task.txt",
+      "sourceSha256": "237fb91f62bf71111c2c11002bc9f7997dcb95b4cdbc8e902eda19e746cca38e",
+      "publishedSha256": "237fb91f62bf71111c2c11002bc9f7997dcb95b4cdbc8e902eda19e746cca38e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/task-detail/field-oracle.txt",
+      "published": "analysis-evidence/task-detail/field-oracle.txt",
+      "sourceSha256": "816704cff2d1313d5c563196ea62b4fd963acfeb6a760856ab5610f83e9ba88a",
+      "publishedSha256": "816704cff2d1313d5c563196ea62b4fd963acfeb6a760856ab5610f83e9ba88a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/task-detail/master-schema.txt",
+      "published": "analysis-evidence/task-detail/master-schema.txt",
+      "sourceSha256": "4b6376945464468d34adffb3d645cbfe5a0c805272aff81ac9700aab642fafd0",
+      "publishedSha256": "4b6376945464468d34adffb3d645cbfe5a0c805272aff81ac9700aab642fafd0",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/task-detail/master-create.txt",
+      "published": "analysis-evidence/task-detail/master-create.txt",
+      "sourceSha256": "0fbf3050d837b4306773c6c01552a4dd1aaae2e480ab083ea603c346ccea8f58",
+      "publishedSha256": "0fbf3050d837b4306773c6c01552a4dd1aaae2e480ab083ea603c346ccea8f58",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-80966-eads-it-back-by-returned-ID-repeat3/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-80966-eads-it-back-by-returned-ID-repeat3/failure-diagnostics.json",
+      "sourceSha256": "da60bfdc5c3940c526819eeae1287651f6013e5067b2924f6cac4807d223471c",
+      "publishedSha256": "da60bfdc5c3940c526819eeae1287651f6013e5067b2924f6cac4807d223471c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-80966-eads-it-back-by-returned-ID-repeat3/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-80966-eads-it-back-by-returned-ID-repeat3/error-context.md.txt",
+      "sourceSha256": "6d7560e7ce6cc8b3b858c2f638ac4b0d1e100830cbb5e7b29ae8ec9b5f98e537",
+      "publishedSha256": "6d7560e7ce6cc8b3b858c2f638ac4b0d1e100830cbb5e7b29ae8ec9b5f98e537",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-task-detail-readback--3.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-task-detail-readback--3.json",
+      "sourceSha256": "022e88591efe1a5a93249b8df44737f6c330362c67275d94a4e44a884926ead1",
+      "publishedSha256": "022e88591efe1a5a93249b8df44737f6c330362c67275d94a4e44a884926ead1",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/webfetch-design/suite-contract.txt",
+      "published": "analysis-evidence/webfetch-design/suite-contract.txt",
+      "sourceSha256": "454dcb89d0523586c0f1344375d170e1f3db84f6ecca6c7b9113a002e5e194d6",
+      "publishedSha256": "454dcb89d0523586c0f1344375d170e1f3db84f6ecca6c7b9113a002e5e194d6",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/webfetch-design/suite-driver.txt",
+      "published": "analysis-evidence/webfetch-design/suite-driver.txt",
+      "sourceSha256": "a7df9d87ea66bd545abe7e3d3b4914ffb0c83459f1ed844634e610a76705d5da",
+      "publishedSha256": "a7df9d87ea66bd545abe7e3d3b4914ffb0c83459f1ed844634e610a76705d5da",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/webfetch-design/suite-driver-rejection.txt",
+      "published": "analysis-evidence/webfetch-design/suite-driver-rejection.txt",
+      "sourceSha256": "6987e3f857fedfbaaaeb018c43e349a168ab52d495f700891db6d147a1e0c1ce",
+      "publishedSha256": "6987e3f857fedfbaaaeb018c43e349a168ab52d495f700891db6d147a1e0c1ce",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/webfetch-design/suite-audit-only-webfetch.txt",
+      "published": "analysis-evidence/webfetch-design/suite-audit-only-webfetch.txt",
+      "sourceSha256": "4e4c2f309372679aa30345e46cdce18a727d18c809ed0a0866fd45d2e2006bef",
+      "publishedSha256": "4e4c2f309372679aa30345e46cdce18a727d18c809ed0a0866fd45d2e2006bef",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model/failure-diagnostics.json",
+      "sourceSha256": "6fca0d91f31401c7cfcbbeb1ce17245959ba95e22b493d759f27b9ddbc9c3e24",
+      "publishedSha256": "6fca0d91f31401c7cfcbbeb1ce17245959ba95e22b493d759f27b9ddbc9c3e24",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat1/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat1/failure-diagnostics.json",
+      "sourceSha256": "5e58df3f2f9766eaaaf7c13e5eb8a97702b2b2337df3187fdbf6030c1a54eed0",
+      "publishedSha256": "5e58df3f2f9766eaaaf7c13e5eb8a97702b2b2337df3187fdbf6030c1a54eed0",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat3/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat3/failure-diagnostics.json",
+      "sourceSha256": "7629f22ebb035dcd5cae9255df819fd7c7529d5fc1a6eb2aa0ba656d022c3c37",
+      "publishedSha256": "7629f22ebb035dcd5cae9255df819fd7c7529d5fc1a6eb2aa0ba656d022c3c37",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-web-fetch-page--0.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-web-fetch-page--0.json",
+      "sourceSha256": "9d60e864f52bcb989710148abdcb410286bb0bcb6b0b42bdb9b0072a3aabc925",
+      "publishedSha256": "9d60e864f52bcb989710148abdcb410286bb0bcb6b0b42bdb9b0072a3aabc925",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-web-fetch-page--1.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-web-fetch-page--1.json",
+      "sourceSha256": "5703c878c202bb3e9b895f85c051ba3b7522e61cd230d2e178b704212006c3c4",
+      "publishedSha256": "5703c878c202bb3e9b895f85c051ba3b7522e61cd230d2e178b704212006c3c4",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-web-fetch-page--3.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-web-fetch-page--3.json",
+      "sourceSha256": "fa2e3cb214e9aef8f746df4b92e4c15d1d137d10656d349b33e46b2dd210c4ef",
+      "publishedSha256": "fa2e3cb214e9aef8f746df4b92e4c15d1d137d10656d349b33e46b2dd210c4ef",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/project-search/task-contrast.txt",
+      "published": "analysis-evidence/project-search/task-contrast.txt",
+      "sourceSha256": "86d316d0cff15d1d37c36e33a293bb694c1d4ddad61b0a0ab6c30cf20a1d238e",
+      "publishedSha256": "86d316d0cff15d1d37c36e33a293bb694c1d4ddad61b0a0ab6c30cf20a1d238e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/project-search/only-projects-oracle.txt",
+      "published": "analysis-evidence/project-search/only-projects-oracle.txt",
+      "sourceSha256": "424be0bbdff9bd3a6c91ca014647bafb87e3e27b3b08eb105d2df9208840d033",
+      "publishedSha256": "424be0bbdff9bd3a6c91ca014647bafb87e3e27b3b08eb105d2df9208840d033",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/project-search/required-real-search.txt",
+      "published": "analysis-evidence/project-search/required-real-search.txt",
+      "sourceSha256": "ddbdc564467f5e835647396e19d32545163d59c9fecd06550ffad8a5f2906ed2",
+      "publishedSha256": "ddbdc564467f5e835647396e19d32545163d59c9fecd06550ffad8a5f2906ed2",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/project-search/master-search.txt",
+      "published": "analysis-evidence/project-search/master-search.txt",
+      "sourceSha256": "30c3d02a273e3df7c4772f289c02303ba79299dd407e173bfb957a93f21690ca",
+      "publishedSha256": "30c3d02a273e3df7c4772f289c02303ba79299dd407e173bfb957a93f21690ca",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-948b8-rves-durable-business-truth-repeat3/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-948b8-rves-durable-business-truth-repeat3/failure-diagnostics.json",
+      "sourceSha256": "92e072a22e95a6fcb1a7a1cf21ec522d6dcc91f54e974efb00646fbce6725237",
+      "publishedSha256": "92e072a22e95a6fcb1a7a1cf21ec522d6dcc91f54e974efb00646fbce6725237",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-948b8-rves-durable-business-truth-repeat3/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-948b8-rves-durable-business-truth-repeat3/error-context.md.txt",
+      "sourceSha256": "d3a1e6b2fba5d7eb2150387b8112339564f1071238402c139c2a62e52c52369b",
+      "publishedSha256": "d3a1e6b2fba5d7eb2150387b8112339564f1071238402c139c2a62e52c52369b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--assistant.live-project-search--3.json",
+      "published": "analysis-evidence/sample-excerpts/live--assistant.live-project-search--3.json",
+      "sourceSha256": "7eb83a075279c716b2e7ed84326d2dcd97a5e41312e57919e9f11ac96ed73844",
+      "publishedSha256": "7eb83a075279c716b2e7ed84326d2dcd97a5e41312e57919e9f11ac96ed73844",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/dns-incident/goal.live-pause-resume--proxy-dns-classification.txt",
+      "published": "analysis-evidence/dns-incident/goal.live-pause-resume--proxy-dns-classification.txt",
+      "sourceSha256": "ebb7c73f2d2b073aeef9754819f0619b828cfb671706378ffc9545cf8a3936c8",
+      "publishedSha256": "ebb7c73f2d2b073aeef9754819f0619b828cfb671706378ffc9545cf8a3936c8",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/dns-incident/goal.live-pause-resume--classifier-terminal.txt",
+      "published": "analysis-evidence/dns-incident/goal.live-pause-resume--classifier-terminal.txt",
+      "sourceSha256": "a34632a0f1e52ae800b3f815ce2ca2ebeaebd14939eb16f131949d27cb4d1e2e",
+      "publishedSha256": "a34632a0f1e52ae800b3f815ce2ca2ebeaebd14939eb16f131949d27cb4d1e2e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/dns-incident/goal.live-pause-resume--case-wait.txt",
+      "published": "analysis-evidence/dns-incident/goal.live-pause-resume--case-wait.txt",
+      "sourceSha256": "d90131ce83f4073e42f413c103a32aed4c14d30d1d039093e1625cb83ad62b0c",
+      "publishedSha256": "d90131ce83f4073e42f413c103a32aed4c14d30d1d039093e1625cb83ad62b0c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/dns-incident/goal.live-pause-resume--3.json",
+      "published": "analysis-evidence/dns-incident/goal.live-pause-resume--3.json",
+      "sourceSha256": "5a0b7a4302085e74cdb729d0db661cce1eda73f5a609ad0c66149692aa96215f",
+      "publishedSha256": "5a0b7a4302085e74cdb729d0db661cce1eda73f5a609ad0c66149692aa96215f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/dns-incident/recovered-resolution-observation.json",
+      "published": "analysis-evidence/dns-incident/recovered-resolution-observation.json",
+      "sourceSha256": "53768eae6baf05c8d1ebae6d23f9a2c2c888f8e16edcf5e6dc7302d17325b7b6",
+      "publishedSha256": "53768eae6baf05c8d1ebae6d23f9a2c2c888f8e16edcf5e6dc7302d17325b7b6",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-p-f06a1--resume-with-fresh-approval-repeat3/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-goal-live-p-f06a1--resume-with-fresh-approval-repeat3/failure-diagnostics.json",
+      "sourceSha256": "eecd981e25e1651ab83bdbab7ca965d0785910bebde60678ce8ad87bb5aaf4c5",
+      "publishedSha256": "eecd981e25e1651ab83bdbab7ca965d0785910bebde60678ce8ad87bb5aaf4c5",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--goal.live-pause-resume--3.json",
+      "published": "analysis-evidence/sample-excerpts/live--goal.live-pause-resume--3.json",
+      "sourceSha256": "86e4b807ac296b9835648fb31b17ab5ee7e3ee6a9b06d6cbec027aae4e765f8c",
+      "publishedSha256": "86e4b807ac296b9835648fb31b17ab5ee7e3ee6a9b06d6cbec027aae4e765f8c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/dns-incident/standard.live-task-reminder--proxy-dns-classification.txt",
+      "published": "analysis-evidence/dns-incident/standard.live-task-reminder--proxy-dns-classification.txt",
+      "sourceSha256": "ebb7c73f2d2b073aeef9754819f0619b828cfb671706378ffc9545cf8a3936c8",
+      "publishedSha256": "ebb7c73f2d2b073aeef9754819f0619b828cfb671706378ffc9545cf8a3936c8",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/dns-incident/standard.live-task-reminder--classifier-terminal.txt",
+      "published": "analysis-evidence/dns-incident/standard.live-task-reminder--classifier-terminal.txt",
+      "sourceSha256": "a34632a0f1e52ae800b3f815ce2ca2ebeaebd14939eb16f131949d27cb4d1e2e",
+      "publishedSha256": "a34632a0f1e52ae800b3f815ce2ca2ebeaebd14939eb16f131949d27cb4d1e2e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/dns-incident/standard.live-task-reminder--case-wait.txt",
+      "published": "analysis-evidence/dns-incident/standard.live-task-reminder--case-wait.txt",
+      "sourceSha256": "ebe0fa387d26db352fe7cececdd3ff4d5df6c62755058e5c6ce71cdc6e3de08d",
+      "publishedSha256": "ebe0fa387d26db352fe7cececdd3ff4d5df6c62755058e5c6ce71cdc6e3de08d",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/dns-incident/standard.live-task-reminder--3.json",
+      "published": "analysis-evidence/dns-incident/standard.live-task-reminder--3.json",
+      "sourceSha256": "cabbd8ee9367c781fb6a39466b60ef004568256909c861ef85b8bc7bc1d65468",
+      "publishedSha256": "cabbd8ee9367c781fb6a39466b60ef004568256909c861ef85b8bc7bc1d65468",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-bb538-er-at-production-thresholds-repeat3/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-bb538-er-at-production-thresholds-repeat3/failure-diagnostics.json",
+      "sourceSha256": "0f2d67fea61e9ae751d0b6a1422e42e732dccee7f6dae8d567ce04db7e1b5c6a",
+      "publishedSha256": "0f2d67fea61e9ae751d0b6a1422e42e732dccee7f6dae8d567ce04db7e1b5c6a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-task-reminder--3.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-task-reminder--3.json",
+      "sourceSha256": "6836b66d4de42a1a1dbdf3cb88f98402b9b1b242628f5f4611125ac14705aee1",
+      "publishedSha256": "6836b66d4de42a1a1dbdf3cb88f98402b9b1b242628f5f4611125ac14705aee1",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/dns-incident/standard.live-input-fifo--proxy-dns-classification.txt",
+      "published": "analysis-evidence/dns-incident/standard.live-input-fifo--proxy-dns-classification.txt",
+      "sourceSha256": "ebb7c73f2d2b073aeef9754819f0619b828cfb671706378ffc9545cf8a3936c8",
+      "publishedSha256": "ebb7c73f2d2b073aeef9754819f0619b828cfb671706378ffc9545cf8a3936c8",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/dns-incident/standard.live-input-fifo--classifier-terminal.txt",
+      "published": "analysis-evidence/dns-incident/standard.live-input-fifo--classifier-terminal.txt",
+      "sourceSha256": "a34632a0f1e52ae800b3f815ce2ca2ebeaebd14939eb16f131949d27cb4d1e2e",
+      "publishedSha256": "a34632a0f1e52ae800b3f815ce2ca2ebeaebd14939eb16f131949d27cb4d1e2e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/dns-incident/standard.live-input-fifo--case-wait.txt",
+      "published": "analysis-evidence/dns-incident/standard.live-input-fifo--case-wait.txt",
+      "sourceSha256": "1b602ad4483b627a4c5b27b98444a2f4b2f0784e01854533ccb8e700b5838c15",
+      "publishedSha256": "1b602ad4483b627a4c5b27b98444a2f4b2f0784e01854533ccb8e700b5838c15",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/dns-incident/standard.live-input-fifo--3.json",
+      "published": "analysis-evidence/dns-incident/standard.live-input-fifo--3.json",
+      "sourceSha256": "0aaf47bd8c9b908b6642c5e1ddd9322acf3f29253b47cd9a0cf8fb1fd7730d05",
+      "publishedSha256": "0aaf47bd8c9b908b6642c5e1ddd9322acf3f29253b47cd9a0cf8fb1fd7730d05",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-71fa1-order-after-the-active-task-repeat3/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-71fa1-order-after-the-active-task-repeat3/failure-diagnostics.json",
+      "sourceSha256": "b361f32bb3270b266ff661df5273d703b6f720a52fddc3fdce4d7042c1ffe7dd",
+      "publishedSha256": "b361f32bb3270b266ff661df5273d703b6f720a52fddc3fdce4d7042c1ffe7dd",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-input-fifo--3.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-input-fifo--3.json",
+      "sourceSha256": "cf21d4da338f5df892f4ad556aa06c67453d4b43cfa44d7f2c8faf5457dd3e87",
+      "publishedSha256": "cf21d4da338f5df892f4ad556aa06c67453d4b43cfa44d7f2c8faf5457dd3e87",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/notebook-contract/suite-audit-read.txt",
+      "published": "analysis-evidence/notebook-contract/suite-audit-read.txt",
+      "sourceSha256": "37851a5b31a3c5307be68eb3e48ff097b549275b70a8b0e8f5cd9c7e4a53fe5f",
+      "publishedSha256": "37851a5b31a3c5307be68eb3e48ff097b549275b70a8b0e8f5cd9c7e4a53fe5f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/notebook-contract/suite-audit-edit-render.txt",
+      "published": "analysis-evidence/notebook-contract/suite-audit-edit-render.txt",
+      "sourceSha256": "bca97e89f0d29d12f0953dd9f654c211edda881ef6f358563b957f8d82dc49a7",
+      "publishedSha256": "bca97e89f0d29d12f0953dd9f654c211edda881ef6f358563b957f8d82dc49a7",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/notebook-contract/suite-driver-file-truth.txt",
+      "published": "analysis-evidence/notebook-contract/suite-driver-file-truth.txt",
+      "sourceSha256": "41bba4661be08b8444e00a45abcda5be5c28196a451b56287d242b450f284792",
+      "publishedSha256": "41bba4661be08b8444e00a45abcda5be5c28196a451b56287d242b450f284792",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/notebook-contract/master-tool-description.txt",
+      "published": "analysis-evidence/notebook-contract/master-tool-description.txt",
+      "sourceSha256": "ec410b206d8b6c609bc2b0e95be46109c236db0aa0a2dff721357109f27529ec",
+      "publishedSha256": "ec410b206d8b6c609bc2b0e95be46109c236db0aa0a2dff721357109f27529ec",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/notebook-contract/master-change-note.txt",
+      "published": "analysis-evidence/notebook-contract/master-change-note.txt",
+      "sourceSha256": "f5277c418b9e2c6ff8816069270e8dd727bb735b7401dccdfee5ad088ffa7dce",
+      "publishedSha256": "f5277c418b9e2c6ff8816069270e8dd727bb735b7401dccdfee5ad088ffa7dce",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell/failure-diagnostics.json",
+      "sourceSha256": "61ac4b1e63d8ba4d851bc7c56395de146175adbcc3846b99a60fd6151614e224",
+      "publishedSha256": "61ac4b1e63d8ba4d851bc7c56395de146175adbcc3846b99a60fd6151614e224",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat1/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat1/failure-diagnostics.json",
+      "sourceSha256": "f8364d60bfd944f943518b06a96e8bd7d6693cfbc6171d37170ccec3509bf213",
+      "publishedSha256": "f8364d60bfd944f943518b06a96e8bd7d6693cfbc6171d37170ccec3509bf213",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat2/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat2/failure-diagnostics.json",
+      "sourceSha256": "e64ea36b6e30dcb97aed8212b65720c7ba1b3a70669bfdf3451180631e747921",
+      "publishedSha256": "e64ea36b6e30dcb97aed8212b65720c7ba1b3a70669bfdf3451180631e747921",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat3/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat3/failure-diagnostics.json",
+      "sourceSha256": "5bf1775ba03da0a98917eb5faa6cfe2981a0a0e1b5d59812436c1a9cdf8f995f",
+      "publishedSha256": "5bf1775ba03da0a98917eb5faa6cfe2981a0a0e1b5d59812436c1a9cdf8f995f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat4/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat4/failure-diagnostics.json",
+      "sourceSha256": "d946de98dc2032bcb26f399bbf2334faacc606566db17f3fe84b0cd4262e0dd1",
+      "publishedSha256": "d946de98dc2032bcb26f399bbf2334faacc606566db17f3fe84b0cd4262e0dd1",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/notebook-contract/sample-review.json",
+      "published": "analysis-evidence/notebook-contract/sample-review.json",
+      "sourceSha256": "745b119dde896c2f9021c351fe20eb937a6c9138f567a5a653dc7d6e5258ccda",
+      "publishedSha256": "745b119dde896c2f9021c351fe20eb937a6c9138f567a5a653dc7d6e5258ccda",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-notebook-cell-edit--0.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-notebook-cell-edit--0.json",
+      "sourceSha256": "335d05d5233fb12e5c3b1facba0933b33382f8b00e81187ae912d45c9dcf70c8",
+      "publishedSha256": "335d05d5233fb12e5c3b1facba0933b33382f8b00e81187ae912d45c9dcf70c8",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-notebook-cell-edit--1.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-notebook-cell-edit--1.json",
+      "sourceSha256": "3020a4934f52fc794efa1ea7ebed97a006be7f4e069293b93a7b26d33a4aa4ee",
+      "publishedSha256": "3020a4934f52fc794efa1ea7ebed97a006be7f4e069293b93a7b26d33a4aa4ee",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-notebook-cell-edit--2.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-notebook-cell-edit--2.json",
+      "sourceSha256": "0e1bddcc43c582fa0c337ddd43c8876bbe84fd305e4aa05ac2d6df915b469513",
+      "publishedSha256": "0e1bddcc43c582fa0c337ddd43c8876bbe84fd305e4aa05ac2d6df915b469513",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-notebook-cell-edit--3.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-notebook-cell-edit--3.json",
+      "sourceSha256": "d519f7117c1f1ad37807459f45f1f5ee2cb03cc49764c45646aed7cdaedb3689",
+      "publishedSha256": "d519f7117c1f1ad37807459f45f1f5ee2cb03cc49764c45646aed7cdaedb3689",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-notebook-cell-edit--4.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-notebook-cell-edit--4.json",
+      "sourceSha256": "ef3bcd834d1fa639df064f0e7a1d23cfd3976e0b64244e8a2403d9b85b6704dc",
+      "publishedSha256": "ef3bcd834d1fa639df064f0e7a1d23cfd3976e0b64244e8a2403d9b85b6704dc",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/compaction-candidates/master-candidate-check.txt",
+      "published": "analysis-evidence/compaction-candidates/master-candidate-check.txt",
+      "sourceSha256": "028dcf8a60f8fa3693199c451b431eb73552654a7b0770bc9c0de2f3a6992fcf",
+      "publishedSha256": "028dcf8a60f8fa3693199c451b431eb73552654a7b0770bc9c0de2f3a6992fcf",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/compaction-candidates/master-structural-contract.txt",
+      "published": "analysis-evidence/compaction-candidates/master-structural-contract.txt",
+      "sourceSha256": "7c60c770bb2eded34761a3e418755f1d4f4b60a09d2a6787f24bce2ca973ee69",
+      "publishedSha256": "7c60c770bb2eded34761a3e418755f1d4f4b60a09d2a6787f24bce2ca973ee69",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/compaction-candidates/master-auto-fail-open.txt",
+      "published": "analysis-evidence/compaction-candidates/master-auto-fail-open.txt",
+      "sourceSha256": "d93eab89b0d783535dce313ebe81d2ddc5da500265bf190aa038672d2b1dfe5a",
+      "publishedSha256": "d93eab89b0d783535dce313ebe81d2ddc5da500265bf190aa038672d2b1dfe5a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/compaction-candidates/suite-target-oracle.txt",
+      "published": "analysis-evidence/compaction-candidates/suite-target-oracle.txt",
+      "sourceSha256": "007cc408ef114a331f614d4f1dbdf449f277623a577391778dadb6129256fe99",
+      "publishedSha256": "007cc408ef114a331f614d4f1dbdf449f277623a577391778dadb6129256fe99",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/compaction-candidates/wire-proof-live-3.json",
+      "published": "analysis-evidence/compaction-candidates/wire-proof-live-3.json",
+      "sourceSha256": "c9774adf2d619b06f8603b6f67d113648a68b6963d9ab5f56bd53c6102ff055c",
+      "publishedSha256": "c9774adf2d619b06f8603b6f67d113648a68b6963d9ab5f56bd53c6102ff055c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/compaction-candidates/diagnostic-result-live-3.json",
+      "published": "analysis-evidence/compaction-candidates/diagnostic-result-live-3.json",
+      "sourceSha256": "439dab261b71358f3928a244ebad14e0d42a562f3d0ff68d221021c903ad772a",
+      "publishedSha256": "439dab261b71358f3928a244ebad14e0d42a562f3d0ff68d221021c903ad772a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/compaction-candidates/wire-proof-live-4.json",
+      "published": "analysis-evidence/compaction-candidates/wire-proof-live-4.json",
+      "sourceSha256": "b42ae987554431539e2059d3284276640d38848a489a52e2428330725b1af9bf",
+      "publishedSha256": "b42ae987554431539e2059d3284276640d38848a489a52e2428330725b1af9bf",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/compaction-candidates/diagnostic-result-live-4.json",
+      "published": "analysis-evidence/compaction-candidates/diagnostic-result-live-4.json",
+      "sourceSha256": "1dd9bd1ea6bd3e1ccf6f1b65eac82af7d967b8a76a9bc28bff04615a59a42fb1",
+      "publishedSha256": "1dd9bd1ea6bd3e1ccf6f1b65eac82af7d967b8a76a9bc28bff04615a59a42fb1",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-context-compaction--3.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-context-compaction--3.json",
+      "sourceSha256": "53d0c16e892cb497127d890f18e6b00970121fdbbfe95b1fb550d4e8562d044e",
+      "publishedSha256": "53d0c16e892cb497127d890f18e6b00970121fdbbfe95b1fb550d4e8562d044e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-context-compaction--4.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-context-compaction--4.json",
+      "sourceSha256": "fda876762cea24a1f9acbb20337db24a69432d037ee995589334462b79daf76c",
+      "publishedSha256": "fda876762cea24a1f9acbb20337db24a69432d037ee995589334462b79daf76c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/compaction-candidates/diagnostic-input-live-3.json",
+      "published": "analysis-evidence/compaction-candidates/diagnostic-input-live-3.json",
+      "sourceSha256": "1db09f162c473c30c7302cbe03ca8218f4527dc83e11b85f20988bb608bcbb91",
+      "publishedSha256": "1db09f162c473c30c7302cbe03ca8218f4527dc83e11b85f20988bb608bcbb91",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/compaction-candidates/replay-diagnostic.mjs.txt",
+      "published": "analysis-evidence/compaction-candidates/replay-diagnostic.mjs.txt",
+      "sourceSha256": "2b9be5a069f6437a43c62f120d46560f7d4929062e27b525b4533c027d560467",
+      "publishedSha256": "2b9be5a069f6437a43c62f120d46560f7d4929062e27b525b4533c027d560467",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat3/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat3/failure-diagnostics.json",
+      "sourceSha256": "ab6b098e1681f589ea02611c2f70ef254f2af788cac79d3e5b5da6823fe5ece8",
+      "publishedSha256": "ab6b098e1681f589ea02611c2f70ef254f2af788cac79d3e5b5da6823fe5ece8",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/compaction-candidates/diagnostic-input-live-4.json",
+      "published": "analysis-evidence/compaction-candidates/diagnostic-input-live-4.json",
+      "sourceSha256": "030910f0db861f8ab29052597f39dbae9d63bb12d707af677f9619708d201953",
+      "publishedSha256": "030910f0db861f8ab29052597f39dbae9d63bb12d707af677f9619708d201953",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat4/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat4/failure-diagnostics.json",
+      "sourceSha256": "93fa77f518b8f0b93ac281223ed9fb9d1e5086ec3ff5cf66c62fc35a2481bd0a",
+      "publishedSha256": "93fa77f518b8f0b93ac281223ed9fb9d1e5086ec3ff5cf66c62fc35a2481bd0a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/manual-compaction-candidates/master-candidate-check.txt",
+      "published": "analysis-evidence/manual-compaction-candidates/master-candidate-check.txt",
+      "sourceSha256": "028dcf8a60f8fa3693199c451b431eb73552654a7b0770bc9c0de2f3a6992fcf",
+      "publishedSha256": "028dcf8a60f8fa3693199c451b431eb73552654a7b0770bc9c0de2f3a6992fcf",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/manual-compaction-candidates/master-structural-contract.txt",
+      "published": "analysis-evidence/manual-compaction-candidates/master-structural-contract.txt",
+      "sourceSha256": "7c60c770bb2eded34761a3e418755f1d4f4b60a09d2a6787f24bce2ca973ee69",
+      "publishedSha256": "7c60c770bb2eded34761a3e418755f1d4f4b60a09d2a6787f24bce2ca973ee69",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/manual-compaction-candidates/master-auto-fail-open.txt",
+      "published": "analysis-evidence/manual-compaction-candidates/master-auto-fail-open.txt",
+      "sourceSha256": "d93eab89b0d783535dce313ebe81d2ddc5da500265bf190aa038672d2b1dfe5a",
+      "publishedSha256": "d93eab89b0d783535dce313ebe81d2ddc5da500265bf190aa038672d2b1dfe5a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/manual-compaction-candidates/suite-target-oracle.txt",
+      "published": "analysis-evidence/manual-compaction-candidates/suite-target-oracle.txt",
+      "sourceSha256": "0d00a3855056fb807835d313f0a08a5277968ef26537cbc19ba081b37704895f",
+      "publishedSha256": "0d00a3855056fb807835d313f0a08a5277968ef26537cbc19ba081b37704895f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/manual-compaction-candidates/wire-proof-live-3.json",
+      "published": "analysis-evidence/manual-compaction-candidates/wire-proof-live-3.json",
+      "sourceSha256": "b24fcd57b2dcec9fab5f76db76fe4e49e39e04bc4a2499d270cc71c271e1eabd",
+      "publishedSha256": "b24fcd57b2dcec9fab5f76db76fe4e49e39e04bc4a2499d270cc71c271e1eabd",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/manual-compaction-candidates/diagnostic-result-live-3.json",
+      "published": "analysis-evidence/manual-compaction-candidates/diagnostic-result-live-3.json",
+      "sourceSha256": "150e45d57422f67a6f17a28a7813777534fa699ed6f2bd55da5ce303f72d578d",
+      "publishedSha256": "150e45d57422f67a6f17a28a7813777534fa699ed6f2bd55da5ce303f72d578d",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-manual-context-compaction--3.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-manual-context-compaction--3.json",
+      "sourceSha256": "aac96a0ff96efbf8bcbd1b4e1475c5f9d046b34f279aba4cf137689bb27ee2ef",
+      "publishedSha256": "aac96a0ff96efbf8bcbd1b4e1475c5f9d046b34f279aba4cf137689bb27ee2ef",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/manual-compaction-candidates/diagnostic-input-live-3.json",
+      "published": "analysis-evidence/manual-compaction-candidates/diagnostic-input-live-3.json",
+      "sourceSha256": "7de386da5df7f040286ce90335dfc1174fe3fec28c32c3899f50c67e2db2ae8a",
+      "publishedSha256": "7de386da5df7f040286ce90335dfc1174fe3fec28c32c3899f50c67e2db2ae8a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/manual-compaction-candidates/replay-diagnostic.mjs.txt",
+      "published": "analysis-evidence/manual-compaction-candidates/replay-diagnostic.mjs.txt",
+      "sourceSha256": "2b9be5a069f6437a43c62f120d46560f7d4929062e27b525b4533c027d560467",
+      "publishedSha256": "2b9be5a069f6437a43c62f120d46560f7d4929062e27b525b4533c027d560467",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ac643-ation-and-recalls-its-facts-repeat3/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ac643-ation-and-recalls-its-facts-repeat3/failure-diagnostics.json",
+      "sourceSha256": "b3803c67f42216baf54cf57514d850bc912320a94ecde04334558c60e9fbeed4",
+      "publishedSha256": "b3803c67f42216baf54cf57514d850bc912320a94ecde04334558c60e9fbeed4",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/subagent-message/host-child-approval.txt",
+      "published": "analysis-evidence/subagent-message/host-child-approval.txt",
+      "sourceSha256": "7d739e32fe48dc4343d45cd87a6dba528c755e60ef0c03d5726764639043095a",
+      "publishedSha256": "7d739e32fe48dc4343d45cd87a6dba528c755e60ef0c03d5726764639043095a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/subagent-message/host-parent-cleanup.txt",
+      "published": "analysis-evidence/subagent-message/host-parent-cleanup.txt",
+      "sourceSha256": "718736d9c0407ad81c5f35f011bba67427c6136b07a37774403e679351a8cc10",
+      "publishedSha256": "718736d9c0407ad81c5f35f011bba67427c6136b07a37774403e679351a8cc10",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/subagent-message/readiness.txt",
+      "published": "analysis-evidence/subagent-message/readiness.txt",
+      "sourceSha256": "070b1f053f40334818ad0d50567d02f2b7e1c985dd1135ea7171f8b33eb3337b",
+      "publishedSha256": "070b1f053f40334818ad0d50567d02f2b7e1c985dd1135ea7171f8b33eb3337b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/subagent-message/scope-contract.txt",
+      "published": "analysis-evidence/subagent-message/scope-contract.txt",
+      "sourceSha256": "f8fe7bda126222dcdb4ff21b745320f44a78480b788fc44ade93302cc26d2dda",
+      "publishedSha256": "f8fe7bda126222dcdb4ff21b745320f44a78480b788fc44ade93302cc26d2dda",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/subagent-message/task.txt",
+      "published": "analysis-evidence/subagent-message/task.txt",
+      "sourceSha256": "ffbf25c7b58773b2a1426fc609d77f6845f652fe28ed96eb9f1ff40cd6220f9c",
+      "publishedSha256": "ffbf25c7b58773b2a1426fc609d77f6845f652fe28ed96eb9f1ff40cd6220f9c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-534d7-e-same-running-collaborator-repeat4/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-534d7-e-same-running-collaborator-repeat4/failure-diagnostics.json",
+      "sourceSha256": "c429f585b29fee9d96705a4485d44c26716510d836c2f12124b7711a2116b799",
+      "publishedSha256": "c429f585b29fee9d96705a4485d44c26716510d836c2f12124b7711a2116b799",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-534d7-e-same-running-collaborator-repeat4/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-534d7-e-same-running-collaborator-repeat4/error-context.md.txt",
+      "sourceSha256": "e2f19291fa092ce59e3c6706ef1e31412ee66458ca0bf6756df6a1aacbcb76d3",
+      "publishedSha256": "e2f19291fa092ce59e3c6706ef1e31412ee66458ca0bf6756df6a1aacbcb76d3",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-534d7-e-same-running-collaborator-repeat4/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-534d7-e-same-running-collaborator-repeat4/test-failed-1.png",
+      "sourceSha256": "da7a6d36e302fba9060846ac962c16d441793d6434af15f1f5b3c3ec43ebf5f8",
+      "publishedSha256": "da7a6d36e302fba9060846ac962c16d441793d6434af15f1f5b3c3ec43ebf5f8",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--standard.live-subagent-message--4.json",
+      "published": "analysis-evidence/sample-excerpts/live--standard.live-subagent-message--4.json",
+      "sourceSha256": "1db134dc4ca1e294b8f773dcd312fb9beae44b0c78d91256bf580797e445cfb3",
+      "publishedSha256": "1db134dc4ca1e294b8f773dcd312fb9beae44b0c78d91256bf580797e445cfb3",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/project-read/task.txt",
+      "published": "analysis-evidence/project-read/task.txt",
+      "sourceSha256": "083e5137a47e72b4c33c673bb37a8301e45cd0cdca7395ca21a5a290176f4a36",
+      "publishedSha256": "083e5137a47e72b4c33c673bb37a8301e45cd0cdca7395ca21a5a290176f4a36",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/project-read/audit-first-gate.txt",
+      "published": "analysis-evidence/project-read/audit-first-gate.txt",
+      "sourceSha256": "856355a3b3ce3c0bb1d4d20d0989fd05a9dd6f7c6bb4de5fc501938ec6bd243a",
+      "publishedSha256": "856355a3b3ce3c0bb1d4d20d0989fd05a9dd6f7c6bb4de5fc501938ec6bd243a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/project-read/driver-later-checks.txt",
+      "published": "analysis-evidence/project-read/driver-later-checks.txt",
+      "sourceSha256": "32dad909813f2e33580834c7522865c637eec7cd7c6b3913822e949aa0e25699",
+      "publishedSha256": "32dad909813f2e33580834c7522865c637eec7cd7c6b3913822e949aa0e25699",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/project-read/tool-search-read.txt",
+      "published": "analysis-evidence/project-read/tool-search-read.txt",
+      "sourceSha256": "fbe874c7e256054b7b3ffa3df31495da720762271d00bec0520d5526df4c6a1e",
+      "publishedSha256": "fbe874c7e256054b7b3ffa3df31495da720762271d00bec0520d5526df4c6a1e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/project-read/tool-schema.txt",
+      "published": "analysis-evidence/project-read/tool-schema.txt",
+      "sourceSha256": "7907050839f6f5c6347c58b69d64f5c481d81d68ce9d0fab68b85045720e188c",
+      "publishedSha256": "7907050839f6f5c6347c58b69d64f5c481d81d68ce9d0fab68b85045720e188c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-e6e3f-rves-durable-business-truth-repeat4/failure-diagnostics.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-e6e3f-rves-durable-business-truth-repeat4/failure-diagnostics.json",
+      "sourceSha256": "e5c087789c22aaf939a65bd1186e221c93d5a8b6c4faf9f034a12a67b5f74041",
+      "publishedSha256": "e5c087789c22aaf939a65bd1186e221c93d5a8b6c4faf9f034a12a67b5f74041",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-e6e3f-rves-durable-business-truth-repeat4/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-e6e3f-rves-durable-business-truth-repeat4/error-context.md.txt",
+      "sourceSha256": "39503599f9133005e744db747b009a7b0a4fec3df71287fd37770d189b955b88",
+      "publishedSha256": "39503599f9133005e744db747b009a7b0a4fec3df71287fd37770d189b955b88",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-e6e3f-rves-durable-business-truth-repeat4/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-e6e3f-rves-durable-business-truth-repeat4/test-failed-1.png",
+      "sourceSha256": "96f568a4669b51993e7b7e4c1c5e38c413240bc871e05ec37ed4a9fcc9552c40",
+      "publishedSha256": "96f568a4669b51993e7b7e4c1c5e38c413240bc871e05ec37ed4a9fcc9552c40",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/live--assistant.live-project-read--4.json",
+      "published": "analysis-evidence/sample-excerpts/live--assistant.live-project-read--4.json",
+      "sourceSha256": "4972dc4ff1c9532045144726da11c071608b42b3d9f563c7cebe0607a48d5882",
+      "publishedSha256": "4972dc4ff1c9532045144726da11c071608b42b3d9f563c7cebe0607a48d5882",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/g2-execution/product-tree-proof.json",
+      "published": "analysis-evidence/g2-execution/product-tree-proof.json",
+      "sourceSha256": "802674504452c100c2752701a15371c5d6c13cf359007d0f58b3504bbf87dc33",
+      "publishedSha256": "802674504452c100c2752701a15371c5d6c13cf359007d0f58b3504bbf87dc33",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/g2-execution/master-product-leaves.txt",
+      "published": "analysis-evidence/g2-execution/master-product-leaves.txt",
+      "sourceSha256": "fd0bc04eb44cc34b068717e795bec29f820a2ae0f03c67ab923450dc1316f818",
+      "publishedSha256": "fd0bc04eb44cc34b068717e795bec29f820a2ae0f03c67ab923450dc1316f818",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/g2-execution/execution-facts.json",
+      "published": "analysis-evidence/g2-execution/execution-facts.json",
+      "sourceSha256": "6be854f8ad6e6228c13c19df7908cb0d7d639cc75c5bca6a9fc2e65969b96c53",
+      "publishedSha256": "a4f4d71552a557998ef00a44623287e7ad515a9e81a28301d29913c32d363824",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "analysis-evidence/g2-execution/isolation-writes-tree.txt",
+      "published": "analysis-evidence/g2-execution/isolation-writes-tree.txt",
+      "sourceSha256": "27c94e9cdca4f17caaa488199fa92f08d8ed592878a97fd338e19ef4ca992257",
+      "publishedSha256": "27c94e9cdca4f17caaa488199fa92f08d8ed592878a97fd338e19ef4ca992257",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/g2-execution/analysis-uses-main-repository.txt",
+      "published": "analysis-evidence/g2-execution/analysis-uses-main-repository.txt",
+      "sourceSha256": "f2484b1f8129807a71e74aee4a3ceb323ac407f10d44e3ccd51f63a464101fce",
+      "publishedSha256": "f2484b1f8129807a71e74aee4a3ceb323ac407f10d44e3ccd51f63a464101fce",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "analysis-evidence/g2-execution/index.html",
+      "published": "analysis-evidence/g2-execution/index.html",
+      "sourceSha256": "8ad36ce2845e0a8aec1bb2dccef930f334dd6aaf8c2b69448ac781f11ecec905",
+      "publishedSha256": "6f13d47e8146f2b6d92e6baa338c04194a9e6cce2cca05d0d65bedb032c2b93e",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "retained-evidence-verification.json",
+      "published": "retained-evidence-verification.json",
+      "sourceSha256": "3ab142b1973ea642184242301da8920c789c1cf72d0067f668a0aadb9a8addf2",
+      "publishedSha256": "3ab142b1973ea642184242301da8920c789c1cf72d0067f668a0aadb9a8addf2",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/spec--README.md.txt",
+      "published": "methodology/spec--README.md.txt",
+      "sourceSha256": "635de98dea0fc64001b5f0ef3be2833c3bc17f856b18f3e0de5be3b426725292",
+      "publishedSha256": "635de98dea0fc64001b5f0ef3be2833c3bc17f856b18f3e0de5be3b426725292",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/spec--conformance.md.txt",
+      "published": "methodology/spec--conformance.md.txt",
+      "sourceSha256": "0c8c526272e7dc1e17f19debc317d2702df866fa046c2dd9b89cdf77ce3ddd0b",
+      "publishedSha256": "0c8c526272e7dc1e17f19debc317d2702df866fa046c2dd9b89cdf77ce3ddd0b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/docs--testing--README.md.txt",
+      "published": "methodology/docs--testing--README.md.txt",
+      "sourceSha256": "da5e9e18aa29546b124d00f90d82ceb306d4e36f894dabd647691417d8266916",
+      "publishedSha256": "da5e9e18aa29546b124d00f90d82ceb306d4e36f894dabd647691417d8266916",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/docs--testing--case-design.md.txt",
+      "published": "methodology/docs--testing--case-design.md.txt",
+      "sourceSha256": "2efa06b9bf1f21ba19b65c8fa865091a5829037ef332e5382f3fffc1399a10d3",
+      "publishedSha256": "2efa06b9bf1f21ba19b65c8fa865091a5829037ef332e5382f3fffc1399a10d3",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/docs--testing--failure-attribution.md.txt",
+      "published": "methodology/docs--testing--failure-attribution.md.txt",
+      "sourceSha256": "1de6a557c97934bccebb6e6c86a9930bfb1a342804510f61ec69c7fe859d63e4",
+      "publishedSha256": "1de6a557c97934bccebb6e6c86a9930bfb1a342804510f61ec69c7fe859d63e4",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/docs--testing--harness-evaluation.md.txt",
+      "published": "methodology/docs--testing--harness-evaluation.md.txt",
+      "sourceSha256": "30b42a94d4329e5145bf207f57148921e95395c0d37321b72b51641d09d4bfc7",
+      "publishedSha256": "30b42a94d4329e5145bf207f57148921e95395c0d37321b72b51641d09d4bfc7",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/docs--testing--web-regression.md.txt",
+      "published": "methodology/docs--testing--web-regression.md.txt",
+      "sourceSha256": "9ea1aadf56c67be7cb569f613d36b9f21ccf43c3346ac55d14506de4c1e16646",
+      "publishedSha256": "9ea1aadf56c67be7cb569f613d36b9f21ccf43c3346ac55d14506de4c1e16646",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/docs--testing--test-selection.md.txt",
+      "published": "methodology/docs--testing--test-selection.md.txt",
+      "sourceSha256": "42f3db1b62c5f26025e2b70eb0aa536137491e441d1bf675950f8f05eed39239",
+      "publishedSha256": "42f3db1b62c5f26025e2b70eb0aa536137491e441d1bf675950f8f05eed39239",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/docs--testing--new-playwright-case-sop.md.txt",
+      "published": "methodology/docs--testing--new-playwright-case-sop.md.txt",
+      "sourceSha256": "fb5cbad56cb38db03e12b5b7ad0e0fb879d9382aed2afd8640190ba5c76012f6",
+      "publishedSha256": "fb5cbad56cb38db03e12b5b7ad0e0fb879d9382aed2afd8640190ba5c76012f6",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/scripts--evaluation--README.md.txt",
+      "published": "methodology/scripts--evaluation--README.md.txt",
+      "sourceSha256": "75c91be895f37d433f453608acdab6324b1f72e5791f3e189855b4c6a1af1d40",
+      "publishedSha256": "75c91be895f37d433f453608acdab6324b1f72e5791f3e189855b4c6a1af1d40",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/scripts--evaluation--g2--README.md.txt",
+      "published": "methodology/scripts--evaluation--g2--README.md.txt",
+      "sourceSha256": "dc387f8476c288eb21b2421f2a882775ac065df415b869085924c5b7163f3198",
+      "publishedSha256": "dc387f8476c288eb21b2421f2a882775ac065df415b869085924c5b7163f3198",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/scripts--evaluation--g2--rules.md.txt",
+      "published": "methodology/scripts--evaluation--g2--rules.md.txt",
+      "sourceSha256": "a4ac5879e97674ac2d9da09182182ef49279b21c44ac396adf7f92b8102c6ffd",
+      "publishedSha256": "a4ac5879e97674ac2d9da09182182ef49279b21c44ac396adf7f92b8102c6ffd",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/test--e2e--suite-companions.json.txt",
+      "published": "methodology/test--e2e--suite-companions.json.txt",
+      "sourceSha256": "4696c7b0663a2dc44cd2952521a0d43fdfc7e5e9f0641d9802c116dfd635375d",
+      "publishedSha256": "4696c7b0663a2dc44cd2952521a0d43fdfc7e5e9f0641d9802c116dfd635375d",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/spec--acceptance.md.txt",
+      "published": "methodology/spec--acceptance.md.txt",
+      "sourceSha256": "c8de3b4b49570ea374a14ff4b6dd286554f9a217ce3590ede49bc4fa8b32d669",
+      "publishedSha256": "c8de3b4b49570ea374a14ff4b6dd286554f9a217ce3590ede49bc4fa8b32d669",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/spec--boundaries.md.txt",
+      "published": "methodology/spec--boundaries.md.txt",
+      "sourceSha256": "0d8dc53c94284b3ebb53a7ad78ea1329def299e900fe5a8eb74620f728553263",
+      "publishedSha256": "0d8dc53c94284b3ebb53a7ad78ea1329def299e900fe5a8eb74620f728553263",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/spec--compatibility.md.txt",
+      "published": "methodology/spec--compatibility.md.txt",
+      "sourceSha256": "7d00bf68826d43316372c55ce9335d8cf02662edf4e124c72dd1701d0f159f60",
+      "publishedSha256": "7d00bf68826d43316372c55ce9335d8cf02662edf4e124c72dd1701d0f159f60",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/spec--context.md.txt",
+      "published": "methodology/spec--context.md.txt",
+      "sourceSha256": "acb05a217b8b40e99e4a27730359a9342ba5236ce1a6d00712380f13590cd340",
+      "publishedSha256": "acb05a217b8b40e99e4a27730359a9342ba5236ce1a6d00712380f13590cd340",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/spec--execution.md.txt",
+      "published": "methodology/spec--execution.md.txt",
+      "sourceSha256": "5fda418fd68e34325baceff9af3dea251ef33fb352529d4471fedaabe52e1fe8",
+      "publishedSha256": "5fda418fd68e34325baceff9af3dea251ef33fb352529d4471fedaabe52e1fe8",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/spec--interfaces.md.txt",
+      "published": "methodology/spec--interfaces.md.txt",
+      "sourceSha256": "db58580d0524267f8b1ad30dc45bb7ad4027d08f96213a1aa7cd61a6a58829b2",
+      "publishedSha256": "db58580d0524267f8b1ad30dc45bb7ad4027d08f96213a1aa7cd61a6a58829b2",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/spec--lifecycle.md.txt",
+      "published": "methodology/spec--lifecycle.md.txt",
+      "sourceSha256": "2516f21d3366baa0ea99e80a173c96f6260de5232e3c245e6961a1e93e1b0d9e",
+      "publishedSha256": "2516f21d3366baa0ea99e80a173c96f6260de5232e3c245e6961a1e93e1b0d9e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/spec--persistence.md.txt",
+      "published": "methodology/spec--persistence.md.txt",
+      "sourceSha256": "6433b47e18f7d299f3fa070509e9816aa00522a2296db98ecbf39f7f0dcbf386",
+      "publishedSha256": "6433b47e18f7d299f3fa070509e9816aa00522a2296db98ecbf39f7f0dcbf386",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/spec--policies.md.txt",
+      "published": "methodology/spec--policies.md.txt",
+      "sourceSha256": "8c0d02cb09e2be5929686fed41aa130b70b8cd7ceadc2805ac6551a2e4df3388",
+      "publishedSha256": "8c0d02cb09e2be5929686fed41aa130b70b8cd7ceadc2805ac6551a2e4df3388",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/sources.json",
+      "published": "methodology/sources.json",
+      "sourceSha256": "7f027b4b068acea07234ead4827fa4ad5350752e242bbf92da43f29bf16bfd14",
+      "publishedSha256": "7f027b4b068acea07234ead4827fa4ad5350752e242bbf92da43f29bf16bfd14",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "methodology/index.html",
+      "published": "methodology/index.html",
+      "sourceSha256": "027e0bb1b40f56e196618a4e861ed448b37b61b46e7986c0ea3d98b32f8682e9",
+      "publishedSha256": "0af7c5e42dbc4ccc6f1d64dba2710d9365d49e4b886d848e9ffacc624b8a237c",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "plan.json",
+      "published": "plan.json",
+      "sourceSha256": "f63f1f8a697b3cb21731aafe85ac7a738a0827f1ced626a3af623cf499fdf37d",
+      "publishedSha256": "9f6d4e383b50bb83a6b75b54a01bee774a5dac96ee754b00f16445faed4ee975",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "analysis-evidence/sample-excerpts/index.json",
+      "published": "analysis-evidence/sample-excerpts/index.json",
+      "sourceSha256": "5aee391dd471a84d0503ecbe459a8113c40a16b2c4bbda11acbc5451c3a852e9",
+      "publishedSha256": "5aee391dd471a84d0503ecbe459a8113c40a16b2c4bbda11acbc5451c3a852e9",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit/test-failed-1.png",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit/test-failed-1.png",
+      "sourceSha256": "1ffcb5a6d123f9985d7b08300184914dcadf4161aded2a489c41b72031e60b94",
+      "publishedSha256": "1ffcb5a6d123f9985d7b08300184914dcadf4161aded2a489c41b72031e60b94",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit/attachments/failure-diagnostics-json-31e31caf419ed498de3ebb72b738c4b642b1a0b3.json",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit/attachments/failure-diagnostics-json-31e31caf419ed498de3ebb72b738c4b642b1a0b3.json",
+      "sourceSha256": "f0eaa2ebc38d8a059f361b7e5747378591780beaee29f7c2a02f9a68acbbde43",
+      "publishedSha256": "f0eaa2ebc38d8a059f361b7e5747378591780beaee29f7c2a02f9a68acbbde43",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit/error-context.md",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit/error-context.md.txt",
+      "sourceSha256": "c9c455d707eadb30c81db1e3e24d3851c83443a3eecf389f05fdeb07ac5962cf",
+      "publishedSha256": "c9c455d707eadb30c81db1e3e24d3851c83443a3eecf389f05fdeb07ac5962cf",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat1/test-failed-1.png",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat1/test-failed-1.png",
+      "sourceSha256": "dd586af01d1b31cdd0fdc07ad3701ee79418dd5daf1a6388311c419d1bdce067",
+      "publishedSha256": "dd586af01d1b31cdd0fdc07ad3701ee79418dd5daf1a6388311c419d1bdce067",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat1/attachments/failure-diagnostics-json-5af8225cff9656512699773c3eb4680c3c9e6e59.json",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat1/attachments/failure-diagnostics-json-5af8225cff9656512699773c3eb4680c3c9e6e59.json",
+      "sourceSha256": "483776a1f64c4ddd5278a83bccba21fd0c8baf550c4a76a2f56a64cd128373dc",
+      "publishedSha256": "483776a1f64c4ddd5278a83bccba21fd0c8baf550c4a76a2f56a64cd128373dc",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat1/error-context.md",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat1/error-context.md.txt",
+      "sourceSha256": "24e77f060033d643915dffffcd92a0d476d325d2c07aa475e566cf6d02b490f2",
+      "publishedSha256": "24e77f060033d643915dffffcd92a0d476d325d2c07aa475e566cf6d02b490f2",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat2/test-failed-1.png",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat2/test-failed-1.png",
+      "sourceSha256": "0d948a510c6df4e3ae4566a9c4e0bdfe3ce3dcac4d5a453de80d063c8ecfb889",
+      "publishedSha256": "0d948a510c6df4e3ae4566a9c4e0bdfe3ce3dcac4d5a453de80d063c8ecfb889",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat2/attachments/failure-diagnostics-json-f9d168b8db18ed9e447510b6d1d4577693453e95.json",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat2/attachments/failure-diagnostics-json-f9d168b8db18ed9e447510b6d1d4577693453e95.json",
+      "sourceSha256": "690b4f9203b3ce2a189e44ac98e91ae7f46c319b5258d7f2212c1811ea7d6f45",
+      "publishedSha256": "690b4f9203b3ce2a189e44ac98e91ae7f46c319b5258d7f2212c1811ea7d6f45",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat2/error-context.md",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat2/error-context.md.txt",
+      "sourceSha256": "7ac3eefb28cba82eb5e44238a7c2a8633be7cdce88335dada1332359c64de107",
+      "publishedSha256": "7ac3eefb28cba82eb5e44238a7c2a8633be7cdce88335dada1332359c64de107",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat3/test-failed-1.png",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat3/test-failed-1.png",
+      "sourceSha256": "243d43a52794b11e10902be10f994d7fa073868054deb2ac148bdc02b46dbfc1",
+      "publishedSha256": "243d43a52794b11e10902be10f994d7fa073868054deb2ac148bdc02b46dbfc1",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat3/attachments/failure-diagnostics-json-b2230815f394b58c815861fd7862369087b92eea.json",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat3/attachments/failure-diagnostics-json-b2230815f394b58c815861fd7862369087b92eea.json",
+      "sourceSha256": "d2269626419c9dc032030c46d92b8f8637d9a2f695fd3dda1730a3756186bfbf",
+      "publishedSha256": "d2269626419c9dc032030c46d92b8f8637d9a2f695fd3dda1730a3756186bfbf",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat3/error-context.md",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat3/error-context.md.txt",
+      "sourceSha256": "9abba1b232b5215854ff34c5efd68c9a618a4b84d384f9c59887f4e27daea9ac",
+      "publishedSha256": "9abba1b232b5215854ff34c5efd68c9a618a4b84d384f9c59887f4e27daea9ac",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat4/test-failed-1.png",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat4/test-failed-1.png",
+      "sourceSha256": "41bc38f57c5ca0dab0d559e70285a1c84a6ea232b389ed071e19d625c312b326",
+      "publishedSha256": "41bc38f57c5ca0dab0d559e70285a1c84a6ea232b389ed071e19d625c312b326",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat4/attachments/failure-diagnostics-json-9418ea8450a283b7380b24d7e529330779fee3e9.json",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat4/attachments/failure-diagnostics-json-9418ea8450a283b7380b24d7e529330779fee3e9.json",
+      "sourceSha256": "a165076f64b950fcd5dfcea8d61b37f322cdfe1d1bd2d87817103118790d8c22",
+      "publishedSha256": "a165076f64b950fcd5dfcea8d61b37f322cdfe1d1bd2d87817103118790d8c22",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat4/error-context.md",
+      "published": "deterministic/artifacts/test-results/web-regression-standard-de-d1874-rministic-guard-drain-limit-repeat4/error-context.md.txt",
+      "sourceSha256": "dcd501d5c4ef325da8c0b1350ca7649204863f644e0f481c16be348fbafac163",
+      "publishedSha256": "dcd501d5c4ef325da8c0b1350ca7649204863f644e0f481c16be348fbafac163",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-5b320-one-verified-review-finding-repeat1/attachments/failure-diagnostics-json-86efd91418c085ee1fe821d015839650b119f72b.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-5b320-one-verified-review-finding-repeat1/attachments/failure-diagnostics-json-86efd91418c085ee1fe821d015839650b119f72b.json",
+      "sourceSha256": "41ae10960bfadee7f417ddd90b804f23b7c8bb3471217bfbeb11bd2f21e6eecd",
+      "publishedSha256": "41ae10960bfadee7f417ddd90b804f23b7c8bb3471217bfbeb11bd2f21e6eecd",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell/test-failed-1.png",
+      "sourceSha256": "640e6677eb73577da4b331c0d42df697050c99a6fc244ff2d9049853ade8163b",
+      "publishedSha256": "640e6677eb73577da4b331c0d42df697050c99a6fc244ff2d9049853ade8163b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell/attachments/failure-diagnostics-json-45f0a4a61ca0e4d09335327768050fec2b09cecd.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell/attachments/failure-diagnostics-json-45f0a4a61ca0e4d09335327768050fec2b09cecd.json",
+      "sourceSha256": "61ac4b1e63d8ba4d851bc7c56395de146175adbcc3846b99a60fd6151614e224",
+      "publishedSha256": "61ac4b1e63d8ba4d851bc7c56395de146175adbcc3846b99a60fd6151614e224",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell/error-context.md.txt",
+      "sourceSha256": "52103fe0470f0893a7787941dc1499a63c005249c6cf48d916f0b737fe665f18",
+      "publishedSha256": "52103fe0470f0893a7787941dc1499a63c005249c6cf48d916f0b737fe665f18",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat1/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat1/test-failed-1.png",
+      "sourceSha256": "3a4a9b00d8315f90bcfdf6e30de650440b06c3aa39384c2550c5bbcfb3bef15f",
+      "publishedSha256": "3a4a9b00d8315f90bcfdf6e30de650440b06c3aa39384c2550c5bbcfb3bef15f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat1/attachments/failure-diagnostics-json-a88a99615c61b8c2a4d1662b797024ffd0f9fd80.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat1/attachments/failure-diagnostics-json-a88a99615c61b8c2a4d1662b797024ffd0f9fd80.json",
+      "sourceSha256": "f8364d60bfd944f943518b06a96e8bd7d6693cfbc6171d37170ccec3509bf213",
+      "publishedSha256": "f8364d60bfd944f943518b06a96e8bd7d6693cfbc6171d37170ccec3509bf213",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat1/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat1/error-context.md.txt",
+      "sourceSha256": "dcf8e4fb1cc9030459a85983dab2d07bb9f9028e537c4759ab5bfa8540c85e32",
+      "publishedSha256": "dcf8e4fb1cc9030459a85983dab2d07bb9f9028e537c4759ab5bfa8540c85e32",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat2/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat2/test-failed-1.png",
+      "sourceSha256": "0da0e51a85fefdcf72e2001adfefb4893d84615328961d9b26549c8996159929",
+      "publishedSha256": "0da0e51a85fefdcf72e2001adfefb4893d84615328961d9b26549c8996159929",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat2/attachments/failure-diagnostics-json-57fa64a5447df235dd617b05f56f04b9d3e3cc9c.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat2/attachments/failure-diagnostics-json-57fa64a5447df235dd617b05f56f04b9d3e3cc9c.json",
+      "sourceSha256": "e64ea36b6e30dcb97aed8212b65720c7ba1b3a70669bfdf3451180631e747921",
+      "publishedSha256": "e64ea36b6e30dcb97aed8212b65720c7ba1b3a70669bfdf3451180631e747921",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat2/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat2/error-context.md.txt",
+      "sourceSha256": "4bda41af1ad139bee3800fea206fb7ee656de5cf5d42c47fbc6160f0d6f086da",
+      "publishedSha256": "4bda41af1ad139bee3800fea206fb7ee656de5cf5d42c47fbc6160f0d6f086da",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat3/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat3/test-failed-1.png",
+      "sourceSha256": "62a1c3948db92ba1a01fbbffad96264e1d772ac07ba499aba4a43e3a5b3a6d57",
+      "publishedSha256": "62a1c3948db92ba1a01fbbffad96264e1d772ac07ba499aba4a43e3a5b3a6d57",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat3/attachments/failure-diagnostics-json-ee36ed6f6e18d9d8d839fd14a0e62b06eb82615f.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat3/attachments/failure-diagnostics-json-ee36ed6f6e18d9d8d839fd14a0e62b06eb82615f.json",
+      "sourceSha256": "5bf1775ba03da0a98917eb5faa6cfe2981a0a0e1b5d59812436c1a9cdf8f995f",
+      "publishedSha256": "5bf1775ba03da0a98917eb5faa6cfe2981a0a0e1b5d59812436c1a9cdf8f995f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat3/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat3/error-context.md.txt",
+      "sourceSha256": "e1a4ce791bbe28e7a76b9d38d7c74b24ed8c7f41848476baef17e3c2bdc3af8f",
+      "publishedSha256": "e1a4ce791bbe28e7a76b9d38d7c74b24ed8c7f41848476baef17e3c2bdc3af8f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat4/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat4/test-failed-1.png",
+      "sourceSha256": "5f6d53520741cc93416f975e2d6af57615c6c3814fcb7b3d5bdac43250ddb526",
+      "publishedSha256": "5f6d53520741cc93416f975e2d6af57615c6c3814fcb7b3d5bdac43250ddb526",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat4/attachments/failure-diagnostics-json-3ab7c9fb117b4ccfe102488d1bed8e130f5a8c54.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat4/attachments/failure-diagnostics-json-3ab7c9fb117b4ccfe102488d1bed8e130f5a8c54.json",
+      "sourceSha256": "d946de98dc2032bcb26f399bbf2334faacc606566db17f3fe84b0cd4262e0dd1",
+      "publishedSha256": "d946de98dc2032bcb26f399bbf2334faacc606566db17f3fe84b0cd4262e0dd1",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat4/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat4/error-context.md.txt",
+      "sourceSha256": "bf9af9177c8ca4f23f35cf2bc5391433eed0e48d65ca29fb3d9b84effe8a3efb",
+      "publishedSha256": "bf9af9177c8ca4f23f35cf2bc5391433eed0e48d65ca29fb3d9b84effe8a3efb",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-80966-eads-it-back-by-returned-ID-repeat3/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-80966-eads-it-back-by-returned-ID-repeat3/test-failed-1.png",
+      "sourceSha256": "46b476e2954065ac60d39dd2eacf8e77c3e16039f68587594adf871fb8ca266f",
+      "publishedSha256": "46b476e2954065ac60d39dd2eacf8e77c3e16039f68587594adf871fb8ca266f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-80966-eads-it-back-by-returned-ID-repeat3/attachments/failure-diagnostics-json-63597e45a0d1307e804e8d84c550bd93501d7883.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-80966-eads-it-back-by-returned-ID-repeat3/attachments/failure-diagnostics-json-63597e45a0d1307e804e8d84c550bd93501d7883.json",
+      "sourceSha256": "da60bfdc5c3940c526819eeae1287651f6013e5067b2924f6cac4807d223471c",
+      "publishedSha256": "da60bfdc5c3940c526819eeae1287651f6013e5067b2924f6cac4807d223471c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat3/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat3/test-failed-1.png",
+      "sourceSha256": "d4384989d31465f6c7639fdf89dad41561697a9be0fa17eab3511c8647dda01b",
+      "publishedSha256": "d4384989d31465f6c7639fdf89dad41561697a9be0fa17eab3511c8647dda01b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat3/attachments/failure-diagnostics-json-74bfa13615f295afd4f6d8c8ec8ca2469f521e57.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat3/attachments/failure-diagnostics-json-74bfa13615f295afd4f6d8c8ec8ca2469f521e57.json",
+      "sourceSha256": "ab6b098e1681f589ea02611c2f70ef254f2af788cac79d3e5b5da6823fe5ece8",
+      "publishedSha256": "ab6b098e1681f589ea02611c2f70ef254f2af788cac79d3e5b5da6823fe5ece8",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat3/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat3/error-context.md.txt",
+      "sourceSha256": "6e1ebdb4a8f5be729934250d8d2e91d480f04417320ade352a82ab37173600e9",
+      "publishedSha256": "6e1ebdb4a8f5be729934250d8d2e91d480f04417320ade352a82ab37173600e9",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat4/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat4/test-failed-1.png",
+      "sourceSha256": "7a92418308da995a928d19e00849819575c65eca169dc0df9182defa25bded22",
+      "publishedSha256": "7a92418308da995a928d19e00849819575c65eca169dc0df9182defa25bded22",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat4/attachments/failure-diagnostics-json-cf371a4671d1141d845f1ae6d2dab1612d9b525f.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat4/attachments/failure-diagnostics-json-cf371a4671d1141d845f1ae6d2dab1612d9b525f.json",
+      "sourceSha256": "93fa77f518b8f0b93ac281223ed9fb9d1e5086ec3ff5cf66c62fc35a2481bd0a",
+      "publishedSha256": "93fa77f518b8f0b93ac281223ed9fb9d1e5086ec3ff5cf66c62fc35a2481bd0a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat4/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-07fc7-ion-and-preserves-its-facts-repeat4/error-context.md.txt",
+      "sourceSha256": "a1dd6f3ab0ec8618816235e60b2db2b53e41ca86cf77cf8a4d97829463f16d98",
+      "publishedSha256": "a1dd6f3ab0ec8618816235e60b2db2b53e41ca86cf77cf8a4d97829463f16d98",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ac643-ation-and-recalls-its-facts-repeat3/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ac643-ation-and-recalls-its-facts-repeat3/test-failed-1.png",
+      "sourceSha256": "ca01283e4dd145804626d9763970109b8a0afd94cd81c00c57503448ecbcead7",
+      "publishedSha256": "ca01283e4dd145804626d9763970109b8a0afd94cd81c00c57503448ecbcead7",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ac643-ation-and-recalls-its-facts-repeat3/attachments/failure-diagnostics-json-ede1c63f87f46675b00f1665741de0c3951824c0.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ac643-ation-and-recalls-its-facts-repeat3/attachments/failure-diagnostics-json-ede1c63f87f46675b00f1665741de0c3951824c0.json",
+      "sourceSha256": "b3803c67f42216baf54cf57514d850bc912320a94ecde04334558c60e9fbeed4",
+      "publishedSha256": "b3803c67f42216baf54cf57514d850bc912320a94ecde04334558c60e9fbeed4",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ac643-ation-and-recalls-its-facts-repeat3/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ac643-ation-and-recalls-its-facts-repeat3/error-context.md.txt",
+      "sourceSha256": "9ddf25f5081e474363a12b5e69efec3dbf2757d070d9120b4dc753f166da7205",
+      "publishedSha256": "9ddf25f5081e474363a12b5e69efec3dbf2757d070d9120b4dc753f166da7205",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model/test-failed-1.png",
+      "sourceSha256": "6f31fb6f8f057b13281c3cc42dca9b7d3c53016e82bf346f858da16be2ae230a",
+      "publishedSha256": "6f31fb6f8f057b13281c3cc42dca9b7d3c53016e82bf346f858da16be2ae230a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model/attachments/failure-diagnostics-json-256974b4a80938c6e8c7513736f1fa11bf2c39dc.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model/attachments/failure-diagnostics-json-256974b4a80938c6e8c7513736f1fa11bf2c39dc.json",
+      "sourceSha256": "6fca0d91f31401c7cfcbbeb1ce17245959ba95e22b493d759f27b9ddbc9c3e24",
+      "publishedSha256": "6fca0d91f31401c7cfcbbeb1ce17245959ba95e22b493d759f27b9ddbc9c3e24",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model/error-context.md.txt",
+      "sourceSha256": "e4c9233536233397f3861819534ff99e9b5374563f31196d81e0977654eceffb",
+      "publishedSha256": "e4c9233536233397f3861819534ff99e9b5374563f31196d81e0977654eceffb",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat1/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat1/test-failed-1.png",
+      "sourceSha256": "29315e8bb7da74161b0185c8558b344db9557e2c244586fd998e91d8741f3b5b",
+      "publishedSha256": "29315e8bb7da74161b0185c8558b344db9557e2c244586fd998e91d8741f3b5b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat1/attachments/failure-diagnostics-json-ab5dda22724082712e7ccdfccc059a1ef66f9094.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat1/attachments/failure-diagnostics-json-ab5dda22724082712e7ccdfccc059a1ef66f9094.json",
+      "sourceSha256": "5e58df3f2f9766eaaaf7c13e5eb8a97702b2b2337df3187fdbf6030c1a54eed0",
+      "publishedSha256": "5e58df3f2f9766eaaaf7c13e5eb8a97702b2b2337df3187fdbf6030c1a54eed0",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat1/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat1/error-context.md.txt",
+      "sourceSha256": "b26cfd2b7c04587a81bb5f8891ee553549d6289b972e43814c78bba750a28d3b",
+      "publishedSha256": "b26cfd2b7c04587a81bb5f8891ee553549d6289b972e43814c78bba750a28d3b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat3/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat3/test-failed-1.png",
+      "sourceSha256": "d8a293c3e529c1ad0a097452b3cb4d2e8aeadd54ce993d246fee4aba582f4fa7",
+      "publishedSha256": "d8a293c3e529c1ad0a097452b3cb4d2e8aeadd54ce993d246fee4aba582f4fa7",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat3/attachments/failure-diagnostics-json-2b4bef663921f79c104d759a224ed7926edfeeda.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat3/attachments/failure-diagnostics-json-2b4bef663921f79c104d759a224ed7926edfeeda.json",
+      "sourceSha256": "7629f22ebb035dcd5cae9255df819fd7c7529d5fc1a6eb2aa0ba656d022c3c37",
+      "publishedSha256": "7629f22ebb035dcd5cae9255df819fd7c7529d5fc1a6eb2aa0ba656d022c3c37",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat3/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat3/error-context.md.txt",
+      "sourceSha256": "33ef669990c5bc80dc649d14a656ffbb004e15c20446825477c44f4d247060af",
+      "publishedSha256": "33ef669990c5bc80dc649d14a656ffbb004e15c20446825477c44f4d247060af",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-534d7-e-same-running-collaborator-repeat4/attachments/failure-diagnostics-json-25543c05616928c8a8b5eab9820993bfdb8d543b.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-534d7-e-same-running-collaborator-repeat4/attachments/failure-diagnostics-json-25543c05616928c8a8b5eab9820993bfdb8d543b.json",
+      "sourceSha256": "c429f585b29fee9d96705a4485d44c26716510d836c2f12124b7711a2116b799",
+      "publishedSha256": "c429f585b29fee9d96705a4485d44c26716510d836c2f12124b7711a2116b799",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-675e2-running-background-observer-repeat1/attachments/failure-diagnostics-json-c5ed792f073b693bf22e779c00add6ba5bb4b921.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-675e2-running-background-observer-repeat1/attachments/failure-diagnostics-json-c5ed792f073b693bf22e779c00add6ba5bb4b921.json",
+      "sourceSha256": "9bb332a6e9ee42c2023ce0437e0a301f1b2496c571519234edf0910a17aded94",
+      "publishedSha256": "9bb332a6e9ee42c2023ce0437e0a301f1b2496c571519234edf0910a17aded94",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-e6e3f-rves-durable-business-truth-repeat4/attachments/failure-diagnostics-json-72b18a6a15ba65a93c8242f8ed6178c7a86fcf7c.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-e6e3f-rves-durable-business-truth-repeat4/attachments/failure-diagnostics-json-72b18a6a15ba65a93c8242f8ed6178c7a86fcf7c.json",
+      "sourceSha256": "e5c087789c22aaf939a65bd1186e221c93d5a8b6c4faf9f034a12a67b5f74041",
+      "publishedSha256": "e5c087789c22aaf939a65bd1186e221c93d5a8b6c4faf9f034a12a67b5f74041",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-948b8-rves-durable-business-truth-repeat3/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-948b8-rves-durable-business-truth-repeat3/test-failed-1.png",
+      "sourceSha256": "0bf33a6cf60541e98d46afb62e55b41a204b83dedb4d41b0fb7decbf98fab120",
+      "publishedSha256": "0bf33a6cf60541e98d46afb62e55b41a204b83dedb4d41b0fb7decbf98fab120",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-948b8-rves-durable-business-truth-repeat3/attachments/failure-diagnostics-json-21d828f0529d8e7744231b8406b7afd2e3aa5e18.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-948b8-rves-durable-business-truth-repeat3/attachments/failure-diagnostics-json-21d828f0529d8e7744231b8406b7afd2e3aa5e18.json",
+      "sourceSha256": "92e072a22e95a6fcb1a7a1cf21ec522d6dcc91f54e974efb00646fbce6725237",
+      "publishedSha256": "92e072a22e95a6fcb1a7a1cf21ec522d6dcc91f54e974efb00646fbce6725237",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/attachments/memory-stage-0-json-cbf834615808396351000e18dbfb36c3bd4bbdd1.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/attachments/memory-stage-0-json-cbf834615808396351000e18dbfb36c3bd4bbdd1.json",
+      "sourceSha256": "1e12195664f4b1c723496724ae209691e79b9a2efdbe3f79eaf95ebeb2d3aae5",
+      "publishedSha256": "24020d6f028d44a0fe37d7d540cb60df9d54a3da85ceb626b966b084aaf2c848",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/attachments/memory-stage-1-json-da4904a0bbf952b681aff0d8065ebbfe8fe68eab.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/attachments/memory-stage-1-json-da4904a0bbf952b681aff0d8065ebbfe8fe68eab.json",
+      "sourceSha256": "3286ce7e9b7029ffb883479f7e48eefd0a15b9aa89728f9258ac6749cc195671",
+      "publishedSha256": "52955bbd85bd922e1eb9e131c9f9bb1776e9ae03f8ea92b130968e936d79ccd7",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/attachments/memory-stage-2-json-9555c85914669dd79805692eb57d65976a84984a.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/attachments/memory-stage-2-json-9555c85914669dd79805692eb57d65976a84984a.json",
+      "sourceSha256": "00e0bc60e6ae7783b2f7d365a059cb2b6b00f9c7402012820da349aa79b614d0",
+      "publishedSha256": "17b36894a5437137f6e7d29dadf94cd5b7b1b811c65874cc5ecd7c70379eeb91",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/test-failed-1.png",
+      "sourceSha256": "133a5ec9472eb3e487752a9a3ec9aef4da953e7eca82a63ef7d609236b6c3b5c",
+      "publishedSha256": "133a5ec9472eb3e487752a9a3ec9aef4da953e7eca82a63ef7d609236b6c3b5c",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/attachments/failure-diagnostics-json-d26747f9687a5c17be272d3d90b826864e3e210d.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/attachments/failure-diagnostics-json-d26747f9687a5c17be272d3d90b826864e3e210d.json",
+      "sourceSha256": "b41af10355a3df35390482cf088977519b475c35090c2a31267ed1844f4d4455",
+      "publishedSha256": "b41af10355a3df35390482cf088977519b475c35090c2a31267ed1844f4d4455",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-0d512-rves-durable-business-truth/error-context.md.txt",
+      "sourceSha256": "eefe388ac6b5da0c7892a82f1b328542ab770551cea3d5c1e2b45bf3ab8635b1",
+      "publishedSha256": "eefe388ac6b5da0c7892a82f1b328542ab770551cea3d5c1e2b45bf3ab8635b1",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion/test-failed-1.png",
+      "sourceSha256": "2f211741d227fcab4f1e522340a88f235dd6d546365b351c1a35a8434d9d8f3f",
+      "publishedSha256": "2f211741d227fcab4f1e522340a88f235dd6d546365b351c1a35a8434d9d8f3f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion/attachments/failure-diagnostics-json-408daef09b861f317e0687ce698dd12ea0c596f3.json",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion/attachments/failure-diagnostics-json-408daef09b861f317e0687ce698dd12ea0c596f3.json",
+      "sourceSha256": "714a62a337ddf101fc4923ee8b3c15454398956d423d12580a11fbd47964a81e",
+      "publishedSha256": "714a62a337ddf101fc4923ee8b3c15454398956d423d12580a11fbd47964a81e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion/error-context.md.txt",
+      "sourceSha256": "8a4a225693cdc1023d145e8a339de9a65a776e3f6e01740098db8817576750cb",
+      "publishedSha256": "8a4a225693cdc1023d145e8a339de9a65a776e3f6e01740098db8817576750cb",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat1/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat1/test-failed-1.png",
+      "sourceSha256": "47fab98fc68d7aaa3f06a1d625f742d69cf52257b8f06b1e14f0982c064e1783",
+      "publishedSha256": "47fab98fc68d7aaa3f06a1d625f742d69cf52257b8f06b1e14f0982c064e1783",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat1/attachments/failure-diagnostics-json-34376dc2f3ea47e72fdcd7faa163e19c73ec80cf.json",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat1/attachments/failure-diagnostics-json-34376dc2f3ea47e72fdcd7faa163e19c73ec80cf.json",
+      "sourceSha256": "507d7a5a489c54d4c616e2effd4762e4cc581554a6efd24c2265ecbd5aaa10b9",
+      "publishedSha256": "507d7a5a489c54d4c616e2effd4762e4cc581554a6efd24c2265ecbd5aaa10b9",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat1/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat1/error-context.md.txt",
+      "sourceSha256": "771b7bbae32987d19e656418485eeb4a034bb5b7879962d5723b0f14f1d56153",
+      "publishedSha256": "771b7bbae32987d19e656418485eeb4a034bb5b7879962d5723b0f14f1d56153",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat2/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat2/test-failed-1.png",
+      "sourceSha256": "65496f0c19f9e6adee9242b67e1d0470f7fe05773522c6f3d56e2edfae5046d8",
+      "publishedSha256": "65496f0c19f9e6adee9242b67e1d0470f7fe05773522c6f3d56e2edfae5046d8",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat2/attachments/failure-diagnostics-json-58edf4bfd1796e40431f9efcbbfd32ee79b70fcd.json",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat2/attachments/failure-diagnostics-json-58edf4bfd1796e40431f9efcbbfd32ee79b70fcd.json",
+      "sourceSha256": "f4198ff27c36fc35acc68d53348ddb8e7875fc5533dfb8e6267079304d78403e",
+      "publishedSha256": "f4198ff27c36fc35acc68d53348ddb8e7875fc5533dfb8e6267079304d78403e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat2/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-53afd-before-declaring-completion-repeat2/error-context.md.txt",
+      "sourceSha256": "f15f2518f2e5f6899b7b4ea4b7e5398cd828cf53da518cc090be00dd2c983834",
+      "publishedSha256": "f15f2518f2e5f6899b7b4ea4b7e5398cd828cf53da518cc090be00dd2c983834",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-c05c1-ss-question-without-writing-repeat1/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-c05c1-ss-question-without-writing-repeat1/test-failed-1.png",
+      "sourceSha256": "a4a6e9acf40dd430ea3d4d928dfc653da971069618e6bd290189808180319f40",
+      "publishedSha256": "a4a6e9acf40dd430ea3d4d928dfc653da971069618e6bd290189808180319f40",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-c-c05c1-ss-question-without-writing-repeat1/attachments/failure-diagnostics-json-acfca87ec6cf52e00c7bb3f988bf74ff5261fc89.json",
+      "published": "live/artifacts/test-results/web-regression-goal-live-c-c05c1-ss-question-without-writing-repeat1/attachments/failure-diagnostics-json-acfca87ec6cf52e00c7bb3f988bf74ff5261fc89.json",
+      "sourceSha256": "41bd6b672ff05cb44df9496e38bd086a9ed601cb387cc10dbe19b3304d42c92f",
+      "publishedSha256": "41bd6b672ff05cb44df9496e38bd086a9ed601cb387cc10dbe19b3304d42c92f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-p-f06a1--resume-with-fresh-approval-repeat3/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-goal-live-p-f06a1--resume-with-fresh-approval-repeat3/test-failed-1.png",
+      "sourceSha256": "38df390bea239f6e42627012b90efa282e183297d2363c987f0b1170669f90b4",
+      "publishedSha256": "38df390bea239f6e42627012b90efa282e183297d2363c987f0b1170669f90b4",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-p-f06a1--resume-with-fresh-approval-repeat3/attachments/goal-execution-evidence-996a0e6509617c9c8d24fdcf480d3972e4066cf4.json",
+      "published": "live/artifacts/test-results/web-regression-goal-live-p-f06a1--resume-with-fresh-approval-repeat3/attachments/goal-execution-evidence-996a0e6509617c9c8d24fdcf480d3972e4066cf4.json",
+      "sourceSha256": "ae34952d00fccee18a7996b7e5dd89b5d4950a43be33cb7619dab23256352b96",
+      "publishedSha256": "b7d60c3cf906ba750104993727f9c51429cd57e715bec186a96c168241203929",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-p-f06a1--resume-with-fresh-approval-repeat3/attachments/failure-diagnostics-json-746e0e6d9c8517c46939bc471db2db7d67e143dd.json",
+      "published": "live/artifacts/test-results/web-regression-goal-live-p-f06a1--resume-with-fresh-approval-repeat3/attachments/failure-diagnostics-json-746e0e6d9c8517c46939bc471db2db7d67e143dd.json",
+      "sourceSha256": "eecd981e25e1651ab83bdbab7ca965d0785910bebde60678ce8ad87bb5aaf4c5",
+      "publishedSha256": "eecd981e25e1651ab83bdbab7ca965d0785910bebde60678ce8ad87bb5aaf4c5",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-goal-live-p-f06a1--resume-with-fresh-approval-repeat3/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-goal-live-p-f06a1--resume-with-fresh-approval-repeat3/error-context.md.txt",
+      "sourceSha256": "66a9e0447d6e05eb2a5fa0048e25488bbb0b424d6e11af8ed8cf0c7e203b7477",
+      "publishedSha256": "66a9e0447d6e05eb2a5fa0048e25488bbb0b424d6e11af8ed8cf0c7e203b7477",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-bb538-er-at-production-thresholds-repeat3/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-bb538-er-at-production-thresholds-repeat3/test-failed-1.png",
+      "sourceSha256": "6dd16cbec6078cfc44336b56719a1a986ebfc5433b5988a6d963cebca42355d6",
+      "publishedSha256": "6dd16cbec6078cfc44336b56719a1a986ebfc5433b5988a6d963cebca42355d6",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-bb538-er-at-production-thresholds-repeat3/attachments/failure-diagnostics-json-47a60ede4a79884360c3cefc6d3e46fd7d3f1105.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-bb538-er-at-production-thresholds-repeat3/attachments/failure-diagnostics-json-47a60ede4a79884360c3cefc6d3e46fd7d3f1105.json",
+      "sourceSha256": "0f2d67fea61e9ae751d0b6a1422e42e732dccee7f6dae8d567ce04db7e1b5c6a",
+      "publishedSha256": "0f2d67fea61e9ae751d0b6a1422e42e732dccee7f6dae8d567ce04db7e1b5c6a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-bb538-er-at-production-thresholds-repeat3/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-bb538-er-at-production-thresholds-repeat3/error-context.md.txt",
+      "sourceSha256": "c5aebfb8a0fa2acf3e7eeb13a1cf3bd6ced6acb8f8a13289c5e2a6b8b330f69e",
+      "publishedSha256": "c5aebfb8a0fa2acf3e7eeb13a1cf3bd6ced6acb8f8a13289c5e2a6b8b330f69e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-71fa1-order-after-the-active-task-repeat3/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-standard-li-71fa1-order-after-the-active-task-repeat3/test-failed-1.png",
+      "sourceSha256": "d364091b3c361c2ea9d71e4618a9efdd41666049d73c67b8ec8b559a04167179",
+      "publishedSha256": "d364091b3c361c2ea9d71e4618a9efdd41666049d73c67b8ec8b559a04167179",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-71fa1-order-after-the-active-task-repeat3/attachments/failure-diagnostics-json-9e7caeff9f6f2f2e10500b35dbf952771d2ac5c7.json",
+      "published": "live/artifacts/test-results/web-regression-standard-li-71fa1-order-after-the-active-task-repeat3/attachments/failure-diagnostics-json-9e7caeff9f6f2f2e10500b35dbf952771d2ac5c7.json",
+      "sourceSha256": "b361f32bb3270b266ff661df5273d703b6f720a52fddc3fdce4d7042c1ffe7dd",
+      "publishedSha256": "b361f32bb3270b266ff661df5273d703b6f720a52fddc3fdce4d7042c1ffe7dd",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-standard-li-71fa1-order-after-the-active-task-repeat3/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-standard-li-71fa1-order-after-the-active-task-repeat3/error-context.md.txt",
+      "sourceSha256": "9cbd32e706422b4f88caa4472c220a9c62e7d566995009d414b592e7a2deae20",
+      "publishedSha256": "9cbd32e706422b4f88caa4472c220a9c62e7d566995009d414b592e7a2deae20",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-851e8-ming-its-first-real-message-repeat2/test-failed-1.png",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-851e8-ming-its-first-real-message-repeat2/test-failed-1.png",
+      "sourceSha256": "2ee99a515a82d46c3a50c89be53057f2ecb78f4873824f27a76710e668f9ffc4",
+      "publishedSha256": "2ee99a515a82d46c3a50c89be53057f2ecb78f4873824f27a76710e668f9ffc4",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-851e8-ming-its-first-real-message-repeat2/attachments/failure-diagnostics-json-77ef2d09a1b8f00d9a4cfe5ded306a3f352f9b42.json",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-851e8-ming-its-first-real-message-repeat2/attachments/failure-diagnostics-json-77ef2d09a1b8f00d9a4cfe5ded306a3f352f9b42.json",
+      "sourceSha256": "67a59f91b73377db0f97e74a04b50a2b0882c41736fd1d62a8a650328d9f669b",
+      "publishedSha256": "67a59f91b73377db0f97e74a04b50a2b0882c41736fd1d62a8a650328d9f669b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-assistant-l-851e8-ming-its-first-real-message-repeat2/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-assistant-l-851e8-ming-its-first-real-message-repeat2/error-context.md.txt",
+      "sourceSha256": "174e07d2d1138cb8c66314035baf3e4856909520ff7b487487c3ccbd39dd4509",
+      "publishedSha256": "174e07d2d1138cb8c66314035baf3e4856909520ff7b487487c3ccbd39dd4509",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services/attachments/ptc-file-handoff-evidence-c042a7e53e6224bb9793ccc8f4447e2cad8c8540.json",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services/attachments/ptc-file-handoff-evidence-c042a7e53e6224bb9793ccc8f4447e2cad8c8540.json",
+      "sourceSha256": "e46a9b05d37db063c747176d297c57c522c19932d9c61ca96176537106693117",
+      "publishedSha256": "e46a9b05d37db063c747176d297c57c522c19932d9c61ca96176537106693117",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services/attachments/failure-diagnostics-json-894bf82bca4ef41281d8a0342ffda8f14d5c81c3.json",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services/attachments/failure-diagnostics-json-894bf82bca4ef41281d8a0342ffda8f14d5c81c3.json",
+      "sourceSha256": "8834e9ae4609d8e2c5a2c52f0ff8391efc2571dcac0b20a15004cf542fbad2be",
+      "publishedSha256": "8834e9ae4609d8e2c5a2c52f0ff8391efc2571dcac0b20a15004cf542fbad2be",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services/error-context.md.txt",
+      "sourceSha256": "6cfa9122a144ff44b9f7d7af3928013ca3bb86a1ef87e92514e81456dc8ca97f",
+      "publishedSha256": "6cfa9122a144ff44b9f7d7af3928013ca3bb86a1ef87e92514e81456dc8ca97f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat1/attachments/ptc-file-handoff-evidence-fa38308e02185ba1168dcf332024b500333f1bab.json",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat1/attachments/ptc-file-handoff-evidence-fa38308e02185ba1168dcf332024b500333f1bab.json",
+      "sourceSha256": "045cfd87c026e2670f1a894b06d56cf29a398db79e535a83b0e2d883afd10439",
+      "publishedSha256": "045cfd87c026e2670f1a894b06d56cf29a398db79e535a83b0e2d883afd10439",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat1/attachments/failure-diagnostics-json-993667ead9800b32d9cdbbe06bbf04142da4b1ec.json",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat1/attachments/failure-diagnostics-json-993667ead9800b32d9cdbbe06bbf04142da4b1ec.json",
+      "sourceSha256": "59b417ca500c1fdc11621094741236542024aa7aab6630da55ad45867e9302bf",
+      "publishedSha256": "59b417ca500c1fdc11621094741236542024aa7aab6630da55ad45867e9302bf",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat1/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat1/error-context.md.txt",
+      "sourceSha256": "2dd116de6ba8080a4c90763545318cc3725afbc82a3160907aa9be85071108dd",
+      "publishedSha256": "2dd116de6ba8080a4c90763545318cc3725afbc82a3160907aa9be85071108dd",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat4/attachments/ptc-file-handoff-evidence-0f0f75e0d72724f24a2fdda5944acfe2d0410f49.json",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat4/attachments/ptc-file-handoff-evidence-0f0f75e0d72724f24a2fdda5944acfe2d0410f49.json",
+      "sourceSha256": "0ccc6685d646fbb837b1ae08208beeb2d45c0db678c7dfeba2a78fc3648c4d26",
+      "publishedSha256": "0ccc6685d646fbb837b1ae08208beeb2d45c0db678c7dfeba2a78fc3648c4d26",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat4/attachments/failure-diagnostics-json-bab1b5410921355d4327dc75f56b1a88238fdf1c.json",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat4/attachments/failure-diagnostics-json-bab1b5410921355d4327dc75f56b1a88238fdf1c.json",
+      "sourceSha256": "1116535d178f16f58a0aa83a187964d49deb057b239992f13086a775f3ca393f",
+      "publishedSha256": "1116535d178f16f58a0aa83a187964d49deb057b239992f13086a775f3ca393f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat4/error-context.md",
+      "published": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat4/error-context.md.txt",
+      "sourceSha256": "3ed75351d78ed90db71908927cd8e2a33a0a621ce54350378b8cce4cc489cc26",
+      "publishedSha256": "3ed75351d78ed90db71908927cd8e2a33a0a621ce54350378b8cce4cc489cc26",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "report.html",
+      "published": "index.html",
+      "sourceSha256": "c58652ea1a48cbe665134c63a0bfc3e16652112a69a1a493da4dfedffa10b9f9",
+      "publishedSha256": "b500b0f71cad852387e7e5ec32e9928ff7a7ef4417a7fc7caf5bac45a493eb1a",
+      "adaptation": "portable presentation copy"
+    },
+    {
+      "source": "analysis.json",
+      "published": "analysis.json",
+      "sourceSha256": "3458c506f848949726d3926fa2a71a7d71f21768487035f397fba82ec71127fc",
+      "publishedSha256": "3458c506f848949726d3926fa2a71a7d71f21768487035f397fba82ec71127fc",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "progress.json",
+      "published": "progress.json",
+      "sourceSha256": "8dd8d45d6396c0d83a51a9466209299cc27153efb549456edfb563192405145f",
+      "publishedSha256": "8dd8d45d6396c0d83a51a9466209299cc27153efb549456edfb563192405145f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "seal-manifest.json",
+      "published": "seal-manifest.json",
+      "sourceSha256": "9215fb206cadcb431cbc9276e59a3c2b6a113f6cbdd30a56942741766be70f57",
+      "publishedSha256": "9215fb206cadcb431cbc9276e59a3c2b6a113f6cbdd30a56942741766be70f57",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/runtime/policy/context-resolver.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/runtime/policy/context-resolver.ts.txt",
+      "sourceSha256": "dddc38cab2ebe79faab3902aa43d7eaf54def1d49cf22cd29a22b029f519d415",
+      "publishedSha256": "dddc38cab2ebe79faab3902aa43d7eaf54def1d49cf22cd29a22b029f519d415",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/runtime/policy/context-resolver.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/runtime/policy/context-resolver.ts.txt",
+      "sourceSha256": "dddc38cab2ebe79faab3902aa43d7eaf54def1d49cf22cd29a22b029f519d415",
+      "publishedSha256": "dddc38cab2ebe79faab3902aa43d7eaf54def1d49cf22cd29a22b029f519d415",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/host/providers/openai-chat-provider.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/host/providers/openai-chat-provider.ts.txt",
+      "sourceSha256": "a79dd8b0fbfd5100e6cf5de9198f767e91c59ac8c47eed0541f8f3af0f59531b",
+      "publishedSha256": "a79dd8b0fbfd5100e6cf5de9198f767e91c59ac8c47eed0541f8f3af0f59531b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/host/providers/openai-chat-provider.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/host/providers/openai-chat-provider.ts.txt",
+      "sourceSha256": "a79dd8b0fbfd5100e6cf5de9198f767e91c59ac8c47eed0541f8f3af0f59531b",
+      "publishedSha256": "a79dd8b0fbfd5100e6cf5de9198f767e91c59ac8c47eed0541f8f3af0f59531b",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/common/policies/tool-guidance-policy.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/common/policies/tool-guidance-policy.ts.txt",
+      "sourceSha256": "9c05fb288a79683f08fb5e8e67f4f530867e912804decc7f88412043feedc7b3",
+      "publishedSha256": "9c05fb288a79683f08fb5e8e67f4f530867e912804decc7f88412043feedc7b3",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/common/policies/tool-guidance-policy.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/common/policies/tool-guidance-policy.ts.txt",
+      "sourceSha256": "9c05fb288a79683f08fb5e8e67f4f530867e912804decc7f88412043feedc7b3",
+      "publishedSha256": "9c05fb288a79683f08fb5e8e67f4f530867e912804decc7f88412043feedc7b3",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/ptc/surface-policy.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/ptc/surface-policy.ts.txt",
+      "sourceSha256": "280d82d3fb3665ef4d96199d4a935a1214b206671d23745d255ccb8d4ad0430a",
+      "publishedSha256": "280d82d3fb3665ef4d96199d4a935a1214b206671d23745d255ccb8d4ad0430a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/ptc/surface-policy.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/ptc/surface-policy.ts.txt",
+      "sourceSha256": "280d82d3fb3665ef4d96199d4a935a1214b206671d23745d255ccb8d4ad0430a",
+      "publishedSha256": "280d82d3fb3665ef4d96199d4a935a1214b206671d23745d255ccb8d4ad0430a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/common/policies/time-context-policy.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/common/policies/time-context-policy.ts.txt",
+      "sourceSha256": "f91298e19b54f9adb8decfaca87bdb94759f28559bc00212bdf114582e8faef0",
+      "publishedSha256": "f91298e19b54f9adb8decfaca87bdb94759f28559bc00212bdf114582e8faef0",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/common/policies/time-context-policy.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/common/policies/time-context-policy.ts.txt",
+      "sourceSha256": "f91298e19b54f9adb8decfaca87bdb94759f28559bc00212bdf114582e8faef0",
+      "publishedSha256": "f91298e19b54f9adb8decfaca87bdb94759f28559bc00212bdf114582e8faef0",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/project-instructions/policy.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/project-instructions/policy.ts.txt",
+      "sourceSha256": "1b8c469c78d444d76fb3313f54707292654f31326ca31717c98eedd04b996cf5",
+      "publishedSha256": "1b8c469c78d444d76fb3313f54707292654f31326ca31717c98eedd04b996cf5",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/project-instructions/policy.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/project-instructions/policy.ts.txt",
+      "sourceSha256": "1b8c469c78d444d76fb3313f54707292654f31326ca31717c98eedd04b996cf5",
+      "publishedSha256": "1b8c469c78d444d76fb3313f54707292654f31326ca31717c98eedd04b996cf5",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/skills/policy.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/skills/policy.ts.txt",
+      "sourceSha256": "e68fbb66d3e5725e41b2c0e229a6fb164bbcb02db9ec8f360c3f98e0c1ee68c6",
+      "publishedSha256": "e68fbb66d3e5725e41b2c0e229a6fb164bbcb02db9ec8f360c3f98e0c1ee68c6",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/skills/policy.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/skills/policy.ts.txt",
+      "sourceSha256": "e68fbb66d3e5725e41b2c0e229a6fb164bbcb02db9ec8f360c3f98e0c1ee68c6",
+      "publishedSha256": "e68fbb66d3e5725e41b2c0e229a6fb164bbcb02db9ec8f360c3f98e0c1ee68c6",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/planning/policy.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/planning/policy.ts.txt",
+      "sourceSha256": "d0e3b74e9c59b2f1380ef3961dda9634d7c56d392e98f527ef764274c63d52af",
+      "publishedSha256": "d0e3b74e9c59b2f1380ef3961dda9634d7c56d392e98f527ef764274c63d52af",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/planning/policy.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/planning/policy.ts.txt",
+      "sourceSha256": "d0e3b74e9c59b2f1380ef3961dda9634d7c56d392e98f527ef764274c63d52af",
+      "publishedSha256": "d0e3b74e9c59b2f1380ef3961dda9634d7c56d392e98f527ef764274c63d52af",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/goal/policy/goal-execution-policy.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/goal/policy/goal-execution-policy.ts.txt",
+      "sourceSha256": "f9842b1bde720c017ba203e2baec8814e09f8ec78080e4e4c29743857e87b9e9",
+      "publishedSha256": "f9842b1bde720c017ba203e2baec8814e09f8ec78080e4e4c29743857e87b9e9",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/goal/policy/goal-execution-policy.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/goal/policy/goal-execution-policy.ts.txt",
+      "sourceSha256": "f9842b1bde720c017ba203e2baec8814e09f8ec78080e4e4c29743857e87b9e9",
+      "publishedSha256": "f9842b1bde720c017ba203e2baec8814e09f8ec78080e4e4c29743857e87b9e9",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/memory/policy.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/memory/policy.ts.txt",
+      "sourceSha256": "c58574a1a1017d456ff1501f284b0b8676f9d6a7b02a6ce68685dce31f29a04e",
+      "publishedSha256": "c58574a1a1017d456ff1501f284b0b8676f9d6a7b02a6ce68685dce31f29a04e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/memory/policy.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/memory/policy.ts.txt",
+      "sourceSha256": "c58574a1a1017d456ff1501f284b0b8676f9d6a7b02a6ce68685dce31f29a04e",
+      "publishedSha256": "c58574a1a1017d456ff1501f284b0b8676f9d6a7b02a6ce68685dce31f29a04e",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/common/policies/output-continuation-policy.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/common/policies/output-continuation-policy.ts.txt",
+      "sourceSha256": "62bb76665fcdcfff3d4aa72c5bc15245018e7e920c94c1f88da5bf6b130886d6",
+      "publishedSha256": "62bb76665fcdcfff3d4aa72c5bc15245018e7e920c94c1f88da5bf6b130886d6",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/common/policies/output-continuation-policy.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/common/policies/output-continuation-policy.ts.txt",
+      "sourceSha256": "62bb76665fcdcfff3d4aa72c5bc15245018e7e920c94c1f88da5bf6b130886d6",
+      "publishedSha256": "62bb76665fcdcfff3d4aa72c5bc15245018e7e920c94c1f88da5bf6b130886d6",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/compaction/micro-compaction-policy.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/compaction/micro-compaction-policy.ts.txt",
+      "sourceSha256": "b582de109a6983aa4eb51c0c463e8322bd719f9ea39226705146b69eb770d306",
+      "publishedSha256": "b582de109a6983aa4eb51c0c463e8322bd719f9ea39226705146b69eb770d306",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/compaction/micro-compaction-policy.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/compaction/micro-compaction-policy.ts.txt",
+      "sourceSha256": "b582de109a6983aa4eb51c0c463e8322bd719f9ea39226705146b69eb770d306",
+      "publishedSha256": "b582de109a6983aa4eb51c0c463e8322bd719f9ea39226705146b69eb770d306",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/compaction/tool-result-spill-policy.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/compaction/tool-result-spill-policy.ts.txt",
+      "sourceSha256": "42bfc94af8ffce440d94890dacf1b49d19f57b49a1dae3610fee25a844d7cf2a",
+      "publishedSha256": "42bfc94af8ffce440d94890dacf1b49d19f57b49a1dae3610fee25a844d7cf2a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/compaction/tool-result-spill-policy.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/compaction/tool-result-spill-policy.ts.txt",
+      "sourceSha256": "42bfc94af8ffce440d94890dacf1b49d19f57b49a1dae3610fee25a844d7cf2a",
+      "publishedSha256": "42bfc94af8ffce440d94890dacf1b49d19f57b49a1dae3610fee25a844d7cf2a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/runtime/model/request-plan.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/runtime/model/request-plan.ts.txt",
+      "sourceSha256": "0f417183838e7774c815c5e5e6ccbb03ecaa3543a46c48be91e6c3f19a98032a",
+      "publishedSha256": "0f417183838e7774c815c5e5e6ccbb03ecaa3543a46c48be91e6c3f19a98032a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/runtime/model/request-plan.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/runtime/model/request-plan.ts.txt",
+      "sourceSha256": "0f417183838e7774c815c5e5e6ccbb03ecaa3543a46c48be91e6c3f19a98032a",
+      "publishedSha256": "0f417183838e7774c815c5e5e6ccbb03ecaa3543a46c48be91e6c3f19a98032a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/subagents/context-policy.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/subagents/context-policy.ts.txt",
+      "sourceSha256": "70ff35071ed52365d447d0d7ea7cc44eafed962447ffea4358a4df8156cb8fb8",
+      "publishedSha256": "70ff35071ed52365d447d0d7ea7cc44eafed962447ffea4358a4df8156cb8fb8",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/subagents/context-policy.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/subagents/context-policy.ts.txt",
+      "sourceSha256": "70ff35071ed52365d447d0d7ea7cc44eafed962447ffea4358a4df8156cb8fb8",
+      "publishedSha256": "70ff35071ed52365d447d0d7ea7cc44eafed962447ffea4358a4df8156cb8fb8",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/runtime/subagents/runtime.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/runtime/subagents/runtime.ts.txt",
+      "sourceSha256": "356e8063c0b288b4ebe61ea2e23e5aeca39ba440be74a596a6870da7d2a40d8f",
+      "publishedSha256": "356e8063c0b288b4ebe61ea2e23e5aeca39ba440be74a596a6870da7d2a40d8f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/runtime/subagents/runtime.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/runtime/subagents/runtime.ts.txt",
+      "sourceSha256": "356e8063c0b288b4ebe61ea2e23e5aeca39ba440be74a596a6870da7d2a40d8f",
+      "publishedSha256": "356e8063c0b288b4ebe61ea2e23e5aeca39ba440be74a596a6870da7d2a40d8f",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/tasks/policy.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/extensions/tasks/policy.ts.txt",
+      "sourceSha256": "f6d257e88090864ec2f8cfc6a4a9b38181643cbf4f82ef20ffeab80650e03815",
+      "publishedSha256": "f6d257e88090864ec2f8cfc6a4a9b38181643cbf4f82ef20ffeab80650e03815",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/tasks/policy.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/extensions/tasks/policy.ts.txt",
+      "sourceSha256": "f6d257e88090864ec2f8cfc6a4a9b38181643cbf4f82ef20ffeab80650e03815",
+      "publishedSha256": "f6d257e88090864ec2f8cfc6a4a9b38181643cbf4f82ef20ffeab80650e03815",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/host/runtime/core-service-providers.ts.txt",
+      "published": "g2/sources/ccd36d617083169d763edb127ec61b9c3355c12e/src/kernel/host/runtime/core-service-providers.ts.txt",
+      "sourceSha256": "2a87cb945a3caa491585122b285f109b927806951d60b2c252d86f2438ed3b3a",
+      "publishedSha256": "2a87cb945a3caa491585122b285f109b927806951d60b2c252d86f2438ed3b3a",
+      "adaptation": "bytes preserved"
+    },
+    {
+      "source": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/host/runtime/core-service-providers.ts.txt",
+      "published": "g2/sources/690ce4ac3d8bd4f24b734173019b8c61340c0a83/src/kernel/host/runtime/core-service-providers.ts.txt",
+      "sourceSha256": "2a87cb945a3caa491585122b285f109b927806951d60b2c252d86f2438ed3b3a",
+      "publishedSha256": "2a87cb945a3caa491585122b285f109b927806951d60b2c252d86f2438ed3b3a",
+      "adaptation": "bytes preserved"
+    }
+  ],
+  "rawEvidenceLocalOnly": 183,
+  "knownCredentialMatches": 0,
+  "brokenRelativeLinks": []
+}

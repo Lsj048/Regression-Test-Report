@@ -1,0 +1,19 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/standard-live-web-fetch-page.ts
+      assert.equal(facts.length, data.calls.length, "WebFetch has an extra or missing lifecycle fact");
+    }
+    const auditedCalls = data.calls.map((call) => {
+      const result = resultsById.get(call.callId)!;
+      assert.equal(call.name, "WebFetch", "the WebFetch Case called another Tool");
+      assert.equal(result.name, call.name, "WebFetch changed Tool name before its result");
+      for (const fact of [call, result]) {
+        assert.equal(fact.sessionId, rootSessionId, "WebFetch escaped the evaluated Session");
+        assert.equal(fact.turnId, turnId, "WebFetch escaped the evaluated Turn");
+      }
+      assert.equal(call.payload["nestingDepth"], 0, "WebFetch was not a direct model Tool call");
+      assert.equal(call.payload["parentCallId"], undefined, "WebFetch has an unexpected parent");
+      const argumentsValue = jsonObject(call.payload["arguments"], "WebFetch arguments");
+      assert.deepEqual(Object.keys(argumentsValue).sort(), ["prompt", "url"], "WebFetch received extra arguments");
+      assert.equal(new URL(String(argumentsValue["url"])).toString(), scenario.url, "WebFetch received another URL");
+      assert.ok(typeof argumentsValue["prompt"] === "string" && argumentsValue["prompt"].trim().length > 0,
+        "WebFetch received an empty extraction prompt");

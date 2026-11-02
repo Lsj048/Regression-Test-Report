@@ -1,0 +1,26 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/cases/standard-live-subagent-interrupt.ts
+      const ready = await waitForReadyWindow(page, current, session.id, readyWindowBudgetMs);
+      processEvidence = ready.process;
+      const readyWindowMs = Date.now() - readyStartedAt;
+      expect(readyWindowMs).toBeLessThan(readyWindowBudgetMs);
+      await assertReadyProjection(page, ready.audit);
+      expect(await businessWorkspaceSnapshot(current.workspace),
+        "read-only preparation changed the business workspace before the user's decision").toEqual(workspaceBefore);
+
+      const question = page.getByRole("region", { name: "等待回答", exact: true });
+      const { freezeOption: freeze } = await releaseDecisionOptions(question);
+      await expect(freeze).toHaveCount(1);
+      await freeze.click();
+      await expect(freeze).toHaveAttribute("aria-checked", "true");
+      const stopped = page.waitForResponse((response) => response.url()
+        === `${current.baseUrl}/api/sessions/${encodeURIComponent(session.id)}/messages`
+        && response.request().method() === "POST");
+      const stopStartedAt = Date.now();
+      await question.getByRole("button", { name: /确认并继续/u }).click();
+      const stopResponse = await stopped;
+      expect(stopResponse.ok(), "live-subagent-interrupt release decision failed").toBe(true);
+      const stopBody = stopResponse.request().postDataJSON() as Readonly<Record<string, unknown>>;
+      expect(standardLiveSubagentInterruptDecision(stopBody["content"]),
+        "the Web UI did not submit the freeze choice").toBe("freeze");
+      expect(stopBody["replyToRequestId"], "the Web UI answered a different release question")

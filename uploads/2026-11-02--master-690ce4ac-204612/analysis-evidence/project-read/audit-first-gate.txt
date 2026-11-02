@@ -1,0 +1,13 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/assistant-maintenance.ts
+  const eventPath = join(stateDirectory, "event_log.sqlite");
+  const data = commonAudit(eventPath, join(stateDirectory, "message.sqlite"), sessionIds[0]!, sessionIds.slice(1));
+  try {
+    assert.deepEqual(data.childSessionIds, []);
+    const prompts = "change" in scenario ? [scenario.prompt, scenario.change, scenario.recall] : [scenario.prompt];
+    assert.equal(sessionIds.length, prompts.length);
+    const forbidden = assertNoFailures(eventPath, data.events, data.results);
+    const turnEvidence = sessionIds.map((id, stage) => {
+      const events = data.events.filter(e => e.session_id === id);
+      const inputs = data.database.prepare("SELECT content, claimed_by_turn_id FROM inputs WHERE session_id=? ORDER BY admission_seq").all(id);
+      assert.equal(inputs.length, 1, "each new session must contain only its submitted task");

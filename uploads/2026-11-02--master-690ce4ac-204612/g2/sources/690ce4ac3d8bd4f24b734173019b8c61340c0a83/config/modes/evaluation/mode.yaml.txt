@@ -1,0 +1,270 @@
+apiVersion: mode.longcat/v1
+id: evaluation
+label: 评测模式
+status: active
+description: 面向无人工交互的评测任务，不装配人工提问和规划审批工具。
+prompt:
+  package: "@longcat/prompts-builtin"
+  version: 1.0.0
+  component: standard
+  config: {}
+tools:
+  - package: "@longcat/tools-builtin"
+    version: 1.0.0
+    component: Bash
+    config: {}
+    services:
+      - &execution_update { id: longcat.core.execution-update, version: 1.0.0, permissions: {}, config: {} }
+  - &scheduled_tool
+    package: "@longcat/tools-builtin"
+    version: 1.0.0
+    component: CronCreate
+    config: {}
+    services: &scheduler_service
+      - { id: longcat.core.scheduler, version: 1.0.0, permissions: {}, config: {} }
+  - <<: *scheduled_tool
+    component: CronDelete
+  - <<: *scheduled_tool
+    component: CronList
+  - { package: "@longcat/tools-builtin", version: 1.0.0, component: Edit, config: {}, services: [*execution_update] }
+  - { package: "@longcat/tools-builtin", version: 1.0.0, component: EnterWorktree, config: {} }
+  - { package: "@longcat/tools-builtin", version: 1.0.0, component: ExitWorktree, config: {} }
+  - { package: "@longcat/tools-filesystem-search", version: 1.0.0, component: Glob, config: {} }
+  - { package: "@longcat/tools-filesystem-search", version: 1.0.0, component: Grep, config: {} }
+  - { package: "@longcat/tools-builtin", version: 1.0.0, component: NotebookEdit, config: {}, services: [*execution_update] }
+  - { package: "@longcat/tools-builtin", version: 1.0.0, component: Read, config: {} }
+  - <<: *scheduled_tool
+    component: ScheduleWakeup
+  - package: "@longcat/tools-builtin"
+    version: 1.0.0
+    component: Skill
+    config: {}
+    services:
+      - { id: longcat.core.capability-event, version: 1.0.0, permissions: {}, config: {} }
+  - { package: "@longcat/tools-builtin", version: 1.0.0, component: TaskCreate, config: {} }
+  - { package: "@longcat/tools-builtin", version: 1.0.0, component: TaskGet, config: {} }
+  - { package: "@longcat/tools-builtin", version: 1.0.0, component: TaskList, config: {} }
+  - { package: "@longcat/tools-builtin", version: 1.0.0, component: TaskOutput, config: {} }
+  - { package: "@longcat/tools-builtin", version: 1.0.0, component: TaskStop, config: {} }
+  - { package: "@longcat/tools-builtin", version: 1.0.0, component: TaskUpdate, config: {} }
+  - { package: "@longcat/tools-builtin", version: 1.0.0, component: WebFetch, config: {} }
+  - { package: "@longcat/tools-builtin", version: 1.0.0, component: WebSearch, config: {} }
+  - { package: "@longcat/tools-builtin", version: 1.0.0, component: Write, config: {}, services: [*execution_update] }
+  - package: "@longcat/tools-subagents"
+    version: "1.0.0"
+    component: interrupt_agent
+    config: {}
+    services:
+      - id: longcat.core.subagents
+        version: "1.0.0"
+        permissions: { operations: [interrupt] }
+        config: {}
+  - package: "@longcat/tools-subagents"
+    version: "1.0.0"
+    component: list_agents
+    config: {}
+    services:
+      - id: longcat.core.subagents
+        version: "1.0.0"
+        permissions: { operations: [list] }
+        config: {}
+  - package: "@longcat/tools-subagents"
+    version: "1.0.0"
+    component: send_message
+    config: {}
+    services:
+      - id: longcat.core.subagents
+        version: "1.0.0"
+        permissions: { operations: [followup] }
+        config: {}
+  - package: "@longcat/tools-subagents"
+    version: "1.0.0"
+    component: subagent
+    config: {}
+    services:
+      - id: longcat.core.subagents
+        version: "1.0.0"
+        permissions: { operations: [spawn] }
+        config: {}
+  - package: "@longcat/tools-subagents"
+    version: "1.0.0"
+    component: subagent_fork
+    config: {}
+    services:
+      - id: longcat.core.subagents
+        version: "1.0.0"
+        permissions: { operations: [fork] }
+        config: {}
+skills:
+  - package: "@longcat/skills-local"
+    version: 1.0.0
+    component: filesystem
+    config: {}
+subagents:
+  enabled: true
+  maxDepth: 3
+  deniedTools:
+    - CronCreate
+    - CronDelete
+    - CronList
+    - ScheduleWakeup
+    - PushNotification
+    - EnterWorktree
+    - ExitWorktree
+policies:
+  - &builtin_policy
+    package: "@longcat/policies-builtin"
+    version: 1.0.0
+    component: builtin.runtime_context
+    config: {}
+  - <<: *builtin_policy
+    component: builtin.time_context
+    config: {}
+  - <<: *builtin_policy
+    component: builtin.agent_instructions
+    config: { discover: true }
+  - <<: *builtin_policy
+    component: builtin.skills
+    config: { materialize: true }
+  - <<: *builtin_policy
+    component: builtin.micro_compaction
+    config: { enabled: true, protectRecentToolTokens: 20000, protectRecentSteps: 2, minimumReclaimTokens: 5000, protectedTools: [Skill] }
+  - <<: *builtin_policy
+    component: builtin.compaction
+    services:
+      - { id: longcat.core.model-completion, version: 1.0.0, permissions: {}, config: {} }
+      - { id: longcat.core.token-count, version: 1.0.0, permissions: {}, config: {} }
+    config:
+      summaryPrompt: coding-agent
+      highWaterRatio: 1
+      safetyBufferTokens: 4096
+      preserveRecentTokens: 8000
+      maxOverflowAttempts: 2
+      summaryMaxOutputTokens: 12000
+      summaryChunkRatio: 0.55
+      maxSummaryAttempts: 2
+      restoreRecentToolTokens: 0
+      restoreTools: []
+  - <<: *builtin_policy
+    component: builtin.model_tool_calls
+    config: {}
+  - <<: *builtin_policy
+    component: builtin.tool_scheduler
+    config: { maxConcurrency: 8 }
+  - <<: *builtin_policy
+    component: builtin.tool_result_spill
+    config: { thresholdChars: 50000, previewChars: 2000, excludeTools: [Read] }
+  - <<: *builtin_policy
+    component: builtin.repeat_tool_reminder
+    config: { thresholds: [3, 5, 8], hardStopThreshold: 10, semanticBlockThreshold: 5, include: [], exclude: [], argumentsPreviewChars: 500 }
+  - <<: *builtin_policy
+    component: builtin.tool_call_exact_once
+    config: { enabled: true }
+  - <<: *builtin_policy
+    component: builtin.task_list_reminder
+    config: { enabled: true, messagesSinceTaskWrite: 10, messagesBetweenReminders: 10 }
+  - <<: *builtin_policy
+    component: builtin.execution_progress
+    config: { mutationTools: [Edit, Write, NotebookEdit], explorationTools: [Read, Grep, Glob, WebFetch, WebSearch], enabled: true, repeatedResultThreshold: 3, explorationThreshold: 16, failedValidationThreshold: 3, explorationBlockThreshold: 32, failedValidationBlockThreshold: 5, maxInterventionsPerTurn: 4 }
+  - <<: *builtin_policy
+    component: builtin.provider_retry
+    config:
+      maxAttempts: 3
+      rateLimitMaxAttempts: 20
+      rateLimitBackoffMs: 65000
+      rateLimitJitterMs: 30000
+  - <<: *builtin_policy
+    component: builtin.output_continuation
+    config: { enabled: true, maxContinuationsPerTurn: 2 }
+  - <<: *builtin_policy
+    component: builtin.completion_verification
+    services:
+      - { id: longcat.core.model-completion, version: 1.0.0, permissions: {}, config: {} }
+    timeoutMs: 300000
+    config: { mutatingTools: [Edit, Write, NotebookEdit, Bash, Projects, DesignSync], enabled: false, includeSubagents: false, requirementTracking: true, minimumTaskChars: 80, maxRequirements: 12, extractionMaxOutputTokens: 1536, extractionRetryMaxOutputTokens: 3072, maxReviewsPerTurn: 2, maxInterventionsPerTurn: 1, maxOutputTokens: 32768, retryMaxOutputTokens: 98304, maxTranscriptChars: 24000, maxEvidenceItems: 16, maxEvidenceChars: 1500 }
+  - <<: *builtin_policy
+    component: builtin.structured_output
+    config: { enabled: false }
+  - <<: *builtin_policy
+    component: builtin.max_steps
+    config: { maxSteps: 10000 }
+  - <<: *builtin_policy
+    component: builtin.repeated_failure_reminder
+    services:
+      - { id: longcat.core.model-completion, version: 1.0.0, permissions: {}, config: {} }
+    timeoutMs: 300000
+    config:
+      enabled: true
+      observeSuccessTools: [Bash]
+      milestones: [3, 5, 8]
+      maxTaskChars: 32000
+      reviewMaxOutputTokens: 12000
+      reviewRetryMaxOutputTokens: 36000
+  - <<: *builtin_policy
+    component: builtin.contract_ledger_reminder
+    services:
+      - { id: longcat.core.model-completion, version: 1.0.0, permissions: {}, config: {} }
+    timeoutMs: 300000
+    config:
+      enabled: false
+      maxOutputTokens: 32768
+      retryMaxOutputTokens: 98304
+      maxReviewsPerTurn: 6
+      maxReviewsPerSession: 24
+      maxArtifactsPerReview: 4
+  - <<: *builtin_policy
+    component: builtin.subagent_context
+    config: { maxDepth: 3 }
+  - <<: *builtin_policy
+    component: builtin.tool_guidance
+    config: {}
+orders:
+  context:
+    - builtin.runtime_context
+    - builtin.time_context
+    - builtin.agent_instructions
+    - builtin.skills
+    - builtin.task_list_reminder
+    - builtin.micro_compaction
+    - builtin.compaction
+    - builtin.repeat_tool_reminder
+    - builtin.execution_progress
+    - builtin.structured_output
+    - builtin.max_steps
+    - builtin.repeated_failure_reminder
+    - builtin.contract_ledger_reminder
+    - builtin.subagent_context
+    - builtin.completion_verification
+    - builtin.output_continuation
+    - builtin.tool_guidance
+  projectors:
+    - builtin.tool_result_spill
+    - builtin.repeat_tool_reminder
+    - builtin.execution_progress
+    - builtin.completion_verification
+    - builtin.repeated_failure_reminder
+    - builtin.contract_ledger_reminder
+  action:
+    - builtin.max_steps
+    - builtin.structured_output
+    - builtin.model_tool_calls
+    - builtin.tool_call_exact_once
+    - builtin.repeat_tool_reminder
+    - builtin.execution_progress
+    - builtin.tool_scheduler
+  stateEvaluation:
+    on_turn_resume: []
+    after_actions:
+      - builtin.max_steps
+      - builtin.subagent_context
+      - builtin.structured_output
+      - builtin.repeat_tool_reminder
+      - builtin.task_list_reminder
+    after_model_without_actions:
+      - builtin.max_steps
+      - builtin.subagent_context
+      - builtin.structured_output
+      - builtin.output_continuation
+      - builtin.completion_verification
+    on_llm_error:
+      - builtin.provider_retry

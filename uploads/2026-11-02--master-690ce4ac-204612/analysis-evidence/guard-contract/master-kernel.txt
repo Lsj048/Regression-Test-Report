@@ -1,0 +1,33 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/kernel/runtime/agent/agent-kernel.ts
+750:         this.#releaseRestrictionIfTerminal(interrupted);
+751:         return interrupted;
+752:       } catch (error) {
+753:         if (!(error instanceof StateConflictError)) throw error;
+754:       }
+755:     }
+756:     throw new StateConflictError(`Unable to interrupt ${turnId} after repeated CAS conflicts`);
+757:   }
+758: 
+759:   async #drain(turnId: string, signal: AbortSignal): Promise<void> {
+760:     while (!signal.aborted) {
+761:       try {
+762:         const state = await this.repository.loadState(turnId);
+763:         if (isTerminalState(state.kind) || state.kind === "paused") return;
+764:         switch (state.kind) {
+765:           case "created": await this.#created(state); break;
+766:           case "binding": await this.#binding(state); break;
+767:           case "recovering": await this.#recovering(state); break;
+768:           case "materializing_context": await this.#context.materialize(state, signal); break;
+769:           case "invoking_model": await this.#invokeModel(state, signal); break;
+770:           case "resolving_model_error": await this.#context.resolveModelError(state, signal); break;
+771:           case "backing_off": await this.#backoff(state, signal); break;
+772:           case "planning_actions": await this.#planActions(state, signal); break;
+773:           case "executing_actions": await this.#executeActions(state, signal); break;
+774:           case "deciding": await this.#decide(state, signal); break;
+775:         }
+776:       } catch (error) {
+777:         if (error instanceof StateConflictError) continue;
+778:         await this.#failInternal(turnId, error);
+779:         return;
+780:       }

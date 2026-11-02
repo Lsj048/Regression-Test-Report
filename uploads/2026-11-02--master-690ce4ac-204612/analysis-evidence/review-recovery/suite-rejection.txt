@@ -1,0 +1,23 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/assistant-live-code-review-finding.ts
+    assert.deepEqual(host["permissionRules"], [], "the code-review Turn bound unexpected permission rules");
+
+    const forbiddenEvents = assertNoFailures(eventLogPath, data.events, data.results);
+    assert.ok(data.calls.every(({ name }) => name === "Read" || name === "ReportFindings"),
+      "the code-review Case used a Tool outside its source-read and finding boundary");
+    assert.equal(new Set(data.calls.map(({ callId }) => callId)).size, data.calls.length, "the code-review calls contain duplicate IDs");
+    assert.equal(data.results.length, data.calls.length, "the code-review Case has an incomplete Tool result set");
+    assert.ok(data.calls.every((call) => call.sessionId === rootSessionId && call.turnId === turnId),
+      "a code-review Tool call escaped the evaluated Turn");
+    assert.ok(data.results.every((result) => result.sessionId === rootSessionId && result.turnId === turnId),
+      "a code-review Tool result escaped the evaluated Turn");
+    const resultsById = new Map(data.results.map((result) => [result.callId, result]));
+    assert.equal(resultsById.size, data.results.length, "the code-review Case contains duplicate Tool result IDs");
+    assert.deepEqual(data.calls.map(({ callId }) => callId).sort(), [...resultsById.keys()].sort(), "a code-review Tool call or result is unmatched");
+    const readCalls = data.calls.filter(({ name }) => name === "Read");
+    const reportCalls = data.calls.filter(({ name }) => name === "ReportFindings");
+    assert.ok(readCalls.length > 0, "the code-review Case did not read its source");
+    assert.ok(reportCalls.length > 0, "the code-review Case did not register its finding");
+    const sourceLines = originalSource.split("\n");
+    const requiredSourceLines = sourceLines.flatMap((line, index) => line.trim().length > 0 ? [index] : []);
+    const readCoverage = new Map<string, readonly number[]>();

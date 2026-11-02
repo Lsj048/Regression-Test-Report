@@ -1,0 +1,281 @@
+[
+  {
+    "id": "EVIDENCE:G2-036",
+    "ruleId": "G2-036",
+    "kind": "evidence_gap",
+    "count": 240
+  },
+  {
+    "id": "EVIDENCE:G2-037",
+    "ruleId": "G2-037",
+    "kind": "evidence_gap",
+    "count": 240
+  },
+  {
+    "id": "RELATED:src/extensions/compaction/compaction-policy.ts",
+    "kind": "related_file_change",
+    "file": "src/extensions/compaction/compaction-policy.ts",
+    "affectedRuleIds": [
+      "G2-019"
+    ]
+  },
+  {
+    "id": "RELATED:test/e2e/audits/standard-live-code-review-finding.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/audits/standard-live-code-review-finding.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/audits/standard-live-dynamic-mcp-tool.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/audits/standard-live-dynamic-mcp-tool.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/audits/standard-live-mcp-refresh.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/audits/standard-live-mcp-refresh.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/audits/standard-live-mcp-resource-directory.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/audits/standard-live-mcp-resource-directory.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/audits/standard-live-mcp-resource-lookup.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/audits/standard-live-mcp-resource-lookup.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/audits/standard-live-monitor-stream.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/audits/standard-live-monitor-stream.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/audits/standard-live-symbol-navigation.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/audits/standard-live-symbol-navigation.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/cases/standard-live-code-review-finding.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/cases/standard-live-code-review-finding.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/cases/standard-live-dynamic-mcp-tool.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/cases/standard-live-dynamic-mcp-tool.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/cases/standard-live-mcp-refresh.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/cases/standard-live-mcp-refresh.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/cases/standard-live-mcp-resource-directory.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/cases/standard-live-mcp-resource-directory.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/cases/standard-live-mcp-resource-lookup.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/cases/standard-live-mcp-resource-lookup.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/cases/standard-live-monitor-stream.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/cases/standard-live-monitor-stream.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/cases/standard-live-symbol-navigation.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/cases/standard-live-symbol-navigation.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/fixtures/standard-live-code-review-finding/src/invoice-access.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/fixtures/standard-live-code-review-finding/src/invoice-access.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/fixtures/standard-live-symbol-navigation/package.json",
+    "kind": "related_file_change",
+    "file": "test/e2e/fixtures/standard-live-symbol-navigation/package.json",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/fixtures/standard-live-symbol-navigation/src/payment-processor.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/fixtures/standard-live-symbol-navigation/src/payment-processor.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/fixtures/standard-live-symbol-navigation/src/reference-request-key.ts",
+    "kind": "related_file_change",
+    "file": "test/e2e/fixtures/standard-live-symbol-navigation/src/reference-request-key.ts",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "RELATED:test/e2e/fixtures/standard-live-symbol-navigation/tsconfig.json",
+    "kind": "related_file_change",
+    "file": "test/e2e/fixtures/standard-live-symbol-navigation/tsconfig.json",
+    "affectedRuleIds": []
+  },
+  {
+    "id": "UNMAPPED:config/modes/evaluation/mode.yaml",
+    "kind": "unmapped_change",
+    "file": "config/modes/evaluation/mode.yaml"
+  },
+  {
+    "id": "UNMAPPED:package-lock.json",
+    "kind": "unmapped_change",
+    "file": "package-lock.json"
+  },
+  {
+    "id": "UNMAPPED:package.json",
+    "kind": "unmapped_change",
+    "file": "package.json"
+  },
+  {
+    "id": "UNMAPPED:spec/acceptance.md",
+    "kind": "unmapped_change",
+    "file": "spec/acceptance.md"
+  },
+  {
+    "id": "UNMAPPED:spec/conformance.md",
+    "kind": "unmapped_change",
+    "file": "spec/conformance.md"
+  },
+  {
+    "id": "UNMAPPED:spec/interfaces.md",
+    "kind": "unmapped_change",
+    "file": "spec/interfaces.md"
+  },
+  {
+    "id": "UNMAPPED:spec/lifecycle.md",
+    "kind": "unmapped_change",
+    "file": "spec/lifecycle.md"
+  },
+  {
+    "id": "UNMAPPED:spec/persistence.md",
+    "kind": "unmapped_change",
+    "file": "spec/persistence.md"
+  },
+  {
+    "id": "UNMAPPED:src/extensions/agent-context/standard-system-prompt.ts",
+    "kind": "unmapped_change",
+    "file": "src/extensions/agent-context/standard-system-prompt.ts"
+  },
+  {
+    "id": "UNMAPPED:src/extensions/workspace/filesystem.ts",
+    "kind": "unmapped_change",
+    "file": "src/extensions/workspace/filesystem.ts"
+  },
+  {
+    "id": "UNMAPPED:src/extensions/workspace/lsp/index.ts",
+    "kind": "unmapped_change",
+    "file": "src/extensions/workspace/lsp/index.ts"
+  },
+  {
+    "id": "UNMAPPED:src/extensions/workspace/schemas.ts",
+    "kind": "unmapped_change",
+    "file": "src/extensions/workspace/schemas.ts"
+  },
+  {
+    "id": "UNMAPPED:src/extensions/workspace/search/package.ts",
+    "kind": "unmapped_change",
+    "file": "src/extensions/workspace/search/package.ts"
+  },
+  {
+    "id": "UNMAPPED:src/extensions/workspace/search/schemas.ts",
+    "kind": "unmapped_change",
+    "file": "src/extensions/workspace/search/schemas.ts"
+  },
+  {
+    "id": "UNMAPPED:src/kernel/api/session/protocol.ts",
+    "kind": "unmapped_change",
+    "file": "src/kernel/api/session/protocol.ts"
+  },
+  {
+    "id": "UNMAPPED:src/kernel/host/runtime/scheduler-service-provider.ts",
+    "kind": "unmapped_change",
+    "file": "src/kernel/host/runtime/scheduler-service-provider.ts"
+  },
+  {
+    "id": "UNMAPPED:src/kernel/host/session/session-catalog.ts",
+    "kind": "unmapped_change",
+    "file": "src/kernel/host/session/session-catalog.ts"
+  },
+  {
+    "id": "UNMAPPED:src/kernel/host/session/session-manager.ts",
+    "kind": "unmapped_change",
+    "file": "src/kernel/host/session/session-manager.ts"
+  },
+  {
+    "id": "UNMAPPED:src/kernel/runtime/agent/agent-kernel.ts",
+    "kind": "unmapped_change",
+    "file": "src/kernel/runtime/agent/agent-kernel.ts"
+  },
+  {
+    "id": "UNMAPPED:src/kernel/runtime/agent/types.ts",
+    "kind": "unmapped_change",
+    "file": "src/kernel/runtime/agent/types.ts"
+  },
+  {
+    "id": "UNMAPPED:src/ui/tui/main.ts",
+    "kind": "unmapped_change",
+    "file": "src/ui/tui/main.ts"
+  },
+  {
+    "id": "UNMAPPED:src/ui/web-ui/client/App.tsx",
+    "kind": "unmapped_change",
+    "file": "src/ui/web-ui/client/App.tsx"
+  },
+  {
+    "id": "UNMAPPED:src/ui/web-ui/client/Markdown.tsx",
+    "kind": "unmapped_change",
+    "file": "src/ui/web-ui/client/Markdown.tsx"
+  },
+  {
+    "id": "UNMAPPED:src/ui/web-ui/client/markdown-math.ts",
+    "kind": "unmapped_change",
+    "file": "src/ui/web-ui/client/markdown-math.ts"
+  },
+  {
+    "id": "UNMAPPED:src/ui/web-ui/server/http-server.ts",
+    "kind": "unmapped_change",
+    "file": "src/ui/web-ui/server/http-server.ts"
+  },
+  {
+    "id": "UNMAPPED:src/ui/web-ui/tests/markdown.test.tsx",
+    "kind": "unmapped_change",
+    "file": "src/ui/web-ui/tests/markdown.test.tsx"
+  },
+  {
+    "id": "UNMAPPED:src/ui/web-ui/tests/project-session.test.ts",
+    "kind": "unmapped_change",
+    "file": "src/ui/web-ui/tests/project-session.test.ts"
+  },
+  {
+    "id": "UNMAPPED:src/ui/web-ui/tests/session-lifecycle-ui.test.tsx",
+    "kind": "unmapped_change",
+    "file": "src/ui/web-ui/tests/session-lifecycle-ui.test.tsx"
+  },
+  {
+    "id": "INTEGRITY",
+    "kind": "integrity_gap",
+    "count": 1
+  }
+]

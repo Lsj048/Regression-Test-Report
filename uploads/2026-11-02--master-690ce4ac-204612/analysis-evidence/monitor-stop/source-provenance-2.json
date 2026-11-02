@@ -1,0 +1,10 @@
+{
+  "kind": "original-inline-trace-attachment-extraction",
+  "trace": "live/artifacts/test-results/web-regression-assistant-l-851e8-ming-its-first-real-message-repeat2/trace.zip",
+  "traceSha256": "f72d4719f19743dff44af2b0246c81a8bb5e9e45d783a32b4a01d72586bf18b9",
+  "member": "attachments/14faacc288a2302fcdd8de0d8de6cc758127c52e",
+  "attachmentSha256": "356b47051a289ef7ce0a10bfdcf4bf2c0502446161c33921e48034695e224c90",
+  "bytes": 161,
+  "monitorElapsedMs": 30018.0,
+  "sourceConnectionDurationMs": 29966
+}

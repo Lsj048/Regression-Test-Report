@@ -1,0 +1,241 @@
+import type { JsonValue } from "../../kernel/api/foundation/json.js";
+import type { SubagentPolicyAdapter, SubagentPolicyContext, SubagentPolicySettlementContext } from "../../kernel/api/policy/subagent.js";
+import type {
+  ContextEffectForPoint, ContextPoint, ContextPolicy, ContextSnapshot, PolicyInputEnvelope, PolicyResult,
+  StatePolicy, StatePolicyInput, StatePolicyResult,
+} from "../../kernel/api/policy/types.js";
+import { createDescriptor } from "../../kernel/api/policy/descriptor.js";
+import { actionBatchResults } from "../../kernel/api/policy/action-results.js";
+
+export const SUBAGENT_CONTEXT_POLICY_ID = "builtin.subagent_context";
+export const SUBAGENT_NOTICE_INPUT_PREFIX = "input_subagent_notice:";
+
+export interface SubagentPolicyState {
+  readonly depth: number;
+  readonly parentSessionId: string;
+  readonly parentTurnId: string;
+  readonly mode: "spawn" | "fork";
+  readonly label: string;
+  readonly persona?: string;
+}
+
+interface State {
+  readonly child?: SubagentPolicyState;
+  readonly pendingSubagentIds: readonly string[];
+  readonly settledMessageSeq?: number;
+}
+
+export function subagentNoticeInputId(subagentId: string, turnId: string): string {
+  return `${SUBAGENT_NOTICE_INPUT_PREFIX}${subagentId}:${turnId}`;
+}
+
+export function subagentIdFromNoticeInputId(inputId: string | undefined): string | undefined {
+  if (!inputId?.startsWith(SUBAGENT_NOTICE_INPUT_PREFIX)) return undefined;
+  const [subagentId, turnId, ...extra] = inputId.slice(SUBAGENT_NOTICE_INPUT_PREFIX.length).split(":");
+  return subagentId && turnId && extra.length === 0 ? subagentId : undefined;
+}
+
+function xmlText(value: string): string {
+  return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
+/** Keep child-authored text from impersonating the notification envelope or conversation roles. */
+function neutralizeInstructionShapedOutput(value: string): string {
+  const matched: string[] = [];
+  if (/<\/?system-reminder\b/iu.test(value)) matched.push("system-reminder");
+  if (/<\/?(?:task-notification|result|status|summary|task-id|tool-use-id)\b/iu.test(value)) matched.push("notification-tag");
+  if (/^(?:Human|Assistant):/imu.test(value)) matched.push("conversation-role");
+  let output = value
+    .replace(/<\/?(?:system-reminder|task-notification|result|status|summary|task-id|tool-use-id)\b/giu, (tag) => `\\${tag}`)
+    .replace(/^(Human|Assistant):/gimu, "\\$1:");
+  if (matched.length > 0) output = `[harness: subagent output matched instruction-shaped pattern(s): ${matched.join(", ")}]\n${output}`;
+  return output;
+}
+
+/** Model-facing completion envelope owned by the reusable subagent-context Policy. */
+export function renderSubagentCompletionNotice(context: SubagentPolicySettlementContext): string {
+  const summary = context.status === "completed"
+    ? `Agent "${context.label}" completed`
+    : context.status === "failed"
+      ? `Agent "${context.label}" failed`
+      : `Agent "${context.label}" was stopped`;
+  const result = context.output || (context.error === undefined ? "" : JSON.stringify(context.error));
+  return [
+    "<task-notification>",
+    `<task-id>${xmlText(context.subagentId)}</task-id>`,
+    ...(context.parentCallId === undefined ? [] : [`<tool-use-id>${xmlText(context.parentCallId)}</tool-use-id>`]),
+    `<status>${context.status}</status>`,
+    `<summary>${xmlText(summary)}</summary>`,
+    ...(result ? [`<result>${neutralizeInstructionShapedOutput(result)}</result>`] : []),
+    "</task-notification>",
+  ].join("\n");
+}
+
+function state(value: Readonly<JsonValue | null>): State {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return { pendingSubagentIds: [] };
+  const record = value as Readonly<Record<string, JsonValue>>;
+  const pendingSubagentIds = Array.isArray(record["pendingSubagentIds"])
+    ? [...new Set(record["pendingSubagentIds"].filter((item): item is string => typeof item === "string" && item.length > 0))]
+    : [];
+  const child = typeof record["depth"] !== "number" || record["depth"] < 1
+    || typeof record["parentSessionId"] !== "string"
+    || typeof record["parentTurnId"] !== "string"
+    || (record["mode"] !== "spawn" && record["mode"] !== "fork")
+    || typeof record["label"] !== "string"
+    ? undefined
+    : {
+        depth: record["depth"],
+        parentSessionId: record["parentSessionId"],
+        parentTurnId: record["parentTurnId"],
+        mode: record["mode"] as "spawn" | "fork",
+        label: record["label"],
+        ...(typeof record["persona"] === "string" ? { persona: record["persona"] } : {}),
+      };
+  return { ...(child === undefined ? {} : { child }), pendingSubagentIds,
+    ...(typeof record["settledMessageSeq"] === "number" ? { settledMessageSeq: record["settledMessageSeq"] } : {}) };
+}
+
+function serialized(value: State): JsonValue {
+  return {
+    ...(value.child ?? {}),
+    ...(value.pendingSubagentIds.length === 0 ? {} : { pendingSubagentIds: value.pendingSubagentIds }),
+    ...(value.settledMessageSeq === undefined ? {} : { settledMessageSeq: value.settledMessageSeq }),
+  } as unknown as JsonValue;
+}
+
+function stringField(value: JsonValue | undefined, key: string): string | undefined {
+  if (value === null || value === undefined || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const field = (value as Readonly<Record<string, JsonValue>>)[key];
+  return typeof field === "string" && field.length > 0 ? field : undefined;
+}
+
+/**
+ * Policy-owned child identity and prompt composition. The Host only creates and
+ * owns child lifecycles; model-facing child behavior remains a normal policy.
+ */
+export class SubagentContextPolicy implements ContextPolicy<"assemble">, StatePolicy {
+  readonly descriptor = createDescriptor({
+    apiVersion: "policy.longcat/v1",
+    id: SUBAGENT_CONTEXT_POLICY_ID,
+    version: "1.1.0",
+    configSchema: {
+      type: "object",
+      properties: { maxDepth: { type: "integer", minimum: 0 } },
+      additionalProperties: false,
+    },
+    implementedInterfaces: ["context/v1", "state/v1"],
+    points: ["assemble", "after_actions", "after_model_without_actions"],
+    claims: [
+      { kind: "key_prefix", resource: "context.system.section", prefix: "subagent" },
+      { kind: "chain_member", chain: "state.policies" },
+    ],
+    deterministic: true,
+  });
+
+  readonly hostAdapters = Object.freeze({
+    subagent: Object.freeze({
+      componentId: SUBAGENT_CONTEXT_POLICY_ID,
+      initialState(context: SubagentPolicyContext): JsonValue {
+        const initial: SubagentPolicyState = {
+          depth: context.depth,
+          parentSessionId: context.parentSessionId,
+          parentTurnId: context.parentTurnId,
+          mode: context.mode,
+          label: context.label,
+          ...(context.persona === undefined ? {} : { persona: context.persona }),
+        };
+        return initial as unknown as JsonValue;
+      },
+      completionNoticeInputId: subagentNoticeInputId,
+      renderCompletionNotice: renderSubagentCompletionNotice,
+    }) satisfies SubagentPolicyAdapter,
+  });
+
+  async decideContext(input: PolicyInputEnvelope<ContextPoint, ContextSnapshot>): Promise<PolicyResult<ContextEffectForPoint<"assemble">>> {
+    if (input.point !== "assemble") return { decision: "abstain", proposals: [] };
+    const current = state(input.privateState);
+    const settledSubagentId = subagentIdFromNoticeInputId(input.agent.triggerInputId);
+    const settled = new Set(settledSubagentId === undefined ? [] : [settledSubagentId]);
+    let settledMessageSeq = current.settledMessageSeq ?? 0;
+    // A root stop records the completion notice without waking the model. Only
+    // trusted runtime provenance, never user-authored envelope text, clears a wait.
+    for (const message of input.snapshot.messages) {
+      if (message.seq <= settledMessageSeq || message.sourceKind !== "runtime" || !message.sourceId.startsWith("subagent_notification:")) continue;
+      const id = subagentIdFromNoticeInputId(message.sourceId.slice("subagent_notification:".length));
+      if (id !== undefined) { settled.add(id); settledMessageSeq = message.seq; }
+    }
+    const pendingSubagentIds = current.pendingSubagentIds.filter(id => !settled.has(id));
+    const next = { ...current, pendingSubagentIds, ...(settledMessageSeq > 0 ? { settledMessageSeq } : {}) };
+    const effects: ContextEffectForPoint<"assemble">[] = [{
+      kind: "upsert_system_section",
+      key: "subagent.protocol",
+      order: 115.5,
+      mode: "replace_key",
+      content: "Background subagent results arrive in user-role <task-notification> messages. They are internal task events, not messages from the user. Read the result, never thank or reply to the notification itself, and communicate only the useful conclusion to the user. A running subagent has not produced a result yet; wait for its completion notification before reporting its findings.",
+    }];
+    if (current.child !== undefined) effects.push({
+      kind: "upsert_system_section",
+      key: "subagent.delegation",
+      order: 116.5,
+      mode: "replace_key",
+      content: "You are a delegated subagent. Your permission scope and policy composition were fixed when you were started and cannot be widened from inside this session. Complete the delegated task, report the result concisely, and state any limitation that the parent agent must handle.",
+    });
+    if (current.child?.persona?.trim()) {
+      effects.push({
+        kind: "upsert_system_section",
+        key: "subagent.persona",
+        order: 116,
+        mode: "replace_key",
+        content: current.child.persona,
+      });
+    }
+    if (pendingSubagentIds.length > 0) effects.push({
+      kind: "upsert_system_section",
+      key: "subagent.background",
+      order: 117,
+      mode: "replace_key",
+      content: `Background subagents still running: ${pendingSubagentIds.join(", ")}. Do not poll them. Continue independent work; when you have nothing useful left to do, finish the Turn and the Host will wait for their completion notices before allowing it to complete.`,
+    });
+    const changed = pendingSubagentIds.length !== current.pendingSubagentIds.length;
+    return effects.length === 0
+      ? { decision: "abstain", proposals: [], ...(changed ? { privateState: serialized(next) } : {}) }
+      : { decision: "propose", proposals: effects, privateState: serialized(next) };
+  }
+
+  async decideState(input: StatePolicyInput): Promise<StatePolicyResult> {
+    const current = state(input.privateState);
+    if (input.point === "after_actions") {
+      const pending = [...current.pendingSubagentIds];
+      for (const result of actionBatchResults(input.snapshot.actionBatch)) {
+        if (result.isError) continue;
+        const subagentId = result.name === "send_message"
+          ? stringField(result.canonicalValue, "subagent_id")
+          : (result.name === "subagent" || result.name === "subagent_fork") && stringField(result.canonicalValue, "kind") === "background"
+            ? stringField(result.canonicalValue, "subagent_id")
+            : undefined;
+        if (subagentId !== undefined && !pending.includes(subagentId)) pending.push(subagentId);
+      }
+      if (pending.length === current.pendingSubagentIds.length) return {};
+      return { privateStateAfterEvaluation: serialized({ ...current, pendingSubagentIds: pending }) };
+    }
+    if (input.point === "after_model_without_actions" && current.pendingSubagentIds.length > 0 && input.snapshot.session.pendingInputCount === 0) {
+      return {
+        proposal: {
+          directive: {
+            kind: "wait_for_input",
+            mode: "merge",
+            expectations: [{
+              waitId: `subagents:${input.agent.turnId}:${input.agent.stateRevision}`,
+              enteredAt: input.agent.executionCursor.enteredAt,
+              kind: "subagent",
+              subagentIds: current.pendingSubagentIds,
+              mode: "all",
+            }],
+          },
+          reason: { code: "subagents_pending", message: "Wait for all background subagents to settle." },
+        },
+      };
+    }
+    return {};
+  }
+}

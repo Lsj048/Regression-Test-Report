@@ -1,0 +1,151 @@
+#!/usr/bin/env node
+import { randomUUID } from "node:crypto";
+import { publishedPresentations } from "../../kernel/host/session/queries/presentations.js";
+
+import { realpath } from "node:fs/promises";
+import { resolve } from "node:path";
+import { createInterface } from "node:readline/promises";
+import { parseTuiArguments, tuiUsage, type TuiOptions } from "./arguments.js";
+import { answerPresentation, answerQuestions, printContent } from "./presentation.js";
+import { TerminalEventLedger } from "./event-ledger.js";
+import { errorMessage } from "../../kernel/api/foundation/errors.js";
+import { defaultHarnessEventLogSqlitePath, defaultHarnessMessageSqlitePath } from "../../kernel/api/foundation/storage-path.js";
+import type { JsonObject, JsonValue } from "../../kernel/api/foundation/json.js";
+import type { SessionEvent } from "../../kernel/api/session/protocol.js";
+import { HostSessionManager } from "../../kernel/host/session/session-manager.js";
+import { pendingUserQuestions } from "../../kernel/host/session/queries/user-questions.js";
+import { pendingHumanInputs } from "../../kernel/host/session/queries/human-inputs.js";
+import { loadHarnessSettings } from "../../kernel/host/settings/settings.js";
+
+async function taskFrom(options: TuiOptions): Promise<string> {
+  if (options.task?.trim()) return options.task.trim();
+  if (!process.stdin.isTTY) {
+    let input = ""; process.stdin.setEncoding("utf8");
+    for await (const chunk of process.stdin) input += String(chunk);
+    if (input.trim()) return input.trim();
+  }
+  throw new Error("No task provided; pass a quoted task or pipe stdin");
+}
+function record(value: JsonValue): JsonObject { return value && typeof value === "object" && !Array.isArray(value) ? value as JsonObject : {}; }
+
+async function run(options: TuiOptions): Promise<number> {
+  const workspace = await realpath(resolve(options.workdir));
+  const settings = await loadHarnessSettings();
+  const apiKey = settings.model.apiKey ?? process.env["LONGCAT_API_KEY"] ?? process.env["MEITUAN_AIGC_API_KEY"] ?? process.env["FRIDAY_API_KEY"];
+  if (!apiKey) throw new Error("Missing API key: set LONGCAT_API_KEY, MEITUAN_AIGC_API_KEY, or FRIDAY_API_KEY");
+  const task = await taskFrom(options);
+  const interactive = !options.nonInteractive && process.stdin.isTTY === true;
+  const host = await HostSessionManager.create({ mode: options.mode, workspace, model: settings.model, apiKey,
+    supportedModels: [settings.model.name], interactive, defaultPermissionMode: options.permissionMode,
+    eventLogSqlitePath: defaultHarnessEventLogSqlitePath(), messageSqlitePath: defaultHarnessMessageSqlitePath(),
+  });
+  const terminal = interactive ? createInterface({ input: process.stdin, output: process.stderr }) : undefined;
+  let unsubscribe: (() => void) | undefined;
+  let interrupt: (() => void) | undefined;
+  let shutdown: Promise<void> | undefined;
+  try {
+    const session = await host.createSession(task, options.permissionMode, settings.model.name, undefined, options.mode, workspace);
+    process.stderr.write(`[turn] mode=${session.mode} model=${session.model} workspace=${session.workspace}\n`);
+    let answering = false;
+    let exposedActions: Array<{ componentId: string; publicationId: string; actionId: string; label: string }> = [];
+    let shownPublications = "";
+    terminal?.on("line", line => {
+      if (answering || !/^:[1-9]\d*$/u.test(line.trim())) return;
+      const action = exposedActions[Number(line.trim().slice(1)) - 1];
+      if (!action) { process.stderr.write("此操作已不存在，请查看最新公开状态。\n"); return; }
+      void host.invokePresentationAction(session.id, { componentId: action.componentId, publicationId: action.publicationId, actionId: action.actionId, operationId: randomUUID() })
+        .catch(error => process.stderr.write(`${errorMessage(error)}\n`)).finally(() => { generation += 1; wake?.(); });
+    });
+    let generation = 0;
+    let wake: (() => void) | undefined;
+    const ledger = new TerminalEventLedger(session.id);
+    const streamed = new Map<string, { content: string; reasoning: string }>();
+    const currentPlan = new Map<string, string>();
+    const observe = (event: SessionEvent): void => {
+      if (!ledger.observe(event)) return;
+      const payload = record(event.payload);
+      if (event.sourceSessionId === session.id && event.turnId) {
+        if (typeof payload["planId"] === "string") currentPlan.set(event.turnId, payload["planId"]);
+        const key = `${event.turnId}:${currentPlan.get(event.turnId) ?? ""}`;
+        if (event.type === "model.stream.snapshot" || event.type === "model.completed") {
+          const prior = streamed.get(key) ?? { content: "", reasoning: "" };
+          const content = typeof payload["content"] === "string" ? payload["content"] : prior.content;
+          const reasoning = typeof payload["reasoningContent"] === "string" ? payload["reasoningContent"] : prior.reasoning;
+          if (content.startsWith(prior.content)) process.stdout.write(content.slice(prior.content.length));
+          if (options.showReasoning && reasoning.startsWith(prior.reasoning)) process.stderr.write(reasoning.slice(prior.reasoning.length));
+          streamed.set(key, { content, reasoning });
+          if (event.type === "model.completed") {
+            if (content) process.stdout.write("\n");
+            if (options.showReasoning && reasoning) process.stderr.write("\n");
+          }
+        }
+      }
+      if (event.type === "host.activity" && typeof payload["message"] === "string") process.stderr.write(`${payload["message"]}\n`);
+      if (!event.transient || event.type === "policy.state.projected") { generation += 1; wake?.(); }
+    };
+    unsubscribe = host.subscribe(session.id, observe);
+    interrupt = () => { terminal?.close(); shutdown ??= host.interrupt(session.id); void shutdown.then(() => wake?.(), error => { process.stderr.write(`${errorMessage(error)}\n`); wake?.(); }); };
+    process.once("SIGINT", interrupt); process.once("SIGTERM", interrupt);
+    while (true) {
+      const before = generation;
+      const detail = await host.get(session.id);
+      if (!detail) throw new Error("Session disappeared");
+      detail.events.forEach(observe);
+      const publications = publishedPresentations(detail.events, session.id);
+      const revision = publications.map(view => view.publicationId).join(":");
+      if (revision !== shownPublications) {
+        shownPublications = revision; exposedActions = [];
+        for (const view of publications) {
+          process.stderr.write(`\n${view.presentation.title}\n`);
+          printContent(view.presentation.content, text => process.stderr.write(text));
+          for (const action of view.presentation.actions ?? []) exposedActions.push({ componentId: view.componentId, publicationId: view.publicationId, actionId: action.id, label: action.label });
+        }
+        if (terminal) exposedActions.forEach((action, index) => process.stderr.write(`输入 :${index + 1} ${action.label}\n`));
+      }
+      const pending = pendingHumanInputs(detail.events, session.id).at(-1);
+      if (pending && terminal && detail.status === "waiting" && !shutdown) {
+        const payload = record(pending.payload), request = record(payload["request"] ?? {});
+        if (payload["readOnlyReason"]) { process.stderr.write(`${String(payload["readOnlyReason"])}\n`); return 1; }
+        answering = true;
+        const value = await answerPresentation(request["presentation"] ?? null, terminal, text => process.stderr.write(text));
+        answering = false;
+        if (value === undefined) await host.interrupt(session.id);
+        else await host.answerHumanInput(session.id, { requestId: payload["requestId"], requestHash: payload["requestHash"], value });
+        continue;
+      }
+      const question = pendingUserQuestions(detail.events)[0];
+      if (question && terminal && !shutdown) {
+        answering = true;
+        const answer = await answerQuestions(question.questions, terminal, text => process.stderr.write(text));
+        answering = false;
+        await host.sendMessage(session.id, answer, undefined, question.requestId);
+        continue;
+      }
+      if (detail.status !== "running") {
+        if (terminal && exposedActions.length && !shutdown) {
+          answering = true;
+          const selected = (await terminal.question("输入操作编号，或回车退出：")).trim().replace(/^:/u, "");
+          answering = false;
+          const action = exposedActions[Number(selected) - 1];
+          if (action) { await host.invokePresentationAction(session.id, { componentId: action.componentId, publicationId: action.publicationId, actionId: action.actionId, operationId: randomUUID() }); continue; }
+        }
+        const last = (await host.turns(session.id))?.at(-1);
+        process.stderr.write(`LONGCAT_HARNESS_TURN_OUTCOME=${JSON.stringify({ schemaVersion: 1, sessionId: session.id, turnId: last?.turnId, outcome: detail.latestTurnOutcome ?? null })}\n`);
+        process.stderr.write(`[turn] ${detail.status}; model_calls=${ledger.modelCalls}; total_tokens=${ledger.totalTokens}; turn_id=${last?.turnId ?? "unknown"}\n`);
+        return detail.latestTurnOutcome?.kind === "completed" ? 0 : 1;
+      }
+      if (generation === before) await new Promise<void>(resolveNext => { wake = resolveNext; if (generation !== before) resolveNext(); });
+      wake = undefined;
+    }
+  } finally {
+    if (interrupt) { process.removeListener("SIGINT", interrupt); process.removeListener("SIGTERM", interrupt); }
+    unsubscribe?.(); terminal?.close(); await shutdown; await host.close();
+  }
+}
+
+async function main(): Promise<void> {
+  const parsed = parseTuiArguments(process.argv.slice(2));
+  if (parsed === "help") { process.stdout.write(tuiUsage()); return; }
+  process.exitCode = await run(parsed);
+}
+void main().catch((error: unknown) => { process.stderr.write(`longcat-harness: ${errorMessage(error)}\n`); process.exitCode = 1; });

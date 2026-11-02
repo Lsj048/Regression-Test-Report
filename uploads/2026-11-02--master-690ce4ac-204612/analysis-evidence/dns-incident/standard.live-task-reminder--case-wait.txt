@@ -1,0 +1,11 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/cases/live-read-workflow.ts
+        const session = await sessionFrom(response); if (sessionId) expect(session.id).toBe(sessionId); else sessionId = session.id;
+        while (true) {
+          expect(Date.now() - started).toBeLessThan(budget);
+          await expect(page.getByRole("region", { name: "等待回答", exact: true })).not.toBeVisible();
+          const current = await sessionFrom(await fetch(`${env.baseUrl}/api/sessions/${sessionId}`));
+          if (current.status === "completed") break;
+          expect(current.status).toBe("running"); await page.waitForTimeout(100);
+        }
+      }

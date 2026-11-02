@@ -1,0 +1,204 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> standard.deterministic-guard-drain-limit >> real Web UI handles deterministic guard-drain-limit
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: true
+Received: false
+
+Call Log:
+- Timeout 270000ms exceeded while waiting on the predicate
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-H6oCKR/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "请读取 release-backup.txt 中的发布负… 2分钟" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]: 请读取 release-backup.txt 中的发布负…
+          - time [ref=e59]: 2分钟
+        - button "请读取 release-backup.txt 中的发布负… 的会话操作" [ref=e60] [cursor=pointer]
+    - button "归档会话" [ref=e65] [cursor=pointer]
+    - button "设置" [ref=e69] [cursor=pointer]
+  - main [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 请读取 release-backup.txt 中的发布负…
+        - button "复制会话 ID session_026afc73-5cd6-4c40-beea-5396dc41943e" [ref=e78] [cursor=pointer]:
+          - generic [ref=e79]: session_026afc73-5cd6-4c40-beea-5396dc41943e
+      - generic [ref=e83]:
+        - button "对话" [ref=e84] [cursor=pointer]
+        - button "轨迹" [ref=e87] [cursor=pointer]
+    - generic [ref=e90]:
+      - generic [ref=e93]:
+        - generic [ref=e96]:
+          - generic [ref=e97]: 请读取 release-backup.txt 中的发布负责人，不要修改文件。
+          - generic:
+            - time: 21:53
+            - button "复制消息"
+        - group [ref=e99]:
+          - generic "用时 2 分钟 27 秒" [ref=e100] [cursor=pointer]
+        - generic [ref=e104]: "Provider HTTP 422: {\"error\":\"AssertionError [ERR_ASSERTION]: Unexpected extra request; no endless fixture loop\"}"
+        - generic [ref=e105]: 任务执行失败
+      - generic [ref=e108]:
+        - textbox "继续输入消息" [ref=e109]
+        - generic [ref=e110]:
+          - generic [ref=e111]:
+            - button "添加" [ref=e113] [cursor=pointer]
+            - generic [ref=e116] [cursor=pointer]: 标准模式
+            - button "权限：只读" [ref=e122] [cursor=pointer]:
+              - generic [ref=e125]: 只读
+          - generic [ref=e128]:
+            - button "模型：LongCat-2.0" [ref=e130] [cursor=pointer]:
+              - generic [ref=e131]: LongCat-2.0
+              - generic [ref=e132]: 思考
+            - button "发送消息" [disabled] [ref=e135]
+    - generic [ref=e138]:
+      - generic [ref=e141]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e142] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  1   | import { mkdir, writeFile } from "node:fs/promises";
+  2   | import { basename, join } from "node:path";
+  3   | import { DatabaseSync } from "node:sqlite";
+  4   | import { expect } from "@playwright/test";
+  5   | import { assertNoBrowserErrors, attachJson, browserDiagnostics, sessionFrom, type EvaluationCaseDriver } from "../case-driver.js";
+  6   | import { deterministicGuardContract } from "../evaluation-cases.js";
+  7   | import { DETERMINISTIC_FILE, DETERMINISTIC_FOLLOWUP_PROMPT } from "../deterministic-scenarios.js";
+  8   | import { DETERMINISTIC_GUARD_SCENARIOS, GUARD_SOURCE, type DeterministicGuardScenario, type GuardEvidence } from "../deterministic-guard-scenarios.js";
+  9   | import { auditDeterministicGuard } from "../audits/deterministic-guards.js";
+  10  | import { payload, type EventRow } from "../sqlite-audit.js";
+  11  | 
+  12  | export function createDeterministicGuardDriver(scenario: DeterministicGuardScenario): EvaluationCaseDriver {
+  13  |   const spec = DETERMINISTIC_GUARD_SCENARIOS[scenario], contract = deterministicGuardContract(scenario);
+  14  |   const write = scenario === "guard-duplicate-write";
+  15  |   return {
+  16  |     caseId: contract.id, title: `real Web UI handles deterministic ${scenario}`, permissionMode: write ? "workspace-write" : "read-only",
+  17  |     timingBudgetKeys: ["durationMs", "refreshRecoveryMs"],
+  18  |     async prepareWorkspace({ workspace }) {
+  19  |       if (!write && scenario !== "guard-continuation-limit") await writeFile(join(workspace, GUARD_SOURCE.path), GUARD_SOURCE.content);
+  20  |       if (write) {
+  21  |         await mkdir(join(workspace, ".longcat-harness"), { mode: 0o700 });
+  22  |         await writeFile(join(workspace, ".longcat-harness/settings.local.json"), JSON.stringify({ permissions: { allow: [`Edit(${join(workspace, DETERMINISTIC_FILE.path)})`] } }));
+  23  |       }
+  24  |     },
+  25  |     async attachArtifactsBeforeCleanup({ environment, testInfo }) {
+  26  |       const response = await fetch(new URL("/evidence", environment.model.providerBaseUrl!), { signal: AbortSignal.timeout(5000) });
+  27  |       expect(response.ok).toBe(true);
+  28  |       await testInfo.attach("deterministic-fixture.json", { body: JSON.stringify(await response.json(), null, 2), contentType: "application/json" });
+  29  |       const path = join(environment.stateDirectory, "event_log.sqlite");
+  30  |       const db = new DatabaseSync(path, { readOnly: true });
+  31  |       try {
+  32  |         const failures = db.prepare("SELECT seq,session_id,turn_id,type,payload_json,payload_ref FROM event_log WHERE type='turn.failed'").all() as unknown as EventRow[];
+  33  |         const state = { turns: db.prepare("SELECT turn_id,session_id,kind,state_json FROM turns").all(),
+  34  |           inputs: db.prepare("SELECT input_id,session_id,content,claimed_by_turn_id,cancelled_at FROM inputs ORDER BY admission_seq").all(),
+  35  |           failures: failures.map((event) => ({ ...event, payload: payload(path, event) })),
+  36  |           counts: db.prepare("SELECT type,count(*) count FROM event_log GROUP BY type").all() };
+  37  |         await testInfo.attach("guard-terminal-evidence.json", { body: JSON.stringify(state, null, 2), contentType: "application/json" });
+  38  |       } finally { db.close(); }
+  39  |     },
+  40  |     async run({ page, testInfo, environment: current }) {
+  41  |       testInfo.setTimeout(spec.budget + 40_000);
+  42  |       const browser = browserDiagnostics(page);
+  43  |       await page.goto(current.baseUrl);
+  44  |       await expect(page.getByTestId("mode-select")).toContainText("标准模式");
+  45  |       await expect(page.getByTestId("permission-select")).toContainText(write ? "工作区写入" : "只读");
+  46  |       await expect(page.getByTestId("workspace-select")).toContainText(basename(current.workspace));
+  47  |       await expect(page.getByTestId("model-select")).toContainText(current.model.name);
+  48  |       await page.getByTestId("composer-input").fill(spec.prompt);
+  49  |       const created = page.waitForResponse((response) => response.url() === `${current.baseUrl}/api/sessions` && response.request().method() === "POST");
+  50  |       const started = Date.now(); await page.getByTestId("send-message").click();
+  51  |       const createdResponse = await created; expect(createdResponse.ok()).toBe(true);
+  52  |       const session = await sessionFrom(createdResponse), path = join(current.stateDirectory, "event_log.sqlite");
+  53  |       const status = async () => {
+  54  |         const response = await fetch(`${current.baseUrl}/api/sessions/${session.id}`, { signal: AbortSignal.timeout(5000) });
+  55  |         expect(response.ok).toBe(true); return (await sessionFrom(response)).status;
+  56  |       };
+  57  |       if (scenario === "guard-drain-limit") {
+  58  |         // Observe the actual guard before attempting another ordinary task. Never manufacture terminal state.
+  59  |         await expect.poll(() => {
+  60  |           const db = new DatabaseSync(path, { readOnly: true });
+  61  |           try {
+  62  |             const failures = db.prepare("SELECT seq,session_id,turn_id,type,payload_json,payload_ref FROM event_log WHERE session_id=? AND type='turn.failed'").all(session.id) as unknown as EventRow[];
+  63  |             return failures.some((event) => /AGENT_LOOP_NONCONVERGENT|exceeded the transition limit/u.test(JSON.stringify(payload(path, event))));
+  64  |           }
+  65  |           finally { db.close(); }
+> 66  |         }, { timeout: 270_000, intervals: [1000] }).toBe(true);
+      |                                                     ^ Error: expect(received).toBe(expected) // Object.is equality
+  67  |       } else await expect.poll(status, { timeout: 30_000 }).toBe("completed");
+  68  |       if (spec.followup) {
+  69  |         await page.getByTestId("composer-input").fill(DETERMINISTIC_FOLLOWUP_PROMPT);
+  70  |         const accepted = page.waitForResponse((response) => response.url() === `${current.baseUrl}/api/sessions/${session.id}/messages` && response.request().method() === "POST");
+  71  |         await page.getByTestId("send-message").click(); expect((await accepted).ok()).toBe(true);
+  72  |       }
+  73  |       await expect.poll(status, { timeout: 15_000 }).toBe("completed");
+  74  |       const response = await fetch(new URL("/evidence", current.model.providerBaseUrl!), { signal: AbortSignal.timeout(5000) });
+  75  |       expect(response.ok).toBe(true);
+  76  |       const audit = auditDeterministicGuard(path, join(current.stateDirectory, "message.sqlite"), session.id, current.workspace, scenario, await response.json() as GuardEvidence);
+  77  |       const detailResponse = await fetch(`${current.baseUrl}/api/sessions/${session.id}`, { signal: AbortSignal.timeout(5000) });
+  78  |       expect(detailResponse.ok).toBe(true);
+  79  |       const detail = await detailResponse.json() as { events: { type: string; payload: Record<string, unknown> }[] };
+  80  |       await testInfo.attach("guard-public-projection.json", { body: JSON.stringify(detail, null, 2), contentType: "application/json" });
+  81  |       for (const actual of audit.displays) {
+  82  |         const projected = detail.events.filter((event) => event.type === "tool.result" && event.payload["callId"] === actual.callId);
+  83  |         expect(projected).toHaveLength(1);
+  84  |         expect(projected[0]!.payload).toMatchObject({ name: actual.name, status: actual.status, isError: actual.status !== "succeeded" });
+  85  |       }
+  86  |       async function projection() {
+  87  |         for (const activity of await page.locator("details.turn-activity").all()) if (await activity.getAttribute("open") === null) await activity.locator(":scope > summary").click();
+  88  |         const answers = page.locator(".assistant-message");
+  89  |         for (const content of audit.assistantContents.filter(Boolean)) await expect(answers.filter({ hasText: content })).toHaveCount(1);
+  90  |         await expect(answers.last()).toContainText(audit.finalAnswer);
+  91  |         await expect(page.getByTestId("stop-task")).toHaveCount(0);
+  92  |         const cards = page.locator(".tool-card"); await expect(cards).toHaveCount(audit.displays.length);
+  93  |         // UI sorting is not part of the contract; compare statuses as a multiset.
+  94  |         const states = await cards.locator(".tool-state").evaluateAll((items) => items.map((item) => item.className));
+  95  |         for (const state of ["denied", "succeeded", "cancelled"]) expect(states.filter((value) => new RegExp(`\\b${state}\\b`, "u").test(value)).length)
+  96  |           .toBe(audit.displays.filter((item) => item.status === state).length);
+  97  |       }
+  98  |       await projection(); const durationMs = Date.now() - started; expect(durationMs).toBeLessThan(spec.budget);
+  99  |       const refreshed = Date.now(); await page.reload({ timeout: 10_000 });
+  100 |       await page.locator(".session-row").filter({ hasText: spec.prompt.slice(0, 12) }).click(); await projection();
+  101 |       const refreshRecoveryMs = Date.now() - refreshed; expect(refreshRecoveryMs).toBeLessThan(10_000);
+  102 |       assertNoBrowserErrors(browser);
+  103 |       await attachJson(testInfo, contract, "sqlite-audit", { ...audit, model: current.model });
+  104 |       await attachJson(testInfo, contract, "timings", { durationMs, refreshRecoveryMs });
+  105 |     },
+  106 |   };
+  107 | }
+  108 | 
+```

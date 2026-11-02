@@ -1,0 +1,24 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/common/tools/interaction-schemas.ts
+const finding = object({
+  file: string("Repository-relative file path."),
+  line: integer("Optional one-based line number.", { minimum: 1 }),
+  summary: string("One-sentence defect statement."),
+  short_summary: string("Compact defect label."),
+  failure_scenario: string("Concrete state or input that demonstrates the failure."),
+  category: string("Short kebab-case finding category."),
+  verdict: string("Verification result.", { enum: ["CONFIRMED", "PLAUSIBLE"] }),
+  outcome: string("Outcome after a repair pass.", { enum: ["fixed", "skipped", "no_change_needed"] }),
+}, ["file", "summary", "failure_scenario"]);
+
+export const interactionToolSchemas = Object.freeze({
+  AskUserQuestion: {
+    name: "AskUserQuestion",
+    description: "Ask structured questions only when a missing user decision materially changes the result and cannot be resolved from the request, code, or sensible defaults. Each question has two to four choices and an automatic free-form option. Put the recommended option first and label it (Recommended). Use multiSelect for independent choices.",
+    parameters: object({ questions: array("Questions to ask.", question, { minItems: 1 }), metadata: object({ source: string("Optional analytics source identifier.") }) }, ["questions"]),
+  },
+  ReportFindings: {
+    name: "ReportFindings",
+    description: "Report verified code-review findings as structured records, ordered by severity.",
+    parameters: object({ level: string("Review effort.", { enum: ["low", "medium", "high", "xhigh", "max"] }), findings: array("Verified findings.", finding, { maxItems: 32 }) }, ["findings"]),
+  },

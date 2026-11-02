@@ -1,0 +1,9 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/assistant-maintenance-scenarios.ts
+  "memory-update": {
+    prompt: "请长期记住：我的工作周报固定标题为海棠周报。简短确认即可，不操作文件或其他资料。",
+    change: "把我的工作周报固定标题改为白鹭周报，替换旧标题并长期记住。只确认变更，不操作文件或其他资料。",
+    recall: "根据我已保存的个人偏好，我每周工作周报的固定标题是什么？请只回答当前标题，不操作项目资料或文件。",
+    marker: "白鹭周报", oldValue: "海棠周报",
+  },
+  "memory-delete": {

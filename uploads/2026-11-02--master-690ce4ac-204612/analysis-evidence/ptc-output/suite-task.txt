@@ -1,0 +1,39 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/evaluation-cases.ts
+const PTC_FILE_HANDOFF_PROMPT = [
+  "请用 JavaScript 完成一项小交接统计：读取工作区根目录的 handoff-items.json，把读取结果中的 items 数组用于计算，再将统计结果保存为 handoff-count.json。读取、计算、写入可以在同一段程序中完成，不必拆成多段，也不需要开发通用脚本。",
+  "结果是一个 JSON 对象，只含 itemCount（数组条目总数）和 firstItem（数组第一项）两个字段。完整读取并算好后一次性新建文件，不写空文件或中间版本，不重复写入。不要修改源文件或处理其他文件，禁止终端和 shell 命令。",
+  "请让程序输出实际统计结果，完成后报告生成的文件名，并用 JSON 展示实际结果文件的内容。",
+].join("\n");
+
+export const PTC_LIVE_FILE_HANDOFF_SUMMARY_SCENARIO = Object.freeze({
+  inputPath: "handoff-items.json",
+  inputContent: '{"items":["review","release","handoff"]}\n',
+  outputPath: "handoff-count.json",
+  outputValue: Object.freeze({ itemCount: 3, firstItem: "review" }),
+  finalMarker: "handoff-count.json",
+  prompt: PTC_FILE_HANDOFF_PROMPT,
+} as const);
+
+export const PTC_LIVE_FILE_HANDOFF_SUMMARY_CASE = Object.freeze({
+  contractVersion: EVALUATION_CONTRACT_SCHEMA_VERSION,
+  id: "ptc.live-file-handoff-summary",
+  mode: "ptc",
+  modelExecution: "live",
+  artifactFiles: Object.freeze({
+    sqliteAudit: "ptc-live-file-handoff-summary-sqlite-audit.json",
+    timings: "ptc-live-file-handoff-summary-timings.json",
+    serviceLog: "isolated-service.log",
+  }),
+  prompt: PTC_LIVE_FILE_HANDOFF_SUMMARY_SCENARIO.prompt,
+  finalMarker: PTC_LIVE_FILE_HANDOFF_SUMMARY_SCENARIO.finalMarker,
+  timingBudgetsMs: Object.freeze({ durationMs: 240_000, refreshRecoveryMs: 10_000 }),
+  requiredTools: Object.freeze(["RunCode", "Read", "Write"]),
+  allowedOptionalTools: Object.freeze(["Glob"]),
+  requiredPolicyEvidence: Object.freeze(["builtin.programmatic_tool_surface", "builtin.model_tool_calls", "builtin.tool_scheduler"]),
+  toolSurface: "run_code_only",
+} as const satisfies EvaluationCaseContract);
+
+export const PTC_LIVE_TASK_LIST_COUNT_SCENARIO = Object.freeze({
+  taskCount: 0,
+  prompt: [

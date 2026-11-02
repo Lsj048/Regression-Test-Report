@@ -1,0 +1,28 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/cases/deterministic-guards.ts
+50:       const started = Date.now(); await page.getByTestId("send-message").click();
+51:       const createdResponse = await created; expect(createdResponse.ok()).toBe(true);
+52:       const session = await sessionFrom(createdResponse), path = join(current.stateDirectory, "event_log.sqlite");
+53:       const status = async () => {
+54:         const response = await fetch(`${current.baseUrl}/api/sessions/${session.id}`, { signal: AbortSignal.timeout(5000) });
+55:         expect(response.ok).toBe(true); return (await sessionFrom(response)).status;
+56:       };
+57:       if (scenario === "guard-drain-limit") {
+58:         // Observe the actual guard before attempting another ordinary task. Never manufacture terminal state.
+59:         await expect.poll(() => {
+60:           const db = new DatabaseSync(path, { readOnly: true });
+61:           try {
+62:             const failures = db.prepare("SELECT seq,session_id,turn_id,type,payload_json,payload_ref FROM event_log WHERE session_id=? AND type='turn.failed'").all(session.id) as unknown as EventRow[];
+63:             return failures.some((event) => /AGENT_LOOP_NONCONVERGENT|exceeded the transition limit/u.test(JSON.stringify(payload(path, event))));
+64:           }
+65:           finally { db.close(); }
+66:         }, { timeout: 270_000, intervals: [1000] }).toBe(true);
+67:       } else await expect.poll(status, { timeout: 30_000 }).toBe("completed");
+68:       if (spec.followup) {
+69:         await page.getByTestId("composer-input").fill(DETERMINISTIC_FOLLOWUP_PROMPT);
+70:         const accepted = page.waitForResponse((response) => response.url() === `${current.baseUrl}/api/sessions/${session.id}/messages` && response.request().method() === "POST");
+71:         await page.getByTestId("send-message").click(); expect((await accepted).ok()).toBe(true);
+72:       }
+73:       await expect.poll(status, { timeout: 15_000 }).toBe("completed");
+74:       const response = await fetch(new URL("/evidence", current.model.providerBaseUrl!), { signal: AbortSignal.timeout(5000) });
+75:       expect(response.ok).toBe(true);

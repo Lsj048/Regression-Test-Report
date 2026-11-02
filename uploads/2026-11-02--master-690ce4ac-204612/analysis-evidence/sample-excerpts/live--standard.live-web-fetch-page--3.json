@@ -1,0 +1,216 @@
+{
+  "kind": "derived-causal-event-excerpt",
+  "scope": "Selected original durable events cited by manual attribution. Reasoning text is omitted where marked. This is a readable excerpt, not a full trace or a new G1 sample.",
+  "sampleDirectory": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat3",
+  "sourceTrajectory": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model-repeat3/trajectory.jsonl.gz",
+  "sourceTrajectorySha256": "a33eac95d36e1a05106640ab54fc289e944009d35025ab947d760af54122e36e",
+  "manifest": {
+    "kind": "manifest",
+    "schemaVersion": 1,
+    "sample": {
+      "caseId": "standard.live-web-fetch-page",
+      "mode": "standard",
+      "model": {
+        "execution": "live",
+        "name": "LongCat-2.0",
+        "revision": "provider-unreported",
+        "providerBaseUrl": "https://aigc.sankuai.com/v1/openai/native",
+        "settings": {
+          "maxOutputTokens": 4096,
+          "contextWindowTokens": 1048576,
+          "temperature": 0,
+          "thinking": {
+            "enabled": true,
+            "budgetTokens": 1024
+          }
+        }
+      },
+      "repeatEachIndex": 3,
+      "retry": 0,
+      "testStatus": "failed"
+    },
+    "capturedAt": "2026-11-02T15:56:16.142Z",
+    "cleanupStartedAt": "2026-11-02T15:56:16.091Z",
+    "processesStopped": true,
+    "source": "durable SQLite facts; ordered within each table; includes cleanup events; not raw HTTP",
+    "redaction": "known credential values replaced; original payload hashes verified before redaction"
+  },
+  "complete": {
+    "kind": "complete",
+    "events": 78,
+    "turns": 1,
+    "messages": 6
+  },
+  "selectedSequences": [
+    39,
+    58,
+    66,
+    68
+  ],
+  "events": [
+    {
+      "kind": "event",
+      "seq": 39,
+      "event_id": "event_f6f764b1-3bd2-4ff8-b7df-b7f1e9aebf85",
+      "session_id": "session_9a5062e4-5c54-4928-9e6d-829237cad5dc",
+      "turn_id": "turn_59f69efc-f37a-465a-8718-dfded3f584fd",
+      "type": "tool.result",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 1045,
+      "payload_sha256": "1faf5c5a9fd76967cbac1ebb41d740a5195755eb512e29c8e778110c4c36f682",
+      "trace_id": null,
+      "created_at": "2026-11-02T15:56:13.589Z",
+      "payload": {
+        "actionId": "action:call_acf56287b49849049d20251f",
+        "actionPlanId": "plan_e5219f4b-c2d5-4cdd-b848-da43543e1d0b",
+        "callId": "call_acf56287b49849049d20251f",
+        "canonicalValue": {
+          "contentType": "text/html; charset=utf-8",
+          "prompt": "Extract the exact page title (from the <title> tag or main heading) and the first sentence of the body text. Preserve the original English text exactly as it appears, without translation or modification.",
+          "text": "Example Domain This domain is for use in documentation examples without needing permission. This is not a service; avoid relying on it for testing and monitoring purposes.",
+          "url": "https://example.com/"
+        },
+        "content": [
+          {
+            "text": "Fetched https://example.com/\n\nExample Domain This domain is for use in documentation examples without needing permission. This is not a service; avoid relying on it for testing and monitoring purposes.",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "name": "WebFetch",
+        "ordinal": 0,
+        "origin": {
+          "component": "WebFetch",
+          "kind": "tool",
+          "package": "@longcat/tools-builtin",
+          "version": "1.0.0"
+        },
+        "status": "succeeded"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 58,
+      "event_id": "event_dc1a9d43-c9b3-43ed-aaa3-20282c6338ca",
+      "session_id": "session_9a5062e4-5c54-4928-9e6d-829237cad5dc",
+      "turn_id": "turn_59f69efc-f37a-465a-8718-dfded3f584fd",
+      "type": "model.completed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 1129,
+      "payload_sha256": "c2d6ca940289ad91224fb10b009ea903799fdf7d063c214a1f84d7d021bace1b",
+      "trace_id": null,
+      "created_at": "2026-11-02T15:56:15.954Z",
+      "payload": {
+        "attemptId": "attempt_f5132c3d-15c3-4aa9-af23-9c40af989a8a",
+        "content": "让我核对一下原始 HTML，以确认标题和正文第一句话的准确原文。",
+        "finishReason": "tool_calls",
+        "outcomeId": "outcome_bf4a2049-691f-4346-af3d-51e681fb7aa8",
+        "request": {
+          "attempt": 0,
+          "planId": "plan_b0818cc5-6ebe-4cc8-8061-ec0966a14217",
+          "requestHash": "e9baee3a9b0ffec248d9a72a02ae7eead3631f047fee7393baa9c347bcd10457"
+        },
+        "responseMetadata": {
+          "responseId": "d67cf85a17824205b84e1d225f4fbb36"
+        },
+        "toolCalls": [
+          {
+            "arguments": "{\"command\": \"curl -s https://example.com/\", \"description\": \"Fetch raw HTML of example.com\"}",
+            "id": "call_c1994d1a18b843d3bb7a3091",
+            "name": "Bash"
+          }
+        ],
+        "usage": {
+          "cachedTokens": 8064,
+          "completionTokens": 121,
+          "promptTokens": 8357,
+          "reasoningTokens": 67,
+          "totalTokens": 8478
+        }
+      },
+      "omittedFields": [
+        "payload.reasoningContent"
+      ]
+    },
+    {
+      "kind": "event",
+      "seq": 66,
+      "event_id": "event_23ff38ee-4627-45c5-a98d-ee4b8955bfb8",
+      "session_id": "session_9a5062e4-5c54-4928-9e6d-829237cad5dc",
+      "turn_id": "turn_59f69efc-f37a-465a-8718-dfded3f584fd",
+      "type": "tool.call",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 504,
+      "payload_sha256": "34fbd96505ba8a9fc1474e39bfc2fb55a868e3a78582ac9bba04589a324b6717",
+      "trace_id": null,
+      "created_at": "2026-11-02T15:56:15.985Z",
+      "payload": {
+        "actionId": "action:call_c1994d1a18b843d3bb7a3091",
+        "actionPlanId": "plan_db1fe224-1e35-4d6e-a0ff-6df2b146d95c",
+        "arguments": {
+          "command": "curl -s https://example.com/",
+          "description": "Fetch raw HTML of example.com"
+        },
+        "callId": "call_c1994d1a18b843d3bb7a3091",
+        "name": "Bash",
+        "nestingDepth": 0,
+        "ordinal": 0,
+        "origin": {
+          "component": "Bash",
+          "kind": "tool",
+          "package": "@longcat/tools-builtin",
+          "version": "1.0.0"
+        },
+        "sessionId": "session_9a5062e4-5c54-4928-9e6d-829237cad5dc",
+        "turnId": "turn_59f69efc-f37a-465a-8718-dfded3f584fd"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 68,
+      "event_id": "event_4eacf78c-e66f-497e-b3c8-f4bd7758de3d",
+      "session_id": "session_9a5062e4-5c54-4928-9e6d-829237cad5dc",
+      "turn_id": "turn_59f69efc-f37a-465a-8718-dfded3f584fd",
+      "type": "permission.approval.requested",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 769,
+      "payload_sha256": "efa6fd5efc3fbbb771d47fbca21f0bb8f9099c6f6c08a423dd1ab036b2ddaed6",
+      "trace_id": null,
+      "created_at": "2026-11-02T15:56:15.988Z",
+      "payload": {
+        "execution": {
+          "actionId": "action:call_c1994d1a18b843d3bb7a3091",
+          "arguments": {
+            "command": "curl -s https://example.com/",
+            "description": "Fetch raw HTML of example.com"
+          },
+          "callId": "call_c1994d1a18b843d3bb7a3091",
+          "name": "Bash",
+          "nestingDepth": 0,
+          "ordinal": 0,
+          "origin": {
+            "component": "Bash",
+            "kind": "tool",
+            "package": "@longcat/tools-builtin",
+            "version": "1.0.0"
+          },
+          "sessionId": "session_9a5062e4-5c54-4928-9e6d-829237cad5dc",
+          "turnId": "turn_59f69efc-f37a-465a-8718-dfded3f584fd"
+        },
+        "requestId": "approval:turn_59f69efc-f37a-465a-8718-dfded3f584fd:action:call_c1994d1a18b843d3bb7a3091",
+        "suggestedRule": "Bash(curl -s https://example.com/)",
+        "target": {
+          "action": "Bash",
+          "description": "curl -s https://example.com/",
+          "mutates": true,
+          "permissionRequired": true,
+          "resource": "curl -s https://example.com/"
+        }
+      }
+    }
+  ]
+}

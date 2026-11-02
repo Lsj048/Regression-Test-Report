@@ -1,0 +1,371 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> standard.live-subagent-interrupt >> standard mode freezes a release by interrupting its running background observer
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+Error: the interrupt ready window did not open within 240000ms
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-jeFh4l/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "项目已经配置好一条持续发布观察命令，完整命令只有下面一行…" [ref=e56] [cursor=pointer]
+        - button "项目已经配置好一条持续发布观察命令，完整命令只有下面一行… 的会话操作" [ref=e60] [cursor=pointer]
+    - button "归档会话" [ref=e65] [cursor=pointer]
+    - button "设置" [ref=e69] [cursor=pointer]
+  - main [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 项目已经配置好一条持续发布观察命令，完整命令只有下面一行…
+        - button "复制会话 ID session_60ab2a93-2d9f-481e-8bda-4568756f666e" [ref=e79] [cursor=pointer]:
+          - generic [ref=e80]: session_60ab2a93-2d9f-481e-8bda-4568756f666e
+      - generic [ref=e84]:
+        - button "对话" [ref=e85] [cursor=pointer]
+        - button "轨迹" [ref=e88] [cursor=pointer]
+    - generic [ref=e91]:
+      - generic [ref=e94]:
+        - generic [ref=e97]:
+          - generic [ref=e98]: 项目已经配置好一条持续发布观察命令，完整命令只有下面一行： node scripts/watch-release-window.mjs 请让一位名为“发布窗口观察员”的协作者在后台完成观察工作，你不要等待观察结束。交给协作者的要求是：从当前项目根目录运行上述命令，直接等待本次命令执行并观察输出，最长十分钟。这是随本次观察一起停止的临时工作，不要另建独立后台进程或常驻服务。正式观察时不使用 timeout 包裹，不追加 echo、管道、后台符号或其他前后命令；可以仅把标准错误合并到同一输出。Node 和脚本已验证可用，必要的只读文件或 Node 环境确认可以做，不修改文件、不运行其他业务命令。 当前聊天在交办前可以做必要的只读准备：确认项目路径、查看项目文件或检查 Node 环境；不修改文件、不运行观察命令或其他业务命令。只交办这一位协作者，交办后不再做文件或命令检查，立即通过网页提问表单询问我，表单提供“继续观察”和“冻结发布”两个可点击选项，然后等待我的选择。可以查询协作者的状态。不要只在聊天正文列出选项；我要在观察仍进行时点击表单作决定。不要联网、安排提醒或定时任务，不要自行替我选择。 如果我选择“冻结发布”，请停止同一位“发布窗口观察员”正在进行的观察工作并确认它已经停止。不要安排新的协作者，也不要改用终端命令自行停止。确认停止后，回复中必须包含下面两个状态字段各一条，值保持原样；可以附简短的停止确认说明： release-status=frozen verification-status=cancelled
+          - generic:
+            - time: 22:51
+            - button "复制消息"
+        - generic [ref=e100]:
+          - generic [ref=e101]: 已处理 4 分钟 20 秒
+          - generic [ref=e103]:
+            - paragraph [ref=e106]: 我先做只读准备，确认项目路径和脚本存在，然后交办协作者。
+            - 'button "Bash command: pwd && ls -la /private/tmp/lch-e2e-jeFh4l/workspace/scripts/watch-release-window.mjs && 已完成" [ref=e107] [cursor=pointer]':
+              - generic [ref=e111]:
+                - strong [ref=e112]: Bash
+                - generic [ref=e113]: "command: pwd && ls -la /private/tmp/lch-e2e-jeFh4l/workspace/scripts/watch-release-window.mjs &&"
+              - generic [ref=e114]: 已完成
+            - paragraph [ref=e117]: 项目路径、脚本和 Node 环境均已确认。现在交办协作者。
+            - generic [ref=e118]:
+              - generic [ref=e119]: 开启了一个子 Agent
+              - button "查看子 Agent：发布窗口观察员" [ref=e120] [cursor=pointer]:
+                - strong [ref=e126]: 发布窗口观察员
+                - generic [ref=e127]: 运行中
+            - paragraph [ref=e132]: 协作者"发布窗口观察员"已在后台开始观察工作。现在为你提供决策表单。
+            - 'button "Write content: <!DOCTYPE html> <html lang=\"zh-CN\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" 已完成" [ref=e133] [cursor=pointer]':
+              - generic [ref=e137]:
+                - strong [ref=e138]: Write
+                - generic [ref=e139]: "content: <!DOCTYPE html> <html lang=\"zh-CN\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\""
+              - generic [ref=e140]: 已完成
+            - 'button "Read file_path: /private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html 已完成" [ref=e142] [cursor=pointer]':
+              - generic [ref=e146]:
+                - strong [ref=e147]: Read
+                - generic [ref=e148]: "file_path: /private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html"
+              - generic [ref=e149]: 已完成
+            - 'button "Edit file_path: /private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html · new_string: <div cl 已完成" [ref=e151] [cursor=pointer]':
+              - generic [ref=e155]:
+                - strong [ref=e156]: Edit
+                - generic [ref=e157]: "file_path: /private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html · new_string: <div cl"
+              - generic [ref=e158]: 已完成
+            - 'button "Edit file_path: /private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html · new_string: .footer { 已完成" [ref=e160] [cursor=pointer]':
+              - generic [ref=e164]:
+                - strong [ref=e165]: Edit
+                - generic [ref=e166]: "file_path: /private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html · new_string: .footer {"
+              - generic [ref=e167]: 已完成
+            - generic [ref=e169]:
+              - paragraph [ref=e170]: 表单已生成，请打开下方 HTML 文件在浏览器中查看并点击选择：
+              - paragraph [ref=e171]:
+                - strong [ref=e172]: 文件路径：
+                - link [ref=e173] [cursor=pointer]:
+                  - /url: /api/sessions/session_60ab2a93-2d9f-481e-8bda-4568756f666e/files/release-decision.html
+                  - code [ref=e174]: /private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html
+                  - text: ↗
+              - paragraph [ref=e175]: 表单提供两个可点击选项：
+              - list [ref=e176]:
+                - listitem [ref=e177]:
+                  - text: 👁️
+                  - strong [ref=e178]: 继续观察
+                  - text: — 协作者继续在后台观察发布窗口
+                - listitem [ref=e179]:
+                  - text: ❄️
+                  - strong [ref=e180]: 冻结发布
+                  - text: — 停止协作者的观察工作
+              - paragraph [ref=e181]: 请在观察进行中点击你的选择，我会等待你的决定。
+            - 'button "Read file_path: /private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html 已完成" [ref=e182] [cursor=pointer]':
+              - generic [ref=e186]:
+                - strong [ref=e187]: Read
+                - generic [ref=e188]: "file_path: /private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html"
+              - generic [ref=e189]: 已完成
+            - generic [ref=e191]:
+              - paragraph [ref=e192]: 表单已就绪，请用浏览器打开以下文件：
+              - paragraph [ref=e193]:
+                - text: 📄
+                - link [ref=e194] [cursor=pointer]:
+                  - /url: /api/sessions/session_60ab2a93-2d9f-481e-8bda-4568756f666e/files/release-decision.html
+                  - code [ref=e195]: /private/tmp/lch-e2e-jeFh4l/workspace/release-decision.html
+                  - text: ↗
+              - paragraph [ref=e196]: 页面中会显示"发布窗口观察中"状态，并提供两个可点击按钮：
+              - list [ref=e197]:
+                - listitem [ref=e198]:
+                  - text: 👁️
+                  - strong [ref=e199]: 继续观察
+                - listitem [ref=e200]:
+                  - text: ❄️
+                  - strong [ref=e201]: 冻结发布
+              - paragraph [ref=e202]: 请点击你的选择，我在此等待你的决定。
+      - generic [ref=e205]:
+        - textbox "继续输入消息" [ref=e206]:
+          - /placeholder: 追加消息，任务会在当前步骤结束后处理
+        - generic [ref=e207]:
+          - generic [ref=e208]:
+            - button "添加" [ref=e210] [cursor=pointer]
+            - generic [ref=e213] [cursor=pointer]: 标准模式
+            - button "权限：工作区写入" [disabled] [ref=e219]:
+              - generic [ref=e222]: 工作区写入
+          - generic [ref=e225]:
+            - button "模型：LongCat-2.0" [disabled] [ref=e227] [cursor=pointer]:
+              - generic [ref=e228]: LongCat-2.0
+              - generic [ref=e229]: 思考
+            - generic "模型缓存与上下文用量" [ref=e232]:
+              - meter "最近一次模型请求缓存命中 12,672 / 14,823 输入令牌（85.5%）" [ref=e233]:
+                - generic [ref=e234]: 缓存
+                - strong [ref=e235]: 85%
+              - meter "上下文已使用 14,823 / 1,048,576 令牌（1.4%）；最近一次模型请求" [ref=e236]:
+                - generic [ref=e237]: 令牌
+                - strong [ref=e238]: 1%
+            - button "追加消息" [disabled] [ref=e239]
+            - button "停止任务" [ref=e242] [cursor=pointer]
+    - generic [ref=e245]:
+      - generic [ref=e248]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e249] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  223 |   const scenario = STANDARD_LIVE_SUBAGENT_INTERRUPT_SCENARIO;
+  224 |   const eventLogPath = join(environment.stateDirectory, "event_log.sqlite");
+  225 |   const approvedPreparations = new Map<string, LiveSubagentInterruptPreparationApproval>();
+  226 |   const deadline = Date.now() + timeoutMs;
+  227 |   while (Date.now() < deadline) {
+  228 |     const root = await sessionSnapshot(environment, rootSessionId);
+  229 |     if (root.status !== "running" && root.status !== "waiting") {
+  230 |       throw new Error(`live-subagent-interrupt root reached ${root.status} before its ready window`);
+  231 |     }
+  232 |     const question = page.getByRole("region", { name: "等待回答" });
+  233 |     if (await question.isVisible()) {
+  234 |       const approval = auditStandardLiveSubagentInterruptPendingPreparationApproval(
+  235 |         eventLogPath,
+  236 |         rootSessionId,
+  237 |       );
+  238 |       if (approval !== undefined) {
+  239 |         const previous = approvedPreparations.get(approval.requestId);
+  240 |         if (previous !== undefined) {
+  241 |           expect(approval, "a pending preparation approval changed while resuming").toEqual(previous);
+  242 |           await page.waitForTimeout(50);
+  243 |           continue;
+  244 |         }
+  245 |         await approvePreparationQuestion(page, environment, rootSessionId, approval);
+  246 |         approvedPreparations.set(approval.requestId, approval);
+  247 |         continue;
+  248 |       }
+  249 |     }
+  250 |     const logs = await taskLogs(environment.workspace);
+  251 |     const workerLogs = logs.filter(({ content }) => content.split(/\r?\n/u).includes(scenario.workerReadyLine));
+  252 |     expect(workerLogs.length, "more than one release observer emitted the unique ready line").toBeLessThanOrEqual(1);
+  253 |     if (workerLogs.length === 1
+  254 |       && await question.isVisible()
+  255 |       && standardLiveSubagentInterruptReadyWindowReady(eventLogPath, rootSessionId)) {
+  256 |       const worker = workerLogs[0]!;
+  257 |       const workerPid = pidFromOutput(worker.content, scenario.workerPidPrefix);
+  258 |       const workerChildPid = pidFromOutput(worker.content, scenario.workerChildPidPrefix);
+  259 |       if (workerPid === undefined || workerChildPid === undefined) {
+  260 |         await page.waitForTimeout(50);
+  261 |         continue;
+  262 |       }
+  263 |       expect(worker.content, "the release observer advanced before the user's page decision").toBe([
+  264 |         `${scenario.workerPidPrefix}${workerPid}`,
+  265 |         `${scenario.workerChildPidPrefix}${workerChildPid}`,
+  266 |         scenario.workerReadyLine,
+  267 |         "",
+  268 |       ].join("\n"));
+  269 |       const audit = auditStandardLiveSubagentInterruptReadyWindow(eventLogPath, rootSessionId);
+  270 |       expect(audit.preparationApprovals,
+  271 |         "the ready audit disagrees with preparation approvals submitted through the Web UI")
+  272 |         .toEqual([...approvedPreparations.values()]);
+  273 |       expect(worker.sessionId, "the ready observer did not belong to the audited child").toBe(audit.childSessionId);
+  274 |       const child = await subagentSnapshot(environment, rootSessionId, audit);
+  275 |       expect(child).toMatchObject({
+  276 |         id: audit.childSessionId,
+  277 |         subagentId: audit.childSessionId,
+  278 |         turnId: audit.childTurnId,
+  279 |         turnIds: [audit.childTurnId],
+  280 |         parentTurnId: audit.initialRootTurnId,
+  281 |         parentSessionId: rootSessionId,
+  282 |         label: audit.childLabel,
+  283 |         mode: "spawn",
+  284 |         depth: 1,
+  285 |         status: "running",
+  286 |       });
+  287 |       expect(child.turnIds).toEqual([audit.childTurnId]);
+  288 |       expect(child.settledAt).toBeUndefined();
+  289 |       expect(child.eventCount).toBe(child.events.length);
+  290 |       expect(child.events.length).toBeGreaterThan(0);
+  291 |       expect(child.events.every((event) => event.sessionId === rootSessionId
+  292 |         && event.sourceSessionId === audit.childSessionId
+  293 |         && event.turnId === audit.childTurnId)).toBe(true);
+  294 |       for (const type of ["tool.call", "tool.dispatch.started"] as const) {
+  295 |         expect(child.events.some((event) => event.type === type
+  296 |           && eventCallId(event) === audit.childBashCallId), `the child detail omitted ${type}`).toBe(true);
+  297 |       }
+  298 |       expect(child.events.some((event) => event.type === "tool.result"
+  299 |         && eventCallId(event) === audit.childBashCallId), "the child detail settled Bash before the user's page decision")
+  300 |         .toBe(false);
+  301 | 
+  302 |       const workerProcessGroupId = processGroupFor(workerPid);
+  303 |       expect(processGroupFor(workerChildPid), "the observer child escaped the worker process group")
+  304 |         .toBe(workerProcessGroupId);
+  305 |       for (const [label, pid] of [["observer", workerPid], ["observer child", workerChildPid]] as const) {
+  306 |         expect(processTargetIsAlive(pid), `${label} exited before the user's page decision`).toBe(true);
+  307 |         expect(processGroupFor(pid), `${label} escaped its captured process group`).toBe(workerProcessGroupId);
+  308 |       }
+  309 |       expect(processTargetIsAlive(workerProcessGroupId, true), "the observer process group exited before the user's page decision")
+  310 |         .toBe(true);
+  311 |       return {
+  312 |         audit,
+  313 |         process: {
+  314 |           workerOutputFile: worker.path,
+  315 |           workerPid,
+  316 |           workerChildPid,
+  317 |           workerProcessGroupId,
+  318 |         },
+  319 |       };
+  320 |     }
+  321 |     await page.waitForTimeout(100);
+  322 |   }
+> 323 |   throw new Error(`the interrupt ready window did not open within ${timeoutMs}ms`);
+      |         ^ Error: the interrupt ready window did not open within 240000ms
+  324 | }
+  325 | 
+  326 | async function approvePreparationQuestion(
+  327 |   page: Page,
+  328 |   environment: EvaluationCaseEnvironment,
+  329 |   rootSessionId: string,
+  330 |   approval: LiveSubagentInterruptPreparationApproval,
+  331 | ): Promise<void> {
+  332 |   const question = page.getByRole("region", { name: "等待回答", exact: true });
+  333 |   await expect(question).toBeVisible();
+  334 |   await expect(question).toContainText(approval.command);
+  335 |   const allow = question.getByRole("radio", { name: /^允许/u });
+  336 |   const deny = question.getByRole("radio", { name: /^拒绝/u });
+  337 |   await expect(allow).toHaveCount(1);
+  338 |   await expect(deny).toHaveCount(1);
+  339 |   await expect(allow).toHaveAttribute("aria-checked", "false");
+  340 |   await expect(deny).toHaveAttribute("aria-checked", "false");
+  341 |   await allow.click();
+  342 |   await expect(allow).toHaveAttribute("aria-checked", "true");
+  343 |   const answered = page.waitForResponse((response) => response.url()
+  344 |     === `${environment.baseUrl}/api/sessions/${encodeURIComponent(rootSessionId)}/messages`
+  345 |     && response.request().method() === "POST");
+  346 |   await question.getByRole("button", { name: /确认并继续/u }).click();
+  347 |   const response = await answered;
+  348 |   expect(response.ok(), "live-subagent-interrupt preparation approval failed").toBe(true);
+  349 |   const body = response.request().postDataJSON() as Readonly<Record<string, unknown>>;
+  350 |   expect(body["content"], "the Web UI submitted the wrong preparation permission answer").toBe("允许");
+  351 |   expect(body["replyToRequestId"], "the Web UI answered a different preparation approval")
+  352 |     .toBe(approval.requestId);
+  353 |   expect(typeof body["inputId"], "the preparation approval omitted its input ID").toBe("string");
+  354 | }
+  355 | 
+  356 | async function waitForCompletion(
+  357 |   page: Page,
+  358 |   environment: EvaluationCaseEnvironment,
+  359 |   rootSessionId: string,
+  360 |   processEvidence: LiveSubagentInterruptProcessEvidence,
+  361 |   timeoutMs: number,
+  362 | ): Promise<void> {
+  363 |   const deadline = Date.now() + timeoutMs;
+  364 |   while (Date.now() < deadline) {
+  365 |     const pendingQuestion = page.getByRole("region", { name: "等待回答" });
+  366 |     if (await pendingQuestion.isVisible()) {
+  367 |       throw new Error(`live-subagent-interrupt requested another user decision: ${(
+  368 |         await pendingQuestion.innerText()
+  369 |       ).replace(/\s+/gu, " ").trim()}`);
+  370 |     }
+  371 |     const snapshot = await sessionSnapshot(environment, rootSessionId);
+  372 |     if (snapshot.status === "completed") {
+  373 |       expect(processLiveness(processEvidence),
+  374 |         "the root published completion before the observer process group was fully stopped").toEqual({
+  375 |         workerPidAlive: false,
+  376 |         workerChildPidAlive: false,
+  377 |         workerGroupAlive: false,
+  378 |       });
+  379 |       return;
+  380 |     }
+  381 |     if (snapshot.status !== "running" && snapshot.status !== "waiting") {
+  382 |       throw new Error(`live-subagent-interrupt root ended with unexpected status ${snapshot.status}`);
+  383 |     }
+  384 |     await page.waitForTimeout(100);
+  385 |   }
+  386 |   throw new Error(`live-subagent-interrupt did not complete within ${timeoutMs}ms`);
+  387 | }
+  388 | 
+  389 | function cardByName(page: Page, name: string): Locator {
+  390 |   return page.locator(".tool-card").filter({ has: page.locator(".tool-copy > strong", { hasText: name }) });
+  391 | }
+  392 | 
+  393 | async function projectedUserMessageText(message: Locator): Promise<string> {
+  394 |   const direct = message.locator(":scope > span");
+  395 |   if (await direct.count() === 1) return (await direct.textContent() ?? "").trim();
+  396 |   const expanded = message.locator(":scope > .user-message-expanded");
+  397 |   if (await expanded.count() === 1) return (await expanded.textContent() ?? "").trim();
+  398 |   throw new Error("the Web user message has an unsupported projection shape");
+  399 | }
+  400 | 
+  401 | async function releaseDecisionOptions(question: Locator): Promise<{
+  402 |   readonly continueOption: Locator;
+  403 |   readonly freezeOption: Locator;
+  404 |   readonly customOption: Locator;
+  405 | }> {
+  406 |   const radios = question.getByRole("radio");
+  407 |   await expect(radios).toHaveCount(3);
+  408 |   const mapped = new Map<"continue" | "freeze", Locator>();
+  409 |   for (let index = 0; index < 3; index += 1) {
+  410 |     const radio = radios.nth(index);
+  411 |     const label = radio.locator(":scope .question-choice-copy > strong");
+  412 |     if (await label.count() === 0) continue;
+  413 |     await expect(label).toHaveCount(1);
+  414 |     const decision = standardLiveSubagentInterruptDecision(await label.textContent());
+  415 |     expect(decision, `release option ${index + 1} has an ambiguous business label`).toBeDefined();
+  416 |     expect(mapped.has(decision!), `release decision ${decision} was offered more than once`).toBe(false);
+  417 |     mapped.set(decision!, radio);
+  418 |   }
+  419 |   expect([...mapped.keys()].sort(), "the page did not uniquely expose continue and freeze choices")
+  420 |     .toEqual(["continue", "freeze"]);
+  421 |   const customOption = question.getByRole("radio", { name: "其他想法，直接告诉我", exact: true });
+  422 |   await expect(customOption).toHaveCount(1);
+  423 |   return {
+```

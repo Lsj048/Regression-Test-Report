@@ -1,0 +1,247 @@
+{
+  "kind": "derived-causal-event-excerpt",
+  "scope": "Selected original durable events cited by manual attribution. Reasoning text is omitted where marked. This is a readable excerpt, not a full trace or a new G1 sample.",
+  "sampleDirectory": "live/artifacts/test-results/web-regression-goal-live-p-f06a1--resume-with-fresh-approval-repeat3",
+  "sourceTrajectory": "live/artifacts/test-results/web-regression-goal-live-p-f06a1--resume-with-fresh-approval-repeat3/trajectory.jsonl.gz",
+  "sourceTrajectorySha256": "f3accee13b22abfa2a8a2a18da891ee2c0b92f79089ba9bc7eba0f9be21d700e",
+  "manifest": {
+    "kind": "manifest",
+    "schemaVersion": 1,
+    "sample": {
+      "caseId": "goal.live-pause-resume",
+      "mode": "goal",
+      "model": {
+        "execution": "live",
+        "name": "LongCat-2.0",
+        "revision": "provider-unreported",
+        "providerBaseUrl": "https://aigc.sankuai.com/v1/openai/native",
+        "settings": {
+          "maxOutputTokens": 4096,
+          "contextWindowTokens": 1048576,
+          "temperature": 0,
+          "thinking": {
+            "enabled": true,
+            "budgetTokens": 1024
+          }
+        }
+      },
+      "repeatEachIndex": 3,
+      "retry": 0,
+      "testStatus": "failed"
+    },
+    "capturedAt": "2026-11-02T16:10:21.383Z",
+    "cleanupStartedAt": "2026-11-02T16:10:21.306Z",
+    "processesStopped": true,
+    "source": "durable SQLite facts; ordered within each table; includes cleanup events; not raw HTTP",
+    "redaction": "known credential values replaced; original payload hashes verified before redaction"
+  },
+  "complete": {
+    "kind": "complete",
+    "events": 153,
+    "turns": 1,
+    "messages": 7
+  },
+  "selectedSequences": [
+    28,
+    76,
+    108,
+    126,
+    144,
+    149
+  ],
+  "events": [
+    {
+      "kind": "event",
+      "seq": 28,
+      "event_id": "event_80103cfe-2c7c-4cbe-87e7-226cbd7699af",
+      "session_id": "session_375bca8e-5dca-42b2-8725-cdf7a9821ec3",
+      "turn_id": "turn_c4577064-896f-47d4-8155-981555db1e23",
+      "type": "model.completed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 1483,
+      "payload_sha256": "062daadff4ed8bf79e0b4ee777659645c6f821780e0006f20b1057c8adf968a7",
+      "trace_id": null,
+      "created_at": "2026-11-02T16:07:40.855Z",
+      "payload": {
+        "attemptId": "attempt_2527d2fd-1c74-41a5-ae97-8c8b0aff5c78",
+        "content": "",
+        "finishReason": "tool_calls",
+        "outcomeId": "outcome_846ce8e0-6f5b-484a-acef-9762d662746f",
+        "request": {
+          "attempt": 0,
+          "planId": "plan_0b52ae82-1702-410d-8192-181e6e3e94cc",
+          "requestHash": "e05f3ec37ea5313d8492350644d9d9deeb142d1d090d96cbb8f79c59645735ea"
+        },
+        "responseMetadata": {
+          "responseId": "065b6583e6314d509a7284822bcf2566"
+        },
+        "toolCalls": [
+          {
+            "arguments": "{\"command\": \"pwd\", \"description\": \"Check current working directory\"}",
+            "id": "call_a805d62a0e7148d0b74e4362",
+            "name": "Bash"
+          },
+          {
+            "arguments": "{\"command\": \"ls\", \"description\": \"List directory contents\"}",
+            "id": "call_cfaf8d85569a4d5b9e4b1a05",
+            "name": "Bash"
+          }
+        ],
+        "usage": {
+          "cachedTokens": 9344,
+          "completionTokens": 209,
+          "promptTokens": 12365,
+          "reasoningTokens": 157,
+          "totalTokens": 12574
+        }
+      },
+      "omittedFields": [
+        "payload.reasoningContent"
+      ]
+    },
+    {
+      "kind": "event",
+      "seq": 76,
+      "event_id": "event_1aead3b1-ed04-4664-929c-fc0c2f3f1e32",
+      "session_id": "session_375bca8e-5dca-42b2-8725-cdf7a9821ec3",
+      "turn_id": "turn_c4577064-896f-47d4-8155-981555db1e23",
+      "type": "model.completed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 2303,
+      "payload_sha256": "c5861af63f10e4e51d45c08e14672d1b616cb19cd50dca1b0b0f5a4fbab4afd5",
+      "trace_id": null,
+      "created_at": "2026-11-02T16:07:48.546Z",
+      "payload": {
+        "attemptId": "attempt_0077d0a3-e45b-4594-8f70-bb9f39b52953",
+        "content": "",
+        "finishReason": "tool_calls",
+        "outcomeId": "outcome_34470dda-3ee1-40e4-9626-a176f1a482ae",
+        "request": {
+          "attempt": 0,
+          "planId": "plan_8988a0df-b085-4f7e-8c50-40b1ba7af23b",
+          "requestHash": "283ff0b3df079406234c85dbe6bdfb94ca105ce4bf3cd0b8c5d6941dab315450"
+        },
+        "responseMetadata": {
+          "responseId": "0cd3e72c44ea457581507ab4a59d7612"
+        },
+        "toolCalls": [
+          {
+            "arguments": "{\"expectedVersion\": 0, \"requirements\": [{\"id\": \"req:create_file\", \"text\": \"在当前工作区根目录新建 release-note.txt，正文逐字写为「灰度发布已安排」，不加标点，末尾换行可有可无\", \"sourceInputId\": \"input_web_9091aee0-2423-46e2-b1a2-d4a83f218b93\"}, {\"id\": \"req:verify_content\", \"text\": \"读取 release-note.txt 并核对正文内容确为「灰度发布已安排」\", \"sourceInputId\": \"input_web_9091aee0-2423-46e2-b1a2-d4a83f218b93\"}, {\"id\": \"req:present_options\", \"text\": \"在页面提供「发送」和「暂不发送」两个选项，等待用户选择，不主动发送或宣布完成\", \"sourceInputId\": \"input_web_9091aee0-2423-46e2-b1a2-d4a83f218b93\"}], \"steps\": [{\"id\": \"step:write_file\", \"text\": \"在工作区根目录创建 release-note.txt，写入「灰度发布已安排」\", \"requirementIds\": [\"req:create_file\"], \"dependsOn\": [], \"status\": \"in_progress\"}, {\"id\": \"step:read_verify\", \"text\": \"读取文件并核对内容\", \"requirementIds\": [\"req:verify_content\"], \"dependsOn\": [\"step:write_file\"], \"status\": \"pending\"}, {\"id\": \"step:ask_user\", \"text\": \"提供发送/暂不发送选项并等待选择\", \"requirementIds\": [\"req:present_options\"], \"dependsOn\": [\"step:read_verify\"], \"status\": \"pending\"}]}",
+            "id": "call_f6dafdbd02e64e70a30c01ef",
+            "name": "update_goal_plan"
+          }
+        ],
+        "usage": {
+          "cachedTokens": 11648,
+          "completionTokens": 513,
+          "promptTokens": 12621,
+          "reasoningTokens": 81,
+          "totalTokens": 13134
+        }
+      },
+      "omittedFields": [
+        "payload.reasoningContent"
+      ]
+    },
+    {
+      "kind": "event",
+      "seq": 108,
+      "event_id": "event_1654bb7c-1343-40b1-94a6-a8681649c40c",
+      "session_id": "session_375bca8e-5dca-42b2-8725-cdf7a9821ec3",
+      "turn_id": "turn_c4577064-896f-47d4-8155-981555db1e23",
+      "type": "model.failed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 318,
+      "payload_sha256": "0e606e5204f705c3d3da38ff0d69ea704e357b09833caf8fdf16b37226f0b4ec",
+      "trace_id": null,
+      "created_at": "2026-11-02T16:07:48.745Z",
+      "payload": {
+        "attempt": 0,
+        "category": "provider",
+        "code": "PROVIDER_HTTP_502",
+        "message": "Provider HTTP 502: {\"error\":\"LIVE_MODEL_PROXY_INTERNAL_ERROR\"}",
+        "outputCommitted": false,
+        "planId": "plan_2a3d05ef-54eb-462a-8306-7c81cb5edb24",
+        "recoverable": true,
+        "requestHash": "75b883650207ab23943617af4ae5985a42589108b117ca45c028e16e2ef3492a"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 126,
+      "event_id": "event_17ba34f3-b676-4b05-813d-e62a254ab8f7",
+      "session_id": "session_375bca8e-5dca-42b2-8725-cdf7a9821ec3",
+      "turn_id": "turn_c4577064-896f-47d4-8155-981555db1e23",
+      "type": "model.failed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 318,
+      "payload_sha256": "685d55d4b3068e1a3f8e72ad296b056585efb2c0f5de0165ec3f637f7d2665db",
+      "trace_id": null,
+      "created_at": "2026-11-02T16:07:48.860Z",
+      "payload": {
+        "attempt": 1,
+        "category": "provider",
+        "code": "PROVIDER_HTTP_502",
+        "message": "Provider HTTP 502: {\"error\":\"LIVE_MODEL_PROXY_INTERNAL_ERROR\"}",
+        "outputCommitted": false,
+        "planId": "plan_666ec7bd-47e7-4230-8ca5-3faedcf5c16a",
+        "recoverable": true,
+        "requestHash": "75b883650207ab23943617af4ae5985a42589108b117ca45c028e16e2ef3492a"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 144,
+      "event_id": "event_d65e6033-f3d7-43ed-aae8-460246f05580",
+      "session_id": "session_375bca8e-5dca-42b2-8725-cdf7a9821ec3",
+      "turn_id": "turn_c4577064-896f-47d4-8155-981555db1e23",
+      "type": "model.failed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 318,
+      "payload_sha256": "14d2118c5f27b316a2b15ee6d8e7274a00aa33d2afde397698ae716ee6630011",
+      "trace_id": null,
+      "created_at": "2026-11-02T16:07:48.969Z",
+      "payload": {
+        "attempt": 2,
+        "category": "provider",
+        "code": "PROVIDER_HTTP_502",
+        "message": "Provider HTTP 502: {\"error\":\"LIVE_MODEL_PROXY_INTERNAL_ERROR\"}",
+        "outputCommitted": false,
+        "planId": "plan_f974d92a-d2c1-4280-930c-e96d78d66f5e",
+        "recoverable": true,
+        "requestHash": "75b883650207ab23943617af4ae5985a42589108b117ca45c028e16e2ef3492a"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 149,
+      "event_id": "event_325a4321-82bc-492a-9f3b-a3358f3b0009",
+      "session_id": "session_375bca8e-5dca-42b2-8725-cdf7a9821ec3",
+      "turn_id": "turn_c4577064-896f-47d4-8155-981555db1e23",
+      "type": "turn.failed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 206,
+      "payload_sha256": "2bb5a35b58887e01fd534207b851eb655383f011d68fab7609ce2a47671e9ce8",
+      "trace_id": null,
+      "created_at": "2026-11-02T16:07:49.001Z",
+      "payload": {
+        "cause": {
+          "category": "provider",
+          "kind": "llm_error",
+          "recoverable": true
+        },
+        "error": {
+          "code": "PROVIDER_HTTP_502",
+          "message": "Provider HTTP 502: {\"error\":\"LIVE_MODEL_PROXY_INTERNAL_ERROR\"}"
+        },
+        "kind": "fail_turn"
+      }
+    }
+  ]
+}

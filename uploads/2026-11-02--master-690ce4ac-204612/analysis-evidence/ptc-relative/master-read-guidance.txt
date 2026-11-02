@@ -1,0 +1,11 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/workspace/schemas.ts
+  ].join("\n"),
+Read: [
+    "Reads a file from the local filesystem. Assume a user-provided path is valid until the Tool reports otherwise.",
+    FILE_PATH_GUIDANCE,
+    "",
+    "Usage:",
+    "- Omit offset and limit to read the complete text file, subject to the Tool's output cap. For a large file, continue with offset and limit.",
+    "- Text results use cat -n style line numbers starting at 1. The line-number prefix is not part of the file content.",
+    "- Images are returned visually to a multimodal model.",

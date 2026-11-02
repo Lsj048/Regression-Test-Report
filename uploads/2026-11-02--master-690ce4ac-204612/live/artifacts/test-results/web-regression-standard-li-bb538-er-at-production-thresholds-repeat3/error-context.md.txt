@@ -1,0 +1,144 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> standard.live-task-reminder >> a real inspection handoff consumes a durable task reminder at production thresholds
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: "running"
+Received: "failed"
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-k1H0xe/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "请在当前会话登记一项待办，标题严格为“核对巡检交接”，然… 刚刚" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]: 请在当前会话登记一项待办，标题严格为“核对巡检交接”，然…
+          - time [ref=e59]: 刚刚
+        - button "请在当前会话登记一项待办，标题严格为“核对巡检交接”，然… 的会话操作" [ref=e60] [cursor=pointer]
+    - button "归档会话" [ref=e65] [cursor=pointer]
+    - button "设置" [ref=e69] [cursor=pointer]
+  - main [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 请在当前会话登记一项待办，标题严格为“核对巡检交接”，然…
+        - button "复制会话 ID session_0d054fcf-dfd3-4db7-a167-93cfd735165b" [ref=e78] [cursor=pointer]:
+          - generic [ref=e79]: session_0d054fcf-dfd3-4db7-a167-93cfd735165b
+      - generic [ref=e83]:
+        - button "对话" [ref=e84] [cursor=pointer]
+        - button "轨迹" [ref=e87] [cursor=pointer]
+    - generic [ref=e90]:
+      - generic [ref=e93]:
+        - generic [ref=e96]:
+          - generic [ref=e97]: 请在当前会话登记一项待办，标题严格为“核对巡检交接”，然后从巡检交接/北京.txt开始，逐份读取正文，沿每份记录给出的下一份路径核对整条交接链，直到记录明确结束。记录中的路径都相对当前项目根目录，可直接使用，不必改写成绝对路径。核对期间不必逐站更新待办，全部核对完再将这项待办标记完成。最后告诉我末站名称和最终维护负责人。只核对现有记录，不修改文件，不运行终端命令、不联网、不委派、不进入计划阶段。
+          - generic:
+            - time: 00:10
+            - button "复制消息"
+        - group [ref=e99]:
+          - generic "用时 不到 1 秒" [ref=e100] [cursor=pointer]
+        - generic [ref=e104]: "Provider HTTP 502: {\"error\":\"LIVE_MODEL_PROXY_INTERNAL_ERROR\"}"
+        - generic [ref=e105]: 任务执行失败
+      - generic [ref=e108]:
+        - textbox "继续输入消息" [ref=e109]
+        - generic [ref=e110]:
+          - generic [ref=e111]:
+            - button "添加" [ref=e113] [cursor=pointer]
+            - generic [ref=e116] [cursor=pointer]: 标准模式
+            - button "权限：只读" [ref=e122] [cursor=pointer]:
+              - generic [ref=e125]: 只读
+          - generic [ref=e128]:
+            - button "模型：LongCat-2.0" [ref=e130] [cursor=pointer]:
+              - generic [ref=e131]: LongCat-2.0
+              - generic [ref=e132]: 思考
+            - button "发送消息" [disabled] [ref=e135]
+    - generic [ref=e138]:
+      - generic [ref=e141]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e142] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  1  | import { basename } from "node:path";
+  2  | import { expect } from "@playwright/test";
+  3  | import type { EvaluationCaseContract } from "../evaluation-cases.js";
+  4  | import { assertNoBrowserErrors, attachJson, browserDiagnostics, sessionFrom, type EvaluationCaseDriver, type EvaluationCaseEnvironment } from "../case-driver.js";
+  5  | import { checkLiveBusinessPage } from "./live-business-ui.js";
+  6  | 
+  7  | type ReadWorkflowAudit = Parameters<typeof checkLiveBusinessPage>[1] & Record<string, unknown>;
+  8  | /** Only page inputs cause work; setup and audit callbacks never submit commands. */
+  9  | export function createLiveReadWorkflowDriver(options: {
+  10 |   contract: EvaluationCaseContract; title: string; prompts?: readonly string[];
+  11 |   prepare: NonNullable<EvaluationCaseDriver["prepareWorkspace"]>;
+  12 |   audit: (environment: EvaluationCaseEnvironment, sessionId: string) => ReadWorkflowAudit;
+  13 |   attachArtifactsBeforeCleanup?: NonNullable<EvaluationCaseDriver["attachArtifactsBeforeCleanup"]>;
+  14 | }): EvaluationCaseDriver {
+  15 |   const { contract } = options;
+  16 |   return {
+  17 |     caseId: contract.id, title: options.title, permissionMode: "read-only", timingBudgetKeys: ["durationMs", "refreshRecoveryMs"], prepareWorkspace: options.prepare,
+  18 |     ...(options.attachArtifactsBeforeCleanup ? { attachArtifactsBeforeCleanup: options.attachArtifactsBeforeCleanup } : {}),
+  19 |     async run({ page, testInfo, environment: env }) {
+  20 |       const budget = contract.timingBudgetsMs["durationMs"]!, refreshBudget = contract.timingBudgetsMs["refreshRecoveryMs"]!;
+  21 |       testInfo.setTimeout(budget + refreshBudget + 30_000);
+  22 |       const diagnostics = browserDiagnostics(page), started = Date.now();
+  23 |       await page.goto(env.baseUrl);
+  24 |       await expect(page.getByTestId("mode-select")).toContainText(contract.mode === "assistant" ? "个人助理" : "标准模式"); await expect(page.getByTestId("model-select")).toContainText(env.model.name);
+  25 |       await expect(page.getByTestId("permission-select")).toContainText("只读"); await expect(page.getByTestId("workspace-select")).toContainText(basename(env.workspace));
+  26 |       let sessionId = "";
+  27 |       for (const prompt of options.prompts ?? [contract.prompt]) {
+  28 |         await page.getByTestId("composer-input").fill(prompt);
+  29 |         const url = sessionId ? `${env.baseUrl}/api/sessions/${sessionId}/messages` : `${env.baseUrl}/api/sessions`;
+  30 |         const accepted = page.waitForResponse(r => r.url() === url && r.request().method() === "POST");
+  31 |         await page.getByTestId("send-message").click(); const response = await accepted;
+  32 |         expect(response.ok()).toBe(true); expect(response.request().postDataJSON().content).toBe(prompt);
+  33 |         const session = await sessionFrom(response); if (sessionId) expect(session.id).toBe(sessionId); else sessionId = session.id;
+  34 |         while (true) {
+  35 |           expect(Date.now() - started).toBeLessThan(budget);
+  36 |           await expect(page.getByRole("region", { name: "等待回答", exact: true })).not.toBeVisible();
+  37 |           const current = await sessionFrom(await fetch(`${env.baseUrl}/api/sessions/${sessionId}`));
+  38 |           if (current.status === "completed") break;
+> 39 |           expect(current.status).toBe("running"); await page.waitForTimeout(100);
+     |                                  ^ Error: expect(received).toBe(expected) // Object.is equality
+  40 |         }
+  41 |       }
+  42 |       const audit = options.audit(env, sessionId); await checkLiveBusinessPage(page, audit);
+  43 |       const durationMs = Date.now() - started, refreshStarted = Date.now();
+  44 |       await page.reload({ timeout: refreshBudget }); await page.locator(".session-item:not(.provisional) > .session-row").first().click();
+  45 |       await checkLiveBusinessPage(page, audit); expect(options.audit(env, sessionId)).toEqual(audit);
+  46 |       const refreshRecoveryMs = Date.now() - refreshStarted; expect(durationMs).toBeLessThan(budget); expect(refreshRecoveryMs).toBeLessThan(refreshBudget);
+  47 |       assertNoBrowserErrors(diagnostics); await attachJson(testInfo, contract, "timings", { durationMs, refreshRecoveryMs }); await attachJson(testInfo, contract, "sqlite-audit", { ...audit, model: env.model });
+  48 |     },
+  49 |   };
+  50 | }
+  51 | 
+```

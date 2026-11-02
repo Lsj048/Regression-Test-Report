@@ -1,0 +1,32 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/live-monitor-stop.ts
+    const forbidden = assertNoFailures(path, data.events, data.results.filter(r => !rejectedIds.has(r.callId)));
+    const proof = auditLiveBusinessEvidence(data, path, sessionId, monitorStopPrompt(url));
+    assert.ok(data.calls.every(call => contract.requiredTools.includes(call.name)));
+    const launches = data.calls.filter(c => c.name === "Monitor" && !rejectedIds.has(c.callId)), stops = data.calls.filter(c => c.name === "TaskStop");
+    assert.ok(launches.length > 0 && stops.length > 0, "missing real monitor launch or active stop");
+    const eventTime = (seq: number) => Date.parse(String(data.database.prepare("SELECT created_at FROM event_log WHERE seq=?").get(seq)!["created_at"]));
+    const dispatchedAt = (callId: string) => eventTime(data.events.find(e => e.type === "tool.dispatch.started" && payload(path, e)["callId"] === callId)!.seq);
+    const plans = mainModelRounds(path, data.events, sessionId, proof.turnId).plans;
+    const taskIds = new Set<string>();
+    const monitors = launches.map(launch => {
+      const args = jsonObject(launch.payload["arguments"], "monitor args");
+      assert.equal(jsonObject(args["ws"], "WebSocket source")["url"], url); assert.equal(args["command"], undefined);
+      const launchResult = data.results.find(r => r.callId === launch.callId)!;
+      const value = jsonObject(launchResult.payload["canonicalValue"], "monitor result");
+      const taskId = value["taskId"]; assert.equal(typeof taskId, "string");
+      assert.ok(!taskIds.has(taskId as string), "two launches claimed the same monitor task"); taskIds.add(taskId as string);
+      const matchingStops = stops.filter(stop => monitorTaskTarget(stop.name, jsonObject(stop.payload["arguments"], "stop args")) === taskId);
+      assert.ok(matchingStops.length > 0, "a launched monitor was never actively stopped");
+      const stop = matchingStops[0]!, stopResult = data.results.find(r => r.callId === stop.callId)!;
+      for (const call of matchingStops) assertMonitorStopReceipt(jsonObject(data.results.find(r => r.callId === call.callId)!.payload["canonicalValue"], "stop result"), taskId as string);
+      const timeoutMs = value["timeoutMs"];
+      assert.equal(timeoutMs, args["persistent"] === true ? 0 : Math.min(3_600_000, Math.max(1, Number(args["timeout_ms"] ?? 300_000))));
+      const stopWindow = { startedAt: dispatchedAt(stop.callId), completedAt: eventTime(stopResult.seq) };
+      assertActiveMonitorStop(dispatchedAt(launch.callId), stopWindow.completedAt, timeoutMs as number);
+      const outputs = data.calls.filter(c => c.name === "TaskOutput" && monitorTaskTarget(c.name, jsonObject(c.payload["arguments"], "output args")) === taskId).map(call => {
+        const result = data.results.find(r => r.callId === call.callId)!;
+        return { call, result, value: jsonObject(result.payload["canonicalValue"], "task output") };
+      });
+      const ready = outputs.filter(o => o.result.seq < stop.seq && o.value["status"] === "running" && String(o.value["output"]).includes(MONITOR_READY_LINE));
+      const consumedBeforeStop = plans.some(p => p.event.seq < stop.seq && ready.some(o => o.result.seq < p.event.seq && Array.isArray(p.plan["messages"]) && p.plan["messages"].some(raw => { const m = jsonObject(raw, "request"); return m["toolCallId"] === o.call.callId && messageContent(m["content"]) === messageContent(o.result.payload["content"]); })));

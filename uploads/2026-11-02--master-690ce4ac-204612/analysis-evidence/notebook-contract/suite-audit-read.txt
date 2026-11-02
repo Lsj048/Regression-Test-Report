@@ -1,0 +1,21 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/standard-live-notebook-cell-edit.ts
+      assert.equal(resolve(String(args["file_path"] ?? "")), notebookPath, "Read targeted the wrong notebook");
+      const value = jsonObject(resultsById.get(call.callId)!.payload["canonicalValue"], `Read #${index + 1} value`);
+      assert.equal(value["type"], "notebook", "Read did not recognize the ipynb file as a notebook");
+      const file = jsonObject(value["file"], `Read #${index + 1} notebook file`);
+      assert.equal(file["filePath"], notebookPath, "Read reported the wrong notebook path");
+      const readExecution = executionByCall.get(call.callId)!;
+      const beforeEdit = readExecution.dispatch.seq < firstEditExecution.dispatch.seq;
+      assert.ok(beforeEdit ? readExecution.rawResult.seq < firstEditExecution.dispatch.seq
+        : firstEditExecution.rawResult.seq < readExecution.dispatch.seq,
+      `Read #${index + 1} raced the initial NotebookEdit execution`);
+      const expectedCells = beforeEdit ? originalDocument["cells"] : expectedDocument["cells"];
+      assert.deepEqual(file["cells"], expectedCells, `Read #${index + 1} returned the wrong notebook cells`);
+      const renderedRead = jsonObject(
+        JSON.parse(messageContent(resultsById.get(call.callId)!.payload["content"])) as unknown,
+        `Read #${index + 1} model-visible notebook`,
+      );
+      assert.deepEqual(renderedRead, file,
+        `Read #${index + 1} did not expose its complete notebook result to the model`);
+    }

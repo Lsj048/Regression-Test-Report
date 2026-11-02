@@ -1,0 +1,139 @@
+import { BindingError, ContractError } from "../../api/foundation/errors.js";
+import { asJsonObject } from "../../api/foundation/json.js";
+import {
+  NOTIFICATION_SERVICE,
+  USER_QUESTION_SERVICE,
+  type NotificationServiceRequest,
+  type NotificationServiceResponse,
+  type UserQuestionServiceRequest,
+  type UserQuestionServiceResponse,
+} from "../../api/service/core-services.js";
+import type { CoreServiceProvider } from "../../api/service/provider.js";
+import type { CoreServiceGrant } from "../../api/service/types.js";
+import type { ToolQuestion } from "../../api/tool/package.js";
+import { MODEL_COMPLETION_SERVICE, TOKEN_COUNT_SERVICE } from "../../api/service/core-services.js";
+import type {
+  ModelCompletionServiceRequest,
+  ModelCompletionServiceResponse,
+  TokenCountServiceRequest,
+} from "../../api/service/core-services.js";
+import type { ModelInputTokenCount, ModelProvider, ModelTokenCounter } from "../../api/model/types.js";
+import type { AgentKernelModelConfig } from "../../runtime/agent/types.js";
+import { createModelRequestPlan } from "../../runtime/model/request-plan.js";
+
+function validateEmptyGrant(grant: CoreServiceGrant): void {
+  const permissions = asJsonObject(grant.permissions, `${grant.id}.permissions`);
+  const config = asJsonObject(grant.config, `${grant.id}.config`);
+  if (Object.keys(permissions).length > 0 || Object.keys(config).length > 0) {
+    throw new BindingError(`${grant.id} does not accept permission or configuration fields`, "CORE_SERVICE_GRANT_INVALID");
+  }
+}
+
+export function createUserQuestionServiceProvider(
+  presentQuestion: (
+    questions: readonly ToolQuestion[],
+    context: { readonly sessionId: string; readonly turnId: string; readonly callId: string; readonly signal: AbortSignal },
+  ) => Promise<UserQuestionServiceResponse>,
+): CoreServiceProvider<UserQuestionServiceRequest, UserQuestionServiceResponse> {
+  return {
+    definition: USER_QUESTION_SERVICE,
+    callers: ["tool"],
+    validateGrant: validateEmptyGrant,
+    invoke: async (context, request) => {
+      if (context.sessionId === undefined || context.turnId === undefined || context.callId === undefined) {
+        throw new ContractError("User question service requires an active Tool call", "USER_QUESTION_CONTEXT_REQUIRED");
+      }
+      return presentQuestion(request.questions, {
+        sessionId: context.sessionId,
+        turnId: context.turnId,
+        callId: context.callId,
+        signal: context.signal,
+      });
+    },
+  };
+}
+
+export function createModelCompletionServiceProvider(
+  provider: ModelProvider,
+  config: AgentKernelModelConfig,
+): CoreServiceProvider<ModelCompletionServiceRequest, ModelCompletionServiceResponse> {
+  return {
+    definition: MODEL_COMPLETION_SERVICE,
+    callers: ["tool", "policy"],
+    validateGrant: validateEmptyGrant,
+    projectRequestForTrace: (request) => ({ purpose: request.purpose }),
+    invoke: async (context, request) => {
+      const configuredMaximum = config.maxOutputTokens;
+      const requestedMaximum = request.maxOutputTokens;
+      const maxOutputTokens = configuredMaximum === undefined
+        ? requestedMaximum
+        : requestedMaximum === undefined ? configuredMaximum : Math.min(configuredMaximum, requestedMaximum);
+      const plan = createModelRequestPlan({
+        model: config.model,
+        ...(config.inputModalities === undefined ? {} : { inputModalities: config.inputModalities }),
+        messages: request.messages,
+        tools: [],
+        appliedEffectIds: [],
+        toolChoice: "none",
+        ...(maxOutputTokens === undefined ? {} : { maxOutputTokens }),
+        ...(request.temperature === undefined && config.temperature === undefined ? {} : { temperature: request.temperature ?? config.temperature }),
+        ...(config.topP === undefined ? {} : { topP: config.topP }),
+        ...(config.seed === undefined ? {} : { seed: config.seed }),
+        ...(config.reasoningEffort === undefined ? {} : { reasoningEffort: config.reasoningEffort }),
+        ...(config.providerOptions === undefined ? {} : { providerOptions: config.providerOptions }),
+        ...(config.timeouts === undefined ? {} : { timeouts: config.timeouts }),
+      });
+      const outcome = await provider.invoke(plan, { signal: context.signal });
+      return Object.freeze({
+        requestId: plan.planId,
+        outcomeId: outcome.outcomeId,
+        model: config.model,
+        content: outcome.content,
+        reasoningContent: outcome.reasoningContent,
+        finishReason: outcome.finishReason,
+        usage: outcome.usage,
+      });
+    },
+  };
+}
+
+export function createTokenCountServiceProvider(
+  counter: ModelTokenCounter,
+  config: AgentKernelModelConfig,
+): CoreServiceProvider<TokenCountServiceRequest, ModelInputTokenCount> {
+  return {
+    definition: TOKEN_COUNT_SERVICE,
+    callers: ["tool", "policy"],
+    validateGrant: validateEmptyGrant,
+    projectRequestForTrace: (request) => ({ messageCount: request.messages.length, toolCount: request.tools?.length ?? 0 }),
+    invoke: (context, request) => counter.countInputTokens(createModelRequestPlan({
+      model: config.model,
+      ...(config.inputModalities === undefined ? {} : { inputModalities: config.inputModalities }),
+      messages: request.messages,
+      tools: request.tools ?? [],
+      appliedEffectIds: [],
+      toolChoice: request.toolChoice ?? "auto",
+      ...(config.maxOutputTokens === undefined ? {} : { maxOutputTokens: config.maxOutputTokens }),
+      ...(config.temperature === undefined ? {} : { temperature: config.temperature }),
+      ...(config.topP === undefined ? {} : { topP: config.topP }),
+      ...(config.seed === undefined ? {} : { seed: config.seed }),
+      ...(config.reasoningEffort === undefined ? {} : { reasoningEffort: config.reasoningEffort }),
+      ...(config.providerOptions === undefined ? {} : { providerOptions: config.providerOptions }),
+      ...(config.timeouts === undefined ? {} : { timeouts: config.timeouts }),
+    }), { signal: context.signal }),
+  };
+}
+
+export function createNotificationServiceProvider(
+  notify?: (message: string) => Promise<{ readonly localSent?: boolean; readonly pushSent?: boolean }>,
+): CoreServiceProvider<NotificationServiceRequest, NotificationServiceResponse> {
+  return {
+    definition: NOTIFICATION_SERVICE,
+    callers: ["tool", "policy"],
+    validateGrant: validateEmptyGrant,
+    invoke: async (_context, request) => {
+      const result = await notify?.(request.message);
+      return { localSent: result?.localSent ?? false, pushSent: result?.pushSent ?? false };
+    },
+  };
+}

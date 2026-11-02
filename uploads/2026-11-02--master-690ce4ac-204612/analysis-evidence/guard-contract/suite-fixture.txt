@@ -1,0 +1,26 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/fixtures/deterministic-guard-server.mjs
+25:     assert.equal(body.messages[0]?.role, "system");
+26:     assert.ok(body.tools.some((tool) => tool.function?.name === "Read"));
+27:     assert.ok(!body.tools.some((tool) => tool.function?.name === "ReleaseRecordLookup"));
+28:     const users = body.messages.filter(({ role }) => role === "user").map(text).join("\n");
+29:     assert.equal(users.split(spec.prompt).length - 1, 1);
+30:     const followup = users.includes(DETERMINISTIC_FOLLOWUP_PROMPT);
+31:     assert.ok(!followup || spec.followup); assert.ok(!exchanges.some((item) => item.followup));
+32:     const index = exchanges.length;
+33:     assert.ok(index < (scenario === "guard-drain-limit" ? 260 : 8), "Unexpected extra request; no endless fixture loop");
+34:     const prior = exchanges.at(-1);
+35:     if (prior?.calls.length) {
+36:       // Require real previous results, not a canned final answer detached from LCH.
+37:       for (const call of prior.calls) {
+38:         const tools = body.messages.filter((message) => message.role === "tool" && message.tool_call_id === call.id);
+39:         assert.equal(tools.length, 1); assert.ok(text(tools[0]).length > 0);
+40:       }
+41:     }
+42:     if (!followup && scenario === "guard-unknown-tool" && index === 1) assert.match(text(body.messages.find((message) => message.tool_call_id === "guard-0")), /not directly available/u);
+43:     if (!followup && ((scenario === "guard-unknown-tool" && index === 2) || (scenario === "guard-repeated-route" && index === 6))) {
+44:       assert.ok(body.messages.some((message) => message.role === "tool" && text(message).includes("发布负责人：林晓")));
+45:     }
+46:     if (scenario === "guard-continuation-limit" && !followup) assert.ok(index < CONTINUATION_PARTS.length);
+47:     const calls = followup ? [] : guardCalls(scenario, index, process.env.LCH_E2E_WORKSPACE);
+48:     const continuation = scenario === "guard-continuation-limit" && !followup;

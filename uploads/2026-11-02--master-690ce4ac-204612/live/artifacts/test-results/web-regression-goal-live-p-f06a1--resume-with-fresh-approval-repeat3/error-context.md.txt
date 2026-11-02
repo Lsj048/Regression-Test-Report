@@ -1,0 +1,176 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> goal.live-pause-resume >> pause a goal before file authorization then resume with fresh approval
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: getByRole('region', { name: '等待回答', exact: true })
+Expected: visible
+Timeout: 180000ms
+Error: element(s) not found
+
+Call log:
+  - Expect "toBeVisible" getByRole('region', { name: '等待回答', exact: true }) with timeout 180000ms
+  - waiting for getByRole('region', { name: '等待回答', exact: true })
+
+```
+
+```yaml
+- complementary:
+  - button "LongCat Harness"
+  - button "收起侧边栏"
+  - button "新会话"
+  - text: 工作区
+  - button "搜索会话"
+  - button "筛选会话"
+  - button "添加工作区"
+  - textbox "搜索会话":
+    - /placeholder: 搜索会话…
+  - button "workspace" [expanded]
+  - button "workspace 的工作区操作"
+  - button "在 workspace 中新建会话"
+  - button "请先制定简短计划，准备一份发布通知草稿：在当前工作区根目… 刚刚":
+    - text: 请先制定简短计划，准备一份发布通知草稿：在当前工作区根目…
+    - time: 刚刚
+  - button "请先制定简短计划，准备一份发布通知草稿：在当前工作区根目… 的会话操作"
+  - button "归档会话"
+  - button "设置"
+- main:
+  - text: 请先制定简短计划，准备一份发布通知草稿：在当前工作区根目…
+  - button "复制会话 ID session_375bca8e-5dca-42b2-8725-cdf7a9821ec3": session_375bca8e-5dca-42b2-8725-cdf7a9821ec3
+  - button "对话"
+  - button "轨迹"
+  - region "目标 · 推进中":
+    - strong: 目标 · 推进中
+    - text: 推进中 第 1 / 200 轮
+    - paragraph: 请先制定简短计划，准备一份发布通知草稿：在当前工作区根目录新建 release-note.txt，正文逐字写为灰度发布已安排，不加标点，末尾换行可有可无。读取核对后，在页面提供发送和暂不发送两个选项，等待我选择。现在不要发送，也不要宣布整个目标完成。写入需要批准时我会操作页面。只处理这一份文件；如需确认当前目录或目录内容，可以用 pwd、ls 做只读查询，不执行其他命令、不联网、不委派。
+    - text: 计划进度：0 / 3
+    - progressbar "目标计划进度"
+    - paragraph: 当前步骤：在工作区根目录创建 release-note.txt，写入「灰度发布已安排」
+    - group: 查看计划与验收详情
+    - button "暂停目标"
+    - button "取消目标"
+  - text: 请先制定简短计划，准备一份发布通知草稿：在当前工作区根目录新建 release-note.txt，正文逐字写为灰度发布已安排，不加标点，末尾换行可有可无。读取核对后，在页面提供发送和暂不发送两个选项，等待我选择。现在不要发送，也不要宣布整个目标完成。写入需要批准时我会操作页面。只处理这一份文件；如需确认当前目录或目录内容，可以用 pwd、ls 做只读查询，不执行其他命令、不联网、不委派。
+  - time: 00:07
+  - button "复制消息"
+  - group: 用时 27 秒
+  - text: "Provider HTTP 502: {\"error\":\"LIVE_MODEL_PROXY_INTERNAL_ERROR\"} 任务执行失败"
+  - textbox "继续输入消息"
+  - button "添加"
+  - text: 目标模式
+  - button "权限：工作区写入": 工作区写入
+  - button "模型：LongCat-2.0": LongCat-2.0 思考
+  - meter "最近一次模型请求缓存命中 11,648 / 12,621 输入令牌（92.3%）":
+    - text: 缓存
+    - strong: 92%
+  - meter "上下文已使用 12,621 / 1,048,576 令牌（1.2%）；最近一次模型请求":
+    - text: 令牌
+    - strong: 1%
+  - button "发送消息" [disabled]
+```
+
+# Test source
+
+```ts
+  1  | import { existsSync } from "node:fs";
+  2  | import { mkdir, writeFile } from "node:fs/promises";
+  3  | import { basename, join } from "node:path";
+  4  | import { DatabaseSync } from "node:sqlite";
+  5  | import { expect } from "@playwright/test";
+  6  | import { GOAL_PAUSE_TASK as GOAL_TASK, LIVE_GOAL_PAUSE_RESUME_CASE as contract } from "../live-goal-scenarios.js";
+  7  | import { assertNoBrowserErrors, attachJson, browserDiagnostics, sessionFrom, type EvaluationCaseDriver } from "../case-driver.js";
+  8  | import { liveGoalCompleteDriver } from "./live-goal.js";
+  9  | import { checkLiveBusinessTools } from "./live-business-ui.js";
+  10 | import { assertPausedGoalPreserved, auditLiveGoalPauseResume } from "../audits/live-goal-pause-resume.js";
+  11 | import { jsonObject } from "../sqlite-audit.js";
+  12 | 
+  13 | export const liveGoalPauseResumeDriver: EvaluationCaseDriver = {
+  14 |   caseId: contract.id, title: "pause a goal before file authorization then resume with fresh approval", permissionMode: "workspace-write", timingBudgetKeys: ["durationMs", "refreshRecoveryMs"],
+  15 |   attachArtifactsBeforeCleanup: liveGoalCompleteDriver.attachArtifactsBeforeCleanup!,
+  16 |   async prepareWorkspace({ workspace }) {
+  17 |     await mkdir(join(workspace, ".longcat-harness"), { recursive: true });
+  18 |     await writeFile(join(workspace, ".longcat-harness/settings.local.json"), JSON.stringify({ permissions: { ask: [`Edit(${join(workspace, GOAL_TASK.file)})`] } }));
+  19 |   },
+  20 |   async run({ page, testInfo, environment: env }) {
+  21 |     const budget = contract.timingBudgetsMs["durationMs"]!, refreshBudget = contract.timingBudgetsMs["refreshRecoveryMs"]!;
+  22 |     testInfo.setTimeout(budget + refreshBudget + 30_000);
+  23 |     const diagnostics = browserDiagnostics(page), started = Date.now();
+  24 |     await page.goto(env.baseUrl);
+  25 |     await expect(page.getByTestId("mode-select")).toContainText("目标模式"); await expect(page.getByTestId("model-select")).toContainText(env.model.name);
+  26 |     await expect(page.getByTestId("permission-select")).toContainText("工作区写入"); await expect(page.getByTestId("workspace-select")).toContainText(basename(env.workspace));
+  27 |     await page.getByTestId("composer-input").fill(contract.prompt);
+  28 |     const accepted = page.waitForResponse(r => r.url() === `${env.baseUrl}/api/sessions` && r.request().method() === "POST");
+  29 |     await page.getByTestId("send-message").click(); const response = await accepted; expect(response.ok()).toBe(true); const session = await sessionFrom(response);
+  30 |     const detail = async () => { const r = await fetch(`${env.baseUrl}/api/sessions/${session.id}`); expect(r.ok).toBe(true); return await r.json() as { status: string; publicStates?: Record<string, Record<string, unknown>> }; };
+  31 |     const snapshot = () => {
+  32 |       const db = new DatabaseSync(join(env.stateDirectory, "event_log.sqlite"), { readOnly: true });
+  33 |       try { const row = db.prepare("SELECT state_json FROM turns WHERE session_id=? ORDER BY created_at DESC LIMIT 1").get(session.id)!; return jsonObject(JSON.parse(String(row["state_json"])), "goal snapshot"); }
+  34 |       finally { db.close(); }
+  35 |     };
+  36 |     const question = page.getByRole("region", { name: "等待回答", exact: true });
+> 37 |     await expect(question).toBeVisible({ timeout: 180_000 }); await expect(question.getByRole("radio", { name: /^允许/u })).toBeVisible();
+     |                            ^ Error: expect(locator).toBeVisible() failed
+  38 |     expect(existsSync(join(env.workspace, GOAL_TASK.file))).toBe(false);
+  39 |     const before = snapshot(); expect(before["kind"]).toBe("paused");
+  40 |     const operations: Record<string, unknown>[] = [];
+  41 |     const invoke = async (label: string, id: string) => {
+  42 |       const receipt = page.waitForResponse(r => r.url() === `${env.baseUrl}/api/sessions/${session.id}/presentation-actions` && r.request().method() === "POST");
+  43 |       await page.getByRole("button", { name: label, exact: true }).click();
+  44 |       const r = await receipt; expect(r.ok()).toBe(true); const op = r.request().postDataJSON() as Record<string, unknown>; expect(op["actionId"]).toBe(id); operations.push(op);
+  45 |     };
+  46 |     await invoke("暂停目标", "pause");
+  47 |     await expect.poll(async () => { const d = await detail(); return [d.status, d.publicStates?.["goal.execution"]?.["phase"]]; }, { timeout: 120_000 }).toEqual(["completed", "paused"]);
+  48 |     await expect(question).toBeHidden(); await expect(page.getByRole("button", { name: "继续目标", exact: true })).toBeVisible();
+  49 |     const paused = snapshot();
+  50 |     const goalOf = (state: Record<string, unknown>) => jsonObject(jsonObject(state["policyState"], "policies")["goal.execution"], "goal");
+  51 |     assertPausedGoalPreserved(goalOf(before), goalOf(paused));
+  52 |     expect(existsSync(join(env.workspace, GOAL_TASK.file))).toBe(false);
+  53 |     await page.waitForTimeout(3000); expect(snapshot()).toEqual(paused);
+  54 |     await page.reload({ timeout: refreshBudget }); await page.locator(".session-item:not(.provisional) > .session-row").first().click();
+  55 |     await expect(page.getByRole("region", { name: "目标 · 已暂停", exact: true })).toBeVisible(); await expect(question).toBeHidden(); expect(snapshot()).toEqual(paused);
+  56 |     await invoke("继续目标", "resume");
+  57 |     await expect(question).toBeVisible({ timeout: 120_000 }); await expect(question.getByRole("radio", { name: /^允许/u })).toBeVisible();
+  58 |     expect(existsSync(join(env.workspace, GOAL_TASK.file))).toBe(false);
+  59 |     await question.getByRole("radio", { name: /^允许/u }).click();
+  60 |     const approved = page.waitForResponse(r => r.url() === `${env.baseUrl}/api/sessions/${session.id}/messages` && r.request().method() === "POST");
+  61 |     await question.getByRole("button", { name: /确认并继续/u }).click(); expect((await approved).ok()).toBe(true);
+  62 |     while (true) {
+  63 |       expect(Date.now() - started).toBeLessThan(budget);
+  64 |       const d = await detail(), phase = d.publicStates?.["goal.execution"]?.["phase"];
+  65 |       if (d.status === "waiting" && phase === "active") break;
+  66 |       // A failed turn cannot finish without new input; retain it immediately
+  67 |       // instead of waiting out the remaining successful-task timing budget.
+  68 |       expect(["running", "completed", "waiting"]).toContain(d.status);
+  69 |       expect(["planning", "active"]).toContain(phase);
+  70 |       await page.waitForTimeout(150);
+  71 |     }
+  72 |     const audit = auditLiveGoalPauseResume(env.stateDirectory, env.workspace, session.id, operations);
+  73 |     const check = async () => {
+  74 |       await checkLiveBusinessTools(page, audit.toolDetails, ".turn-activity");
+  75 |       await expect(question).toBeVisible();
+  76 |       await expect(question).toContainText("暂不发送");
+  77 |       await expect(question.getByRole("radio", { name: /^允许/u })).toHaveCount(0);
+  78 |       await expect(page.getByRole("button", { name: "暂停目标", exact: true })).toBeEnabled();
+  79 |       await expect(page.getByRole("button", { name: "取消目标", exact: true })).toBeEnabled();
+  80 |       await expect(page.getByRole("region", { name: "目标 · 已验收完成", exact: true })).toHaveCount(0);
+  81 |       expect((await detail()).publicStates?.["goal.execution"]).toMatchObject({ id: audit.goal.id, phase: "active", plan: audit.goal.plan });
+  82 |     };
+  83 |     await check(); const durationMs = Date.now() - started, refreshStarted = Date.now();
+  84 |     await page.reload({ timeout: refreshBudget }); await page.locator(".session-item:not(.provisional) > .session-row").first().click(); await check();
+  85 |     expect(auditLiveGoalPauseResume(env.stateDirectory, env.workspace, session.id, operations)).toEqual(audit);
+  86 |     const refreshRecoveryMs = Date.now() - refreshStarted; expect(durationMs).toBeLessThan(budget); expect(refreshRecoveryMs).toBeLessThan(refreshBudget);
+  87 |     assertNoBrowserErrors(diagnostics); await attachJson(testInfo, contract, "timings", { durationMs, refreshRecoveryMs }); await attachJson(testInfo, contract, "sqlite-audit", { ...audit, model: env.model });
+  88 |   },
+  89 | };
+  90 | 
+```

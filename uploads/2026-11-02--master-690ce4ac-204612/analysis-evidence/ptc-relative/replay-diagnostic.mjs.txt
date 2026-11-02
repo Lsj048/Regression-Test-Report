@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import vm from 'node:vm';
+import crypto from 'node:crypto';
+const input=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+const outputs=[];
+for(const items of [['review','release','handoff'],['verify','approve','package','publish','announce']]){
+ const source=JSON.stringify({items})+'\n';let reads=0;
+ const tools=Object.freeze({call:async(name,args)=>{
+  if(name!=='Read'||path.resolve(input.workspace,args.file_path)!==path.join(input.workspace,'handoff-items.json'))throw Error('Replay escaped declared source');
+  reads++;const res=structuredClone(input.actualReadEnvelope);
+  res.value.file.content=source;
+  res.content=[{type:'text',text:`     1\t${source.trim()}\n     2\t\n[lines 1-2 of 2]`}];
+  return res;
+ }});
+ const sandbox=vm.createContext({tools},{codeGeneration:{strings:false,wasm:false}});
+ const result=await new vm.Script(`(async()=>{${input.code}\n})()`).runInContext(sandbox,{timeout:1000});
+ const actual=JSON.parse(result.value.file.content).items;
+ if(reads!==1||JSON.stringify(actual)!==JSON.stringify(items))throw Error('Source channel did not change with input');
+ outputs.push({inputCount:items.length,firstItem:items[0],sourceReads:reads,channel:'result.value.file.content -> JSON.items',returnedItems:actual});
+}
+const result={kind:'ptc-relative-path-diagnostic-replay',status:'VERIFIED',scope:'Read-only counterfactual replay of the unchanged first successful source program; no G1 rerun or score change.',programSha256:crypto.createHash('sha256').update(input.code).digest('hex'),pathResolution:'Same workspace-root resolution as the documented file Tool contract; relative input arguments address the actual canonical source.',outputs};
+fs.writeFileSync(process.argv[3],JSON.stringify(result,null,2)+'\n');
+process.stdout.write(JSON.stringify({status:result.status,inputCounts:outputs.map(x=>x.inputCount)})+'\n');

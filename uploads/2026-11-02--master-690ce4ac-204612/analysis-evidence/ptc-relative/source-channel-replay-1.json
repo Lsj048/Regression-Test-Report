@@ -1,0 +1,40 @@
+{
+  "kind": "ptc-relative-path-diagnostic-replay",
+  "status": "VERIFIED",
+  "scope": "Read-only counterfactual replay of the unchanged first successful source program; no G1 rerun or score change.",
+  "programSha256": "11bfe7d2b95d435492d5120deacb7c4c6163cafd626629df51ed2f50305dfb83",
+  "pathResolution": "Same workspace-root resolution as the documented file Tool contract; relative input arguments address the actual canonical source.",
+  "outputs": [
+    {
+      "inputCount": 3,
+      "firstItem": "review",
+      "sourceReads": 1,
+      "channel": "result.value.file.content -> JSON.items",
+      "returnedItems": [
+        "review",
+        "release",
+        "handoff"
+      ]
+    },
+    {
+      "inputCount": 5,
+      "firstItem": "verify",
+      "sourceReads": 1,
+      "channel": "result.value.file.content -> JSON.items",
+      "returnedItems": [
+        "verify",
+        "approve",
+        "package",
+        "publish",
+        "announce"
+      ]
+    }
+  ],
+  "sampleDirectory": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services-repeat1",
+  "actualSourceResultSeq": 46,
+  "actualWritingPlanSeq": 141,
+  "diagnosticScript": "analysis-evidence/ptc-relative/replay-diagnostic.mjs.txt",
+  "diagnosticScriptSha256": "b1a1e77d4b42bf56c5fa35b80b042e3c34860a5c47e247ada03f1ebed5a3324f",
+  "replayInput": "analysis-evidence/ptc-relative/replay-input-1.json",
+  "replayInputSha256": "d36dd3bb4c921586f772b8046a337d95dcb58ae06584a8fc725d710748c33831"
+}

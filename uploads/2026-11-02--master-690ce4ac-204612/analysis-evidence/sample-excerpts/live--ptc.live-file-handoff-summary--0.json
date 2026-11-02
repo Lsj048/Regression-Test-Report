@@ -1,0 +1,200 @@
+{
+  "kind": "derived-causal-event-excerpt",
+  "scope": "Selected original durable events cited by manual attribution. Reasoning text is omitted where marked. This is a readable excerpt, not a full trace or a new G1 sample.",
+  "sampleDirectory": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services",
+  "sourceTrajectory": "live/artifacts/test-results/web-regression-ptc-live-fi-3023c-hrough-nested-file-services/trajectory.jsonl.gz",
+  "sourceTrajectorySha256": "d714843b9f5f591cf79fe7184c4a099e7b8a9632136b6c8bd934c6d950dc4c43",
+  "manifest": {
+    "kind": "manifest",
+    "schemaVersion": 1,
+    "sample": {
+      "caseId": "ptc.live-file-handoff-summary",
+      "mode": "ptc",
+      "model": {
+        "execution": "live",
+        "name": "LongCat-2.0",
+        "revision": "provider-unreported",
+        "providerBaseUrl": "https://aigc.sankuai.com/v1/openai/native",
+        "settings": {
+          "maxOutputTokens": 4096,
+          "contextWindowTokens": 1048576,
+          "temperature": 0,
+          "thinking": {
+            "enabled": true,
+            "budgetTokens": 1024
+          }
+        }
+      },
+      "repeatEachIndex": 0,
+      "retry": 0,
+      "testStatus": "failed"
+    },
+    "capturedAt": "2026-11-02T14:38:50.949Z",
+    "cleanupStartedAt": "2026-11-02T14:38:50.916Z",
+    "processesStopped": true,
+    "source": "durable SQLite facts; ordered within each table; includes cleanup events; not raw HTTP",
+    "redaction": "known credential values replaced; original payload hashes verified before redaction"
+  },
+  "complete": {
+    "kind": "complete",
+    "events": 126,
+    "turns": 1,
+    "messages": 9
+  },
+  "selectedSequences": [
+    31,
+    64,
+    96,
+    115
+  ],
+  "events": [
+    {
+      "kind": "event",
+      "seq": 31,
+      "event_id": "event_334e2478-e232-474a-9db6-f12fc4c00b67",
+      "session_id": "session_e086a820-be4c-4125-9c04-53addf4ed9c1",
+      "turn_id": "turn_e218f895-e02e-4a16-bf8e-7cde2fcffe83",
+      "type": "tool.result",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 491,
+      "payload_sha256": "b37f7432d364b85c0cacdab2d717a61b0efe493bf37fa16f9a6418ee245777f1",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:37:52.630Z",
+      "payload": {
+        "actionPlanId": "plan_a66ca8a3-bef1-4ec2-b021-1ae511580939",
+        "callId": "call_17e0060453ca4302b35d21a6",
+        "candidateId": "candidate:call_17e0060453ca4302b35d21a6:0",
+        "canonicalValue": {
+          "code": "TOOL_NOT_MODEL_VISIBLE",
+          "rejected": true
+        },
+        "content": [
+          {
+            "text": "Tool Read is not directly available in this model request. Use one of the visible Tools instead.",
+            "type": "text"
+          }
+        ],
+        "errorCode": "TOOL_NOT_MODEL_VISIBLE",
+        "isError": true,
+        "name": "Read",
+        "ordinal": 0,
+        "status": "denied",
+        "syntheticKind": "action_rejection"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 64,
+      "event_id": "event_d9b5b3b2-bed7-44a6-8a90-b809d796d8e1",
+      "session_id": "session_e086a820-be4c-4125-9c04-53addf4ed9c1",
+      "turn_id": "turn_e218f895-e02e-4a16-bf8e-7cde2fcffe83",
+      "type": "tool.result",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 484,
+      "payload_sha256": "d4074321502e253f53d0858f8e3a8431ed290447806c9dd1b3cd364ce6c61389",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:38:12.267Z",
+      "payload": {
+        "actionId": "action:call_b2296ff20184d282",
+        "actionPlanId": "plan_624c3644-67c4-4270-aeca-de0936b07c23",
+        "callId": "call_b2296ff20184d282",
+        "content": [
+          {
+            "text": "TOOL_EXECUTION_FAILED: ReferenceError: require is not defined",
+            "type": "text"
+          }
+        ],
+        "errorCode": "TOOL_EXECUTION_FAILED",
+        "errorMessage": "ReferenceError: require is not defined",
+        "isError": true,
+        "name": "RunCode",
+        "ordinal": 0,
+        "origin": {
+          "component": "RunCode",
+          "kind": "tool",
+          "package": "@longcat/tools-ptc",
+          "version": "1.0.0"
+        },
+        "status": "failed"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 96,
+      "event_id": "event_8e9e4d04-09b0-4cbc-b598-f5372c93b531",
+      "session_id": "session_e086a820-be4c-4125-9c04-53addf4ed9c1",
+      "turn_id": "turn_e218f895-e02e-4a16-bf8e-7cde2fcffe83",
+      "type": "tool.result",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 484,
+      "payload_sha256": "58d31762f94cc1f1a6c9f12be304d5bd66f9a36fc99b7c99382ef415deb87f41",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:38:29.363Z",
+      "payload": {
+        "actionId": "action:call_bb057d4ea9c679dd",
+        "actionPlanId": "plan_3e645be3-73d8-4eb3-84e9-08f29cc2710a",
+        "callId": "call_bb057d4ea9c679dd",
+        "content": [
+          {
+            "text": "TOOL_EXECUTION_FAILED: ReferenceError: require is not defined",
+            "type": "text"
+          }
+        ],
+        "errorCode": "TOOL_EXECUTION_FAILED",
+        "errorMessage": "ReferenceError: require is not defined",
+        "isError": true,
+        "name": "RunCode",
+        "ordinal": 0,
+        "origin": {
+          "component": "RunCode",
+          "kind": "tool",
+          "package": "@longcat/tools-ptc",
+          "version": "1.0.0"
+        },
+        "status": "failed"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 115,
+      "event_id": "event_010b87d0-9f3e-404d-8641-de9f8b17df24",
+      "session_id": "session_e086a820-be4c-4125-9c04-53addf4ed9c1",
+      "turn_id": "turn_e218f895-e02e-4a16-bf8e-7cde2fcffe83",
+      "type": "model.completed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 3669,
+      "payload_sha256": "1552890a73d8ee904b882e092f5f3021ae3cd3ef7325eb61789c35fe92807a94",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:38:40.724Z",
+      "payload": {
+        "attemptId": "attempt_9044043c-f12e-4428-8fd5-a05d59077308",
+        "content": "",
+        "finishReason": "stop",
+        "outcomeId": "outcome_388388de-c675-4642-974d-c351bd02467d",
+        "request": {
+          "attempt": 0,
+          "planId": "plan_077ba0b5-3a49-488b-bebc-faaf0537a5d3",
+          "requestHash": "d2b4274b9ecd3df5c04f7496e977a2a9ac8b37c624f4ee6329d4ef0653b697b6"
+        },
+        "responseMetadata": {
+          "responseId": "05e95170-0d8e-4e1b-b728-bd970051ec3b"
+        },
+        "toolCalls": [],
+        "usage": {
+          "cachedTokens": 9728,
+          "completionTokens": 732,
+          "promptTokens": 10850,
+          "reasoningTokens": 684,
+          "totalTokens": 11582
+        }
+      },
+      "omittedFields": [
+        "payload.reasoningContent"
+      ]
+    }
+  ]
+}

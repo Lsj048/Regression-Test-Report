@@ -1,0 +1,17 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: scripts/evaluation/g2/analyze.mjs
+    if (existsSync(path)) copyFileSync(path, join(out, "runner", file));
+  }
+  const inventory = run ? trajectoryInventory(run) : { plan: {}, files: [], expected: [], issues: [] };
+  const recordedHead = inventory.plan.masterSha ?? inventory.plan.head;
+  const headSha = commitSha(repository, head ?? recordedHead ?? "HEAD"), baseSha = commitSha(repository, base ?? baseline.revision);
+  const integrityIssues = [...inventory.issues];
+  if (run && (typeof recordedHead !== "string" || !/^[a-f0-9]{40}$/u.test(recordedHead))) integrityIssues.push("实验未记录冻结的完整产品提交 SHA");
+  if (recordedHead && headSha !== commitSha(repository, recordedHead)) integrityIssues.push("轨迹产品提交与指定 head 不一致；不能用旧轨迹证明新提交");
+  const evaluatedTree = inventory.plan.evaluatedTree ?? inventory.plan.tree;
+  if (evaluatedTree) {
+    try {
+      const changed = git(repository, "diff", "--name-only", headSha, evaluatedTree, "--", "src", "config", "spec", "package.json", "package-lock.json").trim();
+      if (changed) integrityIssues.push({ reason: "Evaluated product tree differs from declared head", paths: changed.split("\n") });
+    } catch { integrityIssues.push("无法核对实际 evaluated tree 与产品版本"); }
+  } else if (run) integrityIssues.push("实验未记录 evaluated tree");

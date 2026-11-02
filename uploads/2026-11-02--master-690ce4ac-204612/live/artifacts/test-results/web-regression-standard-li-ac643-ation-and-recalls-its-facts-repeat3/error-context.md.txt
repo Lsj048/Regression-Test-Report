@@ -1,0 +1,325 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> standard.live-manual-context-compaction >> standard mode manually compacts a live-model conversation and recalls its facts
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+Error: manual-compaction command request failed
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: true
+Received: false
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-cXRrGN/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "我正在整理结算平台下周的灰度发布，请把下面的发布交接卡和… 刚刚" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]: 我正在整理结算平台下周的灰度发布，请把下面的发布交接卡和…
+          - time [ref=e59]: 刚刚
+        - button "我正在整理结算平台下周的灰度发布，请把下面的发布交接卡和… 的会话操作" [ref=e60] [cursor=pointer]
+    - button "归档会话" [ref=e65] [cursor=pointer]
+    - button "设置" [ref=e69] [cursor=pointer]
+  - main [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 我正在整理结算平台下周的灰度发布，请把下面的发布交接卡和…
+        - button "复制会话 ID session_fe533413-6ffc-487d-ac0d-8dee8faade64" [ref=e78] [cursor=pointer]:
+          - generic [ref=e79]: session_fe533413-6ffc-487d-ac0d-8dee8faade64
+      - generic [ref=e83]:
+        - button "对话" [ref=e84] [cursor=pointer]
+        - button "轨迹" [ref=e87] [cursor=pointer]
+    - generic [ref=e90]:
+      - generic [ref=e92]:
+        - generic [ref=e93]:
+          - group [ref=e96]:
+            - generic "展开长文本" [ref=e97] [cursor=pointer]:
+              - generic [ref=e101]:
+                - strong [ref=e102]: 长文本
+                - generic [ref=e103]: 6,881 字符 · 119 行
+          - group [ref=e106]:
+            - generic "用时 4 秒" [ref=e107] [cursor=pointer]
+          - generic [ref=e111]:
+            - generic [ref=e112]:
+              - paragraph [ref=e113]: 交接记录逐行确认如下：
+              - list [ref=e114]:
+                - listitem [ref=e115]:
+                  - strong [ref=e116]: 灰度负责人：林澈
+                  - text: —— 字段名与值均原样保留，未改动。
+                - listitem [ref=e117]:
+                  - strong [ref=e118]: 异常回滚版本：2026.09.12-rc3
+                  - text: —— 字段名与值均原样保留；版本号中的年份（2026）、月份（09）、日期（12）、分隔符（
+                  - code [ref=e119]: .
+                  - text: ）及后缀（
+                  - code [ref=e120]: "-rc3"
+                  - text: ）完整无删减、无缩写、无改写。
+              - paragraph [ref=e121]: 两项结论与交接卡一致，未访问工作区、未执行命令、未修改文件。
+            - generic:
+              - button "复制回答"
+              - button "赞"
+              - button "踩"
+              - button "从此回答分叉会话"
+        - group [ref=e123]:
+          - generic "用时 不到 1 秒" [ref=e124] [cursor=pointer]
+      - generic [ref=e130]:
+        - textbox "继续输入消息" [active] [ref=e131]
+        - generic [ref=e132]: "Compaction summarizer failed; original messages remain visible: Compaction LLM returned an unsafe summary: the candidate contains a provider control marker not grounded in source history"
+        - generic [ref=e133]:
+          - generic [ref=e134]:
+            - button "添加" [ref=e136] [cursor=pointer]
+            - generic [ref=e139] [cursor=pointer]: 标准模式
+            - button "权限：只读" [ref=e145] [cursor=pointer]:
+              - generic [ref=e148]: 只读
+          - generic [ref=e151]:
+            - button "模型：LongCat-2.0" [ref=e153] [cursor=pointer]:
+              - generic [ref=e154]: LongCat-2.0
+              - generic [ref=e155]: 思考
+            - generic "模型缓存与上下文用量" [ref=e158]:
+              - meter "最近一次模型请求缓存命中 7,552 / 13,470 输入令牌（56.1%）" [ref=e159]:
+                - generic [ref=e160]: 缓存
+                - strong [ref=e161]: 56%
+              - meter "上下文已使用 13,470 / 32,768 令牌（41.1%）；最近一次模型请求" [ref=e162]:
+                - generic [ref=e163]: 令牌
+                - strong [ref=e164]: 41%
+            - button "发送消息" [disabled] [ref=e165]
+    - generic [ref=e168]:
+      - generic [ref=e171]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e172] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  54  |     await page.waitForTimeout(100);
+  55  |   }
+  56  |   const terminal = await sessionFrom(await fetch(`${environment.baseUrl}/api/sessions/${sessionId}`));
+  57  |   expect(terminal.status, `${label} did not complete within its timing budget`).toBe("completed");
+  58  |   const assistantMessages = page.locator(".timeline-group > .assistant-message");
+  59  |   await expect(assistantMessages, `${label} rendered the wrong number of Assistant answers`)
+  60  |     .toHaveCount(expectedAssistantCount);
+  61  |   const answer = assistantMessages.nth(expectedAssistantCount - 1);
+  62  |   await expect(answer).toBeVisible();
+  63  |   await expect(page.getByTestId("stop-task")).toHaveCount(0);
+  64  |   await expect(page.getByTestId("permission-select")).toBeEnabled();
+  65  |   await expect(page.getByRole("button", { name: "复制回答" }).last()).toBeVisible();
+  66  |   return (await answer.innerText()).trim();
+  67  | }
+  68  | 
+  69  | async function assertCompactProjection(
+  70  |   page: Page,
+  71  |   result: Pick<CompactResponse, "replacedMessageCount" | "replacedTokenCount" | "replacementTokenCount" | "releasedTokenCount">,
+  72  | ): Promise<void> {
+  73  |   const card = page.locator(".compact-command-card.completed");
+  74  |   await expect(card, "the page omitted the completed manual-compaction command").toHaveCount(1);
+  75  |   const activity = page.locator(".timeline-group .turn-activity.completed").filter({ has: card });
+  76  |   await expect(activity, "the manual-compaction card is not attached to one completed activity").toHaveCount(1);
+  77  |   if (await activity.getAttribute("open") === null) await activity.locator(":scope > summary").click();
+  78  |   await expect(card).toBeVisible();
+  79  |   await expect(card.locator("strong")).toHaveText("上下文已压缩");
+  80  |   await expect(card.locator("small")).toContainText(`已将 ${result.replacedMessageCount.toLocaleString("zh-CN")} 条历史消息整理为摘要`);
+  81  |   await expect(card.locator("small")).toContainText(`原文约 ${result.replacedTokenCount.toLocaleString("zh-CN")}`);
+  82  |   await expect(card.locator("small")).toContainText(`摘要约 ${result.replacementTokenCount.toLocaleString("zh-CN")}`);
+  83  |   await expect(card.locator("small")).toContainText(`净减少约 ${result.releasedTokenCount.toLocaleString("zh-CN")}`);
+  84  |   await expect(card.locator("code")).toHaveText("/compact");
+  85  | }
+  86  | 
+  87  | export const standardLiveManualContextCompactionDriver = Object.freeze({
+  88  |   caseId: STANDARD_LIVE_MANUAL_CONTEXT_COMPACTION_CASE.id,
+  89  |   title: "standard mode manually compacts a live-model conversation and recalls its facts",
+  90  |   timingBudgetKeys: Object.freeze(["firstTurnMs", "manualCompactionMs", "recallTurnMs", "refreshRecoveryMs"]),
+  91  |   permissionMode: "read-only",
+  92  |   async run({ page, testInfo, environment: current }) {
+  93  |     const contract = STANDARD_LIVE_MANUAL_CONTEXT_COMPACTION_CASE;
+  94  |     const scenario = STANDARD_LIVE_MANUAL_CONTEXT_COMPACTION_SCENARIO;
+  95  |     const firstTurnBudgetMs = evaluationTimingBudget(contract, "firstTurnMs");
+  96  |     const manualCompactionBudgetMs = evaluationTimingBudget(contract, "manualCompactionMs");
+  97  |     const recallTurnBudgetMs = evaluationTimingBudget(contract, "recallTurnMs");
+  98  |     const refreshRecoveryBudgetMs = evaluationTimingBudget(contract, "refreshRecoveryMs");
+  99  |     testInfo.setTimeout(firstTurnBudgetMs + manualCompactionBudgetMs + recallTurnBudgetMs
+  100 |       + refreshRecoveryBudgetMs + 30_000);
+  101 | 
+  102 |     expect(current.model.execution).toBe("live");
+  103 |     expect(current.model.settings?.contextWindowTokens, "the Web process did not receive the Case context window")
+  104 |       .toBe(scenario.contextWindowTokens);
+  105 |     expect(await readdir(current.workspace), "the isolated manual-compaction workspace must start empty").toEqual([]);
+  106 |     expect(scenario.prompts.recall.includes(scenario.facts.releaseOwner)).toBe(false);
+  107 |     expect(scenario.prompts.recall.includes(scenario.facts.rollbackVersion)).toBe(false);
+  108 | 
+  109 |     const browserState = browserDiagnostics(page);
+  110 |     await page.goto(current.baseUrl);
+  111 |     await expect(page.getByRole("button", { name: "LongCat Harness" })).toBeVisible();
+  112 |     await expect(page.getByTestId("mode-select")).toContainText("标准模式");
+  113 |     await expect(page.getByTestId("model-select")).toContainText(current.model.name);
+  114 |     await expect(page.getByTestId("permission-select")).toContainText("只读");
+  115 |     await expect(page.getByTestId("workspace-select")).toContainText(basename(current.workspace));
+  116 | 
+  117 |     await page.getByTestId("composer-input").fill(scenario.prompts.establish);
+  118 |     const created = page.waitForResponse((response) => response.url() === `${current.baseUrl}/api/sessions`
+  119 |       && response.request().method() === "POST");
+  120 |     const firstStartedAt = Date.now();
+  121 |     await page.getByTestId("send-message").click();
+  122 |     const createResponse = await created;
+  123 |     expect(createResponse.ok(), "manual-compaction create-session request failed").toBe(true);
+  124 |     const session = await sessionFrom(createResponse);
+  125 |     expect(session).toMatchObject({ status: "running", mode: "standard" });
+  126 |     await expect(page.getByTestId("stop-task")).toBeVisible();
+  127 |     await expect(page.getByTestId("permission-select")).toBeDisabled();
+  128 | 
+  129 |     const firstAnswer = await waitForCompletedTurn(
+  130 |       page,
+  131 |       current,
+  132 |       session.id,
+  133 |       firstTurnBudgetMs,
+  134 |       "manual-compaction fact-establishment Turn",
+  135 |       1,
+  136 |     );
+  137 |     const firstTurnMs = Date.now() - firstStartedAt;
+  138 |     expect(firstTurnMs).toBeLessThan(firstTurnBudgetMs);
+  139 |     await expect(page.locator(".tool-card")).toHaveCount(0);
+  140 |     expect(await readdir(current.workspace), "the first read-only Turn changed the empty workspace").toEqual([]);
+  141 | 
+  142 |     const compactUrl = `${current.baseUrl}/api/sessions/${encodeURIComponent(session.id)}/commands/compact`;
+  143 |     await page.getByTestId("composer-input").fill("/compact");
+  144 |     const compactOption = page.getByRole("option", { name: /压缩上下文/u });
+  145 |     await expect(compactOption, "the Web UI did not offer the manual compaction command").toBeVisible();
+  146 |     const compacted = page.waitForResponse(
+  147 |       (response) => response.url() === compactUrl && response.request().method() === "POST",
+  148 |       { timeout: manualCompactionBudgetMs },
+  149 |     );
+  150 |     const manualCompactionStartedAt = Date.now();
+  151 |     await compactOption.click();
+  152 |     const compactResponse = await compacted;
+  153 |     const manualCompactionMs = Date.now() - manualCompactionStartedAt;
+> 154 |     expect(compactResponse.ok(), "manual-compaction command request failed").toBe(true);
+      |                                                                              ^ Error: manual-compaction command request failed
+  155 |     expect(manualCompactionMs).toBeLessThan(manualCompactionBudgetMs);
+  156 |     const compactResult = await compactResponse.json() as CompactResponse;
+  157 |     expect(compactResult.status, "manual compaction made no progress").toBe("completed");
+  158 |     expect(compactResult.commandId).toMatch(/^command_/u);
+  159 |     expect(compactResult.replacedMessageCount).toBeGreaterThan(0);
+  160 |     expect(compactResult.replacedTokenCount).toBeGreaterThan(compactResult.replacementTokenCount);
+  161 |     expect(compactResult.releasedTokenCount)
+  162 |       .toBe(compactResult.replacedTokenCount - compactResult.replacementTokenCount);
+  163 |     await expect(page.getByTestId("composer-input")).toHaveValue("");
+  164 |     await assertCompactProjection(page, compactResult);
+  165 |     await expect(page.locator(".timeline-group > .assistant-message")).toHaveCount(1);
+  166 |     await expect(page.locator(".tool-card")).toHaveCount(0);
+  167 |     expect(await readdir(current.workspace), "manual compaction changed the empty workspace").toEqual([]);
+  168 | 
+  169 |     await page.getByTestId("composer-input").fill(scenario.prompts.recall);
+  170 |     const continued = page.waitForResponse((response) => response.url()
+  171 |       === `${current.baseUrl}/api/sessions/${encodeURIComponent(session.id)}/messages`
+  172 |       && response.request().method() === "POST");
+  173 |     const recallStartedAt = Date.now();
+  174 |     await page.getByTestId("send-message").click();
+  175 |     const continueResponse = await continued;
+  176 |     expect(continueResponse.ok(), "manual-compaction recall request failed").toBe(true);
+  177 |     expect(await sessionFrom(continueResponse)).toMatchObject({ id: session.id, status: "running", mode: "standard" });
+  178 |     const finalAnswer = await waitForCompletedTurn(
+  179 |       page,
+  180 |       current,
+  181 |       session.id,
+  182 |       recallTurnBudgetMs,
+  183 |       "manual-compaction recall Turn",
+  184 |       2,
+  185 |     );
+  186 |     const recallTurnMs = Date.now() - recallStartedAt;
+  187 |     expect(recallTurnMs).toBeLessThan(recallTurnBudgetMs);
+  188 |     await expect(page.locator(".tool-card")).toHaveCount(0);
+  189 |     expect(await readdir(current.workspace), "the recall Turn changed the empty workspace").toEqual([]);
+  190 | 
+  191 |     const audit: LiveManualContextCompactionAudit = auditStandardLiveManualContextCompactionSession(
+  192 |       join(current.stateDirectory, "event_log.sqlite"),
+  193 |       join(current.stateDirectory, "message.sqlite"),
+  194 |       session.id,
+  195 |       current.workspace,
+  196 |     );
+  197 |     assertManualContextProjectedAnswer(finalAnswer, scenario.facts, "the recalled page answer");
+  198 |     expect(audit.commandId).toBe(compactResult.commandId);
+  199 |     expect(audit.replacedMessageCount).toBe(compactResult.replacedMessageCount);
+  200 |     expect(audit.replacedTokenCount).toBe(compactResult.replacedTokenCount);
+  201 |     expect(audit.replacementTokenCount).toBe(compactResult.replacementTokenCount);
+  202 |     expect(audit.releasedTokenCount).toBe(compactResult.releasedTokenCount);
+  203 |     const firstMarkup = renderToStaticMarkup(createElement(ReactMarkdown, {
+  204 |       children: audit.sqliteFirstAnswer, remarkPlugins: [remarkGfm],
+  205 |     }));
+  206 |     const expectedFirstText = await page.evaluate((markup) =>
+  207 |       new DOMParser().parseFromString(markup, "text/html").body.textContent ?? "", firstMarkup);
+  208 |     const displayedFirstText = await page.locator(".timeline-group > .assistant-message > .markdown").first()
+  209 |       .evaluate((element) => {
+  210 |         const content = element.cloneNode(true) as Element;
+  211 |         content.querySelectorAll(".code-head").forEach((header) => header.remove());
+  212 |         return content.textContent ?? "";
+  213 |       });
+  214 |     expect(displayedFirstText.replace(/\s+/gu, " ").trim(),
+  215 |       "the page changed the first answer's complete Markdown projection")
+  216 |       .toBe(expectedFirstText.replace(/\s+/gu, " ").trim());
+  217 |     assertManualContextFinalAnswer(audit.sqliteFinalAnswer, scenario.facts, "the SQLite recalled answer");
+  218 |     const finalMarkup = renderToStaticMarkup(createElement(ReactMarkdown, {
+  219 |       children: audit.sqliteFinalAnswer, remarkPlugins: [remarkGfm],
+  220 |     }));
+  221 |     const expectedFinalText = await page.evaluate((markup) =>
+  222 |       new DOMParser().parseFromString(markup, "text/html").body.textContent ?? "", finalMarkup);
+  223 |     const displayedFinalText = await page.locator(".timeline-group > .assistant-message > .markdown").nth(1)
+  224 |       .evaluate((element) => {
+  225 |         const content = element.cloneNode(true) as Element;
+  226 |         content.querySelectorAll(".code-head").forEach((header) => header.remove());
+  227 |         return content.textContent ?? "";
+  228 |       });
+  229 |     expect(displayedFinalText.replace(/\s+/gu, " ").trim(),
+  230 |       "the page changed the recalled answer's complete Markdown projection")
+  231 |       .toBe(expectedFinalText.replace(/\s+/gu, " ").trim());
+  232 | 
+  233 |     const refreshStartedAt = Date.now();
+  234 |     await page.reload({ timeout: refreshRecoveryBudgetMs });
+  235 |     const restoredSessions = page.locator(".session-item:not(.provisional) > .session-row");
+  236 |     await expect(restoredSessions, "refresh did not restore the manual-compaction Session").toHaveCount(1);
+  237 |     const detailUrl = `${current.baseUrl}/api/sessions/${encodeURIComponent(session.id)}`;
+  238 |     const [recoveredResponse] = await Promise.all([
+  239 |       page.waitForResponse((response) => response.url() === detailUrl && response.request().method() === "GET"),
+  240 |       restoredSessions.first().click(),
+  241 |     ]);
+  242 |     expect(recoveredResponse.ok(), "manual-compaction Session did not reload successfully").toBe(true);
+  243 |     expect(await sessionFrom(recoveredResponse)).toMatchObject({ id: session.id, status: "completed", mode: "standard" });
+  244 |     await expect(restoredSessions.first()).toHaveClass(/active/u);
+  245 |     await expect(page.locator(".timeline-group")).toHaveCount(3);
+  246 |     const restoredAnswers = page.locator(".timeline-group > .assistant-message");
+  247 |     await expect(restoredAnswers).toHaveCount(2);
+  248 |     expect((await restoredAnswers.allInnerTexts()).map((value) => value.trim()),
+  249 |       "one or more manual-compaction answers changed after refresh").toEqual([firstAnswer, finalAnswer]);
+  250 |     await assertCompactProjection(page, compactResult);
+  251 |     await expect(page.locator(".tool-card")).toHaveCount(0);
+  252 |     expect(await readdir(current.workspace), "the empty workspace changed across refresh").toEqual([]);
+  253 |     const refreshRecoveryMs = Date.now() - refreshStartedAt;
+  254 |     expect(refreshRecoveryMs).toBeLessThan(refreshRecoveryBudgetMs);
+```

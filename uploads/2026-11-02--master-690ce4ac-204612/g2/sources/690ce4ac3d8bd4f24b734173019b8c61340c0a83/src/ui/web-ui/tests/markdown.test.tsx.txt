@@ -1,0 +1,266 @@
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+import { localFileHref, Markdown } from "../client/Markdown.js";
+
+describe("Markdown", () => {
+  it.each(["attached", "opening-attached", "closing-attached"])("keeps later sections outside a multiline environment (%s)", (boundary) => {
+    const opening = boundary === "closing-attached" ? "$$\n" : "$$";
+    const closing = boundary === "opening-attached" ? "\n$$" : "$$";
+    const source = `## 第四步\n\n${opening}\\begin{aligned}\na &= b + c \\\\\nd &= \\frac{1}{2}\n\\end{aligned}${closing}\n\n## 第五步\n\n**后文**，$x^2$。`;
+    const html = renderToStaticMarkup(<Markdown>{source}</Markdown>);
+    expect(html).not.toContain("katex-error");
+    expect(html.match(/class="katex-display"/gu)).toHaveLength(1);
+    expect(html).toContain("<h2>第五步</h2>");
+    expect(html).toContain("<strong>后文</strong>");
+    expect(html.match(/class="katex"/gu)).toHaveLength(2);
+  });
+
+  it("repairs successive environments without rewriting intervening code examples", () => {
+    const formula = String.raw`$$\begin{aligned}
+a &= b
+\end{aligned}$$`;
+    const source = `${formula}\n\n\`\`\`latex\n${formula}\n\`\`\`\n\n${formula}\n\n## 后文`;
+    const html = renderToStaticMarkup(<Markdown>{source}</Markdown>);
+    expect(html).not.toContain("katex-error");
+    expect(html.match(/class="katex-display"/gu)).toHaveLength(2);
+    expect(html).toContain("$$\\begin{aligned}\na &amp;= b\n\\end{aligned}$$");
+    expect(html).toContain("<h2>后文</h2>");
+  });
+
+  it.each([String.raw`\tag{4}`, String.raw`\tag*{4}`, String.raw`\label{eq:unroll} \tag{4}`, String.raw`\tag{\text{step }4}`])("preserves formula suffixes before attached closing delimiters: %s", (suffix) => {
+    const source = `$$\\begin{aligned}\na &= b + c \\\\\nd &= \\frac{1}{2}\n\\end{aligned} ${suffix}$$\n\n## 第五步\n\n**后文**，$x^2$。`;
+    const html = renderToStaticMarkup(<Markdown>{source}</Markdown>);
+    expect(html).not.toContain("katex-error");
+    expect(html.match(/class="katex-display"/gu)).toHaveLength(1);
+    expect(html).toContain(suffix);
+    expect(html).toContain("<h2>第五步</h2>");
+    expect(html).toContain("<strong>后文</strong>");
+    expect(html.match(/class="katex"/gu)).toHaveLength(2);
+  });
+
+  it("renders the reported three-line unrolling formula with its trailing equation number", () => {
+    const source = String.raw`## 4. 第四步：把递归式彻底展开
+
+$$\begin{aligned}
+\nabla_\theta V^\pi(s) &= \phi(s) + \sum_{x} \rho(s \to x, 1)\, \phi(x) + \sum_{x} \rho(s \to x, 2)\, \nabla_\theta V^\pi(x) \\
+&= \phi(s) + \sum_{x} \rho(s \to x, 1)\, \phi(x) + \sum_{x} \rho(s \to x, 2)\, \phi(x) + \cdots \\
+&= \sum_{x} \sum_{k=0}^{\infty} \rho(s \to x, k)\, \phi(x)
+\end{aligned} \tag{4}$$
+
+**直觉**：所有可达状态的局部梯度加权求和。
+
+## 5. 第五步：引出状态访问分布
+
+$$\eta(x) = \sum_{k=0}^{\infty} \rho(s_0 \to x, k)$$`;
+    const html = renderToStaticMarkup(<Markdown>{source}</Markdown>);
+    expect(html).not.toContain("katex-error");
+    expect(html.match(/class="katex-display"/gu)).toHaveLength(2);
+    expect(html).toContain("<h2>5. 第五步：引出状态访问分布</h2>");
+    expect(html).toContain("<strong>直觉</strong>");
+    expect(html).not.toContain("aligned}$$");
+  });
+
+  it("keeps tagged streaming formulas readable until closed, without changing tagged code examples", () => {
+    const formula = String.raw`$$\begin{aligned}
+a &= b
+\end{aligned} \tag{4}$$`;
+    for (let end = formula.indexOf("\n") + 1; end < formula.length; end += 1) {
+      const html = renderToStaticMarkup(<Markdown>{formula.slice(0, end)}</Markdown>);
+      expect(html).not.toContain("katex-error");
+    }
+    const html = renderToStaticMarkup(<Markdown>{`${formula}\n\n\`\`\`latex\n${formula}\n\`\`\`\n\n## 后文`}</Markdown>);
+    expect(html.match(/class="katex-display"/gu)).toHaveLength(1);
+    expect(html).toContain("\\end{aligned} \\tag{4}$$");
+    expect(html).toContain("<h2>后文</h2>");
+  });
+
+  it("keeps incomplete streamed environments readable and renders them once closed", () => {
+    const formula = String.raw`$$\begin{aligned}
+a &= b
+\end{aligned}$$`;
+    for (let end = formula.indexOf("\n") + 1; end < formula.length; end += 1) {
+      const html = renderToStaticMarkup(<Markdown>{`前文\n\n${formula.slice(0, end)}`}</Markdown>);
+      expect(html).not.toContain("katex-error");
+      expect(html).toContain("<p>前文</p>");
+    }
+    const html = renderToStaticMarkup(<Markdown>{`${formula}\n\n## 后文`}</Markdown>);
+    expect(html).toContain('class="katex-display"');
+    expect(html).toContain("<h2>后文</h2>");
+    expect(html).not.toContain("katex-error");
+  });
+
+  it.each(["aligned", "gathered", "bmatrix", "cases"])("supports attached delimiters around %s with CRLF", (environment) => {
+    const html = renderToStaticMarkup(<Markdown>{`$$\\begin{${environment}}\r\na \\\\\r\nb\r\n\\end{${environment}}$$\r\n\r\n$$x^2$$\r\n\r\n**后文**`}</Markdown>);
+    expect(html).not.toContain("katex-error");
+    expect(html.match(/class="katex-display"/gu)).toHaveLength(2);
+    expect(html).toContain("<strong>后文</strong>");
+  });
+
+  it.each(["blockquote", "list"])("preserves the surrounding %s container", (container) => {
+    const formula = String.raw`$$\begin{aligned}
+a &= b
+\end{aligned}$$`;
+    const source = container === "blockquote"
+      ? formula.split("\n").map(line => `> ${line}`).join("\n")
+      : `- 示例\n\n${formula.split("\n").map(line => `  ${line}`).join("\n")}`;
+    const html = renderToStaticMarkup(<Markdown>{`${source}\n\n## 后文`}</Markdown>);
+    expect(html).not.toContain("katex-error");
+    expect(html).toContain('class="katex-display"');
+    expect(html).toContain(container === "blockquote" ? "<blockquote>" : "<li>");
+    expect(html).toContain("<h2>后文</h2>");
+  });
+
+  it("leaves fenced, indented and inline formula code literal", () => {
+    const formula = String.raw`$$\begin{aligned}
+a &= b
+\end{aligned}$$`;
+    for (const source of ["```latex\n" + formula + "\n```", "~~~latex\n" + formula + "\n~~~", formula.split("\n").map(line => "    " + line).join("\n"), "`" + formula + "`", String.raw`\$\$\begin{aligned} a &= b \end{aligned}\$\$`]) {
+      const html = renderToStaticMarkup(<Markdown>{source}</Markdown>);
+      expect(html).not.toContain('class="katex');
+      expect(html).toContain("$$\\begin{aligned}");
+    }
+  });
+
+  it("confines an invalid closed environment to its own error element", () => {
+    const html = renderToStaticMarkup(<Markdown>{String.raw`$$\begin{aligned}
+a &= \frac{
+\end{aligned}$$
+
+## 后文
+
+**仍为正文**`}</Markdown>);
+    expect(html.match(/class="katex-error"/gu)).toHaveLength(1);
+    expect(html).toContain("<h2>后文</h2>");
+    expect(html).toContain("<strong>仍为正文</strong>");
+  });
+
+  it("renders inline math in text and table cells without changing surrounding Markdown", () => {
+    const html = renderToStaticMarkup(<Markdown>{String.raw`正文 $E = mc^2$，**粗体**。
+
+| 符号 | 含义 |
+| --- | --- |
+| $\rho$ | 密度 |`}</Markdown>);
+    expect(html.match(/class="katex"/gu)).toHaveLength(2);
+    expect(html).toContain("<math");
+    expect(html).toContain("<table>");
+    expect(html).toContain("<strong>粗体</strong>");
+    expect(html).not.toContain('class="katex-display"');
+  });
+
+  it("renders the historical five-slot formula as display math on a single line", () => {
+    const formula = String.raw`\mathcal{H} = (\underbrace{\rho}_{\text{system prompt}},\;\underbrace{\mathcal{M}}_{\text{memory}},\;\underbrace{\mathcal{O}}_{\text{built-in tools}},\;\underbrace{\mathcal{S}}_{\text{skills}},\;\underbrace{\mathcal{T}}_{\text{MCP}})`;
+    const html = renderToStaticMarkup(<Markdown>{`前文\n\n$$${formula}$$\n\n后文`}</Markdown>);
+    expect(html).toContain('class="katex-display"');
+    expect(html).toContain('encoding="application/x-tex"');
+    expect(html).toContain("<munder>");
+    expect(html).toContain("system prompt");
+    expect(html).not.toContain("katex-error");
+    expect(html).not.toContain("$$");
+    expect(html).toContain("<p>后文</p>");
+  });
+
+  it("renders multiline blocks and keeps inline double-dollar math inline", () => {
+    const html = renderToStaticMarkup(<Markdown>{String.raw`Lift($$L$$)
+
+$$
+\begin{aligned}
+a &= b + c \\
+d &= \frac{1}{2}
+\end{aligned}
+$$`}</Markdown>);
+    expect(html.match(/class="katex-display"/gu)).toHaveLength(1);
+    expect(html.match(/class="katex"/gu)).toHaveLength(2);
+    expect(html).not.toContain("katex-error");
+  });
+
+  it("keeps code examples, escaped dollars and unfinished streaming text readable", () => {
+    const html = renderToStaticMarkup(<Markdown>{[
+      "示例：`$x^2$`；价格 \\$20 和 \\$30；未闭合 $x^2",
+      "```latex\n$$x^2$$\n```",
+    ].join("\n\n")}</Markdown>);
+    expect(html).toContain("$x^2$");
+    expect(html).toContain("价格 $20 和 $30");
+    expect(html).toContain("$$x^2$$");
+    expect(html).not.toContain('class="katex"');
+  });
+
+  it("falls back locally for malformed and partially streamed formulas", () => {
+    for (const formula of [String.raw`\frac{`, String.raw`\begin{aligned} x &=`, String.raw`\def\loop{\loop}\loop`]) {
+      const html = renderToStaticMarkup(<Markdown>{`前文\n\n$$${formula}$$\n\n**后文**`}</Markdown>);
+      expect(html).toContain("katex-error");
+      expect(html).toContain("<strong>后文</strong>");
+    }
+  });
+
+  it("does not trust math commands that load resources or inject links and HTML", () => {
+    const html = renderToStaticMarkup(<Markdown>{String.raw`$\href{javascript:alert(1)}{click}$
+
+$\includegraphics{https://example.com/tracker.png}$
+
+$\htmlClass{injected}{x}$`}</Markdown>);
+    expect(html).not.toContain("<a ");
+    expect(html).not.toContain("<img");
+    expect(html).not.toContain('class="injected"');
+    expect(html).not.toContain("<script");
+  });
+
+  it("does not share formula-defined macros across messages", () => {
+    renderToStaticMarkup(<Markdown>{String.raw`$\gdef\leaked{SECRET}x$`}</Markdown>);
+    const next = renderToStaticMarkup(<Markdown>{String.raw`$\leaked$`}</Markdown>);
+    expect(next).not.toContain("SECRET");
+  });
+
+  it("renders GitHub-style tables and task lists", () => {
+    const html = renderToStaticMarkup(<Markdown>{`| 目录 | 职责 |
+| --- | --- |
+| \`kernel/\` | AgentLoop 协调 |
+
+- [x] 表格
+- [ ] 引用`}</Markdown>);
+
+    expect(html).toContain("<table>");
+    expect(html).toContain("<th>目录</th>");
+    expect(html).toContain("<code>kernel/</code>");
+    expect(html).toContain("type=\"checkbox\"");
+    expect(html).toContain("checked=\"\"");
+  });
+
+  it("supports common blocks without executing raw HTML or unsafe links", () => {
+    const html = renderToStaticMarkup(<Markdown>{`> 引用
+
+~~删除线~~ [安全链接](https://example.com) [危险链接](javascript:alert(1))
+
+<script>alert(1)</script>
+
+\`\`\`ts
+const ok = true;
+\`\`\``}</Markdown>);
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain("<del>删除线</del>");
+    expect(html).toContain("href=\"https://example.com\"");
+    expect(html).not.toContain("javascript:");
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("<span>ts</span>");
+  });
+
+  it("builds safe workspace preview targets and checks them before linking", () => {
+    const html = renderToStaticMarkup(<Markdown sessionId="session-1" workspace="/Users/steven/code/project">{`已生成 \`output/agent-loop-states.html\`，类型在 \`contracts.ts\`，测试命令为 \`node --test dist/test/unit/*.test.js\`。
+
+[查看带空格的文件](</Users/steven/code/project/output/demo file.html>) [工作区外](../secret.txt)`}</Markdown>);
+
+    expect(localFileHref("output/agent-loop-states.html", "session-1", "/Users/steven/code/project", false)).toBe("/api/sessions/session-1/files/output/agent-loop-states.html");
+    expect(localFileHref("contracts.ts", "session-1", "/Users/steven/code/project", false)).toBeUndefined();
+    expect(localFileHref("node --test dist/test/unit/*.test.js", "session-1", "/Users/steven/code/project", false)).toBeUndefined();
+    expect(localFileHref("/Users/steven/code/project/output/demo file.html", "session-1", "/Users/steven/code/project", true)).toBe("/api/sessions/session-1/files/output/demo%20file.html");
+    expect(localFileHref("../secret.txt", "session-1", "/Users/steven/code/project", true)).toBeUndefined();
+    expect(html).toContain("inline-file-link");
+    expect(html).toContain("正在检查文件");
+    expect(html).toContain("local-file-reference");
+    expect(html).toContain("aria-busy=\"true\"");
+    expect(html).not.toContain('href="/api/sessions/session-1/files/output/agent-loop-states.html"');
+    expect(html).not.toContain("files/contracts.ts");
+    expect(html).not.toContain("files/node%20--test");
+    expect(html).not.toContain("secret.txt\"");
+  });
+});

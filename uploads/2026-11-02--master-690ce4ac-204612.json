@@ -1,0 +1,11 @@
+{
+  "title": "LCH 全量回归 · 2026-11-02 · master 690ce4ac",
+  "status": "failed",
+  "summary": "确定性与真实模型完整取样；G1 FAIL；G2 INVALID_EVIDENCE。失败归因、代码溯源及取证边界见正文。",
+  "metrics": {
+    "passed": 138,
+    "failed": 19,
+    "skipped": 0
+  },
+  "entry": "index.html"
+}

@@ -1,0 +1,135 @@
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+import { localFileHref, Markdown } from "../client/Markdown.js";
+
+describe("Markdown", () => {
+  it("renders inline math in text and table cells without changing surrounding Markdown", () => {
+    const html = renderToStaticMarkup(<Markdown>{String.raw`正文 $E = mc^2$，**粗体**。
+
+| 符号 | 含义 |
+| --- | --- |
+| $\rho$ | 密度 |`}</Markdown>);
+    expect(html.match(/class="katex"/gu)).toHaveLength(2);
+    expect(html).toContain("<math");
+    expect(html).toContain("<table>");
+    expect(html).toContain("<strong>粗体</strong>");
+    expect(html).not.toContain('class="katex-display"');
+  });
+
+  it("renders the historical five-slot formula as display math on a single line", () => {
+    const formula = String.raw`\mathcal{H} = (\underbrace{\rho}_{\text{system prompt}},\;\underbrace{\mathcal{M}}_{\text{memory}},\;\underbrace{\mathcal{O}}_{\text{built-in tools}},\;\underbrace{\mathcal{S}}_{\text{skills}},\;\underbrace{\mathcal{T}}_{\text{MCP}})`;
+    const html = renderToStaticMarkup(<Markdown>{`前文\n\n$$${formula}$$\n\n后文`}</Markdown>);
+    expect(html).toContain('class="katex-display"');
+    expect(html).toContain('encoding="application/x-tex"');
+    expect(html).toContain("<munder>");
+    expect(html).toContain("system prompt");
+    expect(html).not.toContain("katex-error");
+    expect(html).not.toContain("$$");
+    expect(html).toContain("<p>后文</p>");
+  });
+
+  it("renders multiline blocks and keeps inline double-dollar math inline", () => {
+    const html = renderToStaticMarkup(<Markdown>{String.raw`Lift($$L$$)
+
+$$
+\begin{aligned}
+a &= b + c \\
+d &= \frac{1}{2}
+\end{aligned}
+$$`}</Markdown>);
+    expect(html.match(/class="katex-display"/gu)).toHaveLength(1);
+    expect(html.match(/class="katex"/gu)).toHaveLength(2);
+    expect(html).not.toContain("katex-error");
+  });
+
+  it("keeps code examples, escaped dollars and unfinished streaming text readable", () => {
+    const html = renderToStaticMarkup(<Markdown>{[
+      "示例：`$x^2$`；价格 \\$20 和 \\$30；未闭合 $x^2",
+      "```latex\n$$x^2$$\n```",
+    ].join("\n\n")}</Markdown>);
+    expect(html).toContain("$x^2$");
+    expect(html).toContain("价格 $20 和 $30");
+    expect(html).toContain("$$x^2$$");
+    expect(html).not.toContain('class="katex"');
+  });
+
+  it("falls back locally for malformed and partially streamed formulas", () => {
+    for (const formula of [String.raw`\frac{`, String.raw`\begin{aligned} x &=`, String.raw`\def\loop{\loop}\loop`]) {
+      const html = renderToStaticMarkup(<Markdown>{`前文\n\n$$${formula}$$\n\n**后文**`}</Markdown>);
+      expect(html).toContain("katex-error");
+      expect(html).toContain("<strong>后文</strong>");
+    }
+  });
+
+  it("does not trust math commands that load resources or inject links and HTML", () => {
+    const html = renderToStaticMarkup(<Markdown>{String.raw`$\href{javascript:alert(1)}{click}$
+
+$\includegraphics{https://example.com/tracker.png}$
+
+$\htmlClass{injected}{x}$`}</Markdown>);
+    expect(html).not.toContain("<a ");
+    expect(html).not.toContain("<img");
+    expect(html).not.toContain('class="injected"');
+    expect(html).not.toContain("<script");
+  });
+
+  it("does not share formula-defined macros across messages", () => {
+    renderToStaticMarkup(<Markdown>{String.raw`$\gdef\leaked{SECRET}x$`}</Markdown>);
+    const next = renderToStaticMarkup(<Markdown>{String.raw`$\leaked$`}</Markdown>);
+    expect(next).not.toContain("SECRET");
+  });
+
+  it("renders GitHub-style tables and task lists", () => {
+    const html = renderToStaticMarkup(<Markdown>{`| 目录 | 职责 |
+| --- | --- |
+| \`kernel/\` | AgentLoop 协调 |
+
+- [x] 表格
+- [ ] 引用`}</Markdown>);
+
+    expect(html).toContain("<table>");
+    expect(html).toContain("<th>目录</th>");
+    expect(html).toContain("<code>kernel/</code>");
+    expect(html).toContain("type=\"checkbox\"");
+    expect(html).toContain("checked=\"\"");
+  });
+
+  it("supports common blocks without executing raw HTML or unsafe links", () => {
+    const html = renderToStaticMarkup(<Markdown>{`> 引用
+
+~~删除线~~ [安全链接](https://example.com) [危险链接](javascript:alert(1))
+
+<script>alert(1)</script>
+
+\`\`\`ts
+const ok = true;
+\`\`\``}</Markdown>);
+
+    expect(html).toContain("<blockquote>");
+    expect(html).toContain("<del>删除线</del>");
+    expect(html).toContain("href=\"https://example.com\"");
+    expect(html).not.toContain("javascript:");
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("<span>ts</span>");
+  });
+
+  it("builds safe workspace preview targets and checks them before linking", () => {
+    const html = renderToStaticMarkup(<Markdown sessionId="session-1" workspace="/Users/steven/code/project">{`已生成 \`output/agent-loop-states.html\`，类型在 \`contracts.ts\`，测试命令为 \`node --test dist/test/unit/*.test.js\`。
+
+[查看带空格的文件](</Users/steven/code/project/output/demo file.html>) [工作区外](../secret.txt)`}</Markdown>);
+
+    expect(localFileHref("output/agent-loop-states.html", "session-1", "/Users/steven/code/project", false)).toBe("/api/sessions/session-1/files/output/agent-loop-states.html");
+    expect(localFileHref("contracts.ts", "session-1", "/Users/steven/code/project", false)).toBeUndefined();
+    expect(localFileHref("node --test dist/test/unit/*.test.js", "session-1", "/Users/steven/code/project", false)).toBeUndefined();
+    expect(localFileHref("/Users/steven/code/project/output/demo file.html", "session-1", "/Users/steven/code/project", true)).toBe("/api/sessions/session-1/files/output/demo%20file.html");
+    expect(localFileHref("../secret.txt", "session-1", "/Users/steven/code/project", true)).toBeUndefined();
+    expect(html).toContain("inline-file-link");
+    expect(html).toContain("正在检查文件");
+    expect(html).toContain("local-file-reference");
+    expect(html).toContain("aria-busy=\"true\"");
+    expect(html).not.toContain('href="/api/sessions/session-1/files/output/agent-loop-states.html"');
+    expect(html).not.toContain("files/contracts.ts");
+    expect(html).not.toContain("files/node%20--test");
+    expect(html).not.toContain("secret.txt\"");
+  });
+});

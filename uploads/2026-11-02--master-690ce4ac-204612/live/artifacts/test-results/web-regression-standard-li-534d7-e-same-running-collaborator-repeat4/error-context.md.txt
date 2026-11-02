@@ -1,0 +1,323 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> standard.live-subagent-message >> standard mode forwards a Web-selected release window to the same running collaborator
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+Error: the running collaborator and release-window question did not become ready within 240000ms
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-w2R5VH/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "请安排一位独立的后台协作者核验本周发布基线，只交给它这项… 3分钟" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]: 请安排一位独立的后台协作者核验本周发布基线，只交给它这项…
+          - time [ref=e59]: 3分钟
+        - button "请安排一位独立的后台协作者核验本周发布基线，只交给它这项… 的会话操作" [ref=e60] [cursor=pointer]
+    - button "归档会话" [ref=e65] [cursor=pointer]
+    - button "设置" [ref=e69] [cursor=pointer]
+  - main [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 请安排一位独立的后台协作者核验本周发布基线，只交给它这项…
+        - button "复制会话 ID session_5bd9d944-9afe-41b0-aeec-82d176a2a298" [ref=e79] [cursor=pointer]:
+          - generic [ref=e80]: session_5bd9d944-9afe-41b0-aeec-82d176a2a298
+      - generic [ref=e84]:
+        - button "对话" [ref=e85] [cursor=pointer]
+        - button "轨迹" [ref=e88] [cursor=pointer]
+    - generic [ref=e91]:
+      - generic [ref=e94]:
+        - generic [ref=e97]:
+          - generic [ref=e98]: 请安排一位独立的后台协作者核验本周发布基线，只交给它这项任务、不复制聊天历史：在项目根目录运行 node scripts/run-release-baseline.mjs，等实际结果出来后报告完整的实际版本号。命令可能需要十分钟，你自己不要代跑，也不要另外安排协作者。 协作者开始处理后，我还需要在“周五 20:00”和“周六 10:00”两个灰度窗口中作决定。请在页面上提供这两个可点击的候选项，等我点选，不要替我决定。若我选择周五 20:00，后续按 rollout-window=Friday-20:00 记录；若选择周六 10:00，则按 rollout-window=Saturday-10:00 记录。 收到我的选择后，请把对应的 rollout-window 交给刚才仍在核验的同一位协作者，让它在核验完成后同时汇报 rollout-window 和 release-version；不要改由新的协作者处理。收到最终核验结果后，只输出两行纯文本：第一行 rollout-window=<灰度窗口>，第二行 release-version=<发布版本>，不加列表、Markdown 或其他文字。 脚本和运行环境已确认可用，命令已获准运行。只做这项只读核验和发布窗口交接，不要修改文件或开展其他任务。转交窗口后直接等待协作者返回结果，不要另外运行 sleep、echo 等等待命令。
+          - generic:
+            - time: 00:28
+            - button "复制消息"
+        - generic [ref=e100]:
+          - generic [ref=e101]: 已处理 4 分钟 16 秒
+          - generic [ref=e103]:
+            - paragraph [ref=e106]: 我先启动一位独立的后台协作者来核验发布基线，然后为你提供灰度窗口的候选项。
+            - generic [ref=e107]:
+              - generic [ref=e108]: 开启了一个子 Agent
+              - button "查看子 Agent：核验本周发布基线" [ref=e109] [cursor=pointer]:
+                - strong [ref=e115]: 核验本周发布基线
+                - generic [ref=e116]: 运行中
+            - paragraph [ref=e121]: 后台协作者已开始核验发布基线。现在请选择灰度窗口：
+            - button "AskUserQuestion 等待回答" [ref=e122] [cursor=pointer]:
+              - strong [ref=e127]: AskUserQuestion
+              - generic [ref=e128]: 等待回答
+        - status [ref=e129]:
+          - generic [ref=e132]: 正在等待你的回答
+        - status [ref=e133]:
+          - generic [ref=e136]: 正在等待你的回答
+      - generic [ref=e137]:
+        - navigation "待回答的请求" [ref=e138]:
+          - button "权限确认" [pressed] [ref=e139] [cursor=pointer]
+          - button "灰度窗口" [ref=e140] [cursor=pointer]
+        - region "等待回答" [ref=e142]:
+          - generic [ref=e143]:
+            - paragraph [ref=e147]: 是否允许：ls -la /private/tmp/lch-e2e-w2R5VH/workspace && ls -la /private/tmp/lch-e2e-w2R5VH/workspace/scripts 2>/dev/null？
+            - radiogroup "是否允许：ls -la /private/tmp/lch-e2e-w2R5VH/workspace && ls -la /private/tmp/lch-e2e-w2R5VH/workspace/scripts 2>/dev/null？" [ref=e149]:
+              - radio [active] [ref=e150] [cursor=pointer]:
+                - generic [aria-hidden] [ref=e151]: "1."
+                - generic [ref=e152]:
+                  - strong [ref=e153]: 允许
+                  - generic [ref=e154]: 只允许本次调用。
+                - generic [ref=e156]: ↑↓
+              - radio [ref=e157] [cursor=pointer]:
+                - generic [aria-hidden] [ref=e158]: "2."
+                - generic [ref=e159]:
+                  - strong [ref=e160]: 拒绝
+                  - generic [ref=e161]: 阻止本次调用。
+              - radio "其他想法，直接告诉我" [ref=e163] [cursor=pointer]:
+                - generic [aria-hidden] [ref=e164]: "3."
+            - generic [ref=e166]:
+              - generic [ref=e167]:
+                - generic [ref=e168]: 选择一项
+                - generic [ref=e169]: ↑↓ 切换 · 数字选择
+              - generic [ref=e170]:
+                - button "收起 Esc" [ref=e171] [cursor=pointer]:
+                  - text: 收起
+                  - generic [ref=e172]: Esc
+                - button "确认并继续 ↵" [disabled] [ref=e173]:
+                  - text: 确认并继续
+                  - generic [ref=e174]: ↵
+    - generic [ref=e175]:
+      - generic [ref=e178]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e179] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  67  | 
+  68  | function errorCode(error: unknown): string {
+  69  |   return error !== null && typeof error === "object" && "code" in error
+  70  |     ? String((error as { readonly code?: unknown }).code)
+  71  |     : "";
+  72  | }
+  73  | 
+  74  | function pidFromOutput(content: string, prefix: string): number | undefined {
+  75  |   const line = content.split(/\r?\n/u).find((candidate) => candidate.startsWith(prefix));
+  76  |   if (line === undefined) return undefined;
+  77  |   const value = Number(line.slice(prefix.length));
+  78  |   return Number.isSafeInteger(value) && value > 0 ? value : undefined;
+  79  | }
+  80  | 
+  81  | async function taskLogs(workspace: string): Promise<readonly TaskLog[]> {
+  82  |   const sessionsDirectory = join(workspace, ".longcat-harness", "tools", "sessions");
+  83  |   const sessions = await readdir(sessionsDirectory, { withFileTypes: true }).catch((error: unknown) => {
+  84  |     if (errorCode(error) === "ENOENT") return [];
+  85  |     throw error;
+  86  |   });
+  87  |   const logs: TaskLog[] = [];
+  88  |   for (const session of sessions) {
+  89  |     if (!session.isDirectory()) continue;
+  90  |     const tasksDirectory = join(sessionsDirectory, session.name, "tasks");
+  91  |     const tasks = await readdir(tasksDirectory, { withFileTypes: true }).catch((error: unknown) => {
+  92  |       if (errorCode(error) === "ENOENT") return [];
+  93  |       throw error;
+  94  |     });
+  95  |     for (const task of tasks) {
+  96  |       if (!task.isFile() || !task.name.endsWith(".log")) continue;
+  97  |       const path = join(tasksDirectory, task.name);
+  98  |       logs.push({ sessionId: session.name, path, content: await readFile(path, "utf8") });
+  99  |     }
+  100 |   }
+  101 |   return logs;
+  102 | }
+  103 | 
+  104 | async function sessionSnapshot(
+  105 |   environment: EvaluationCaseEnvironment,
+  106 |   sessionId: string,
+  107 | ): Promise<WebSessionSnapshot> {
+  108 |   const response = await fetch(`${environment.baseUrl}/api/sessions/${encodeURIComponent(sessionId)}`);
+  109 |   expect(response.ok, "live-subagent-message Session inspection failed").toBe(true);
+  110 |   return response.json() as Promise<WebSessionSnapshot>;
+  111 | }
+  112 | 
+  113 | function assertNoQuestion(page: Page, label: string): Promise<void> {
+  114 |   return page.getByRole("region", { name: "等待回答" }).isVisible().then(async (visible) => {
+  115 |     if (!visible) return;
+  116 |     throw new Error(`${label} requested unexpected user input: ${(
+  117 |       await page.getByRole("region", { name: "等待回答" }).innerText()
+  118 |     ).replace(/\s+/gu, " ").trim()}`);
+  119 |   });
+  120 | }
+  121 | 
+  122 | async function waitForQuestionWindow(
+  123 |   page: Page,
+  124 |   environment: EvaluationCaseEnvironment,
+  125 |   rootSessionId: string,
+  126 |   timeoutMs: number,
+  127 | ): Promise<{
+  128 |   readonly audit: LiveSubagentMessageQuestionWindow;
+  129 |   readonly process: WorkerProcessEvidence;
+  130 | }> {
+  131 |   const scenario = STANDARD_LIVE_SUBAGENT_MESSAGE_SCENARIO;
+  132 |   const eventLogPath = join(environment.stateDirectory, "event_log.sqlite");
+  133 |   const deadline = Date.now() + timeoutMs;
+  134 |   while (Date.now() < deadline) {
+  135 |     const snapshot = await sessionSnapshot(environment, rootSessionId);
+  136 |     if (snapshot.status !== "running" && snapshot.status !== "waiting") {
+  137 |       throw new Error(`live-subagent-message root reached unexpected status ${snapshot.status} before the release-window choice`);
+  138 |     }
+  139 |     if (standardLiveSubagentMessageQuestionWindowReady(eventLogPath, rootSessionId, environment.workspace)) {
+  140 |       const audit = auditStandardLiveSubagentMessageQuestionWindow(
+  141 |         eventLogPath, rootSessionId, environment.workspace);
+  142 |       const logs = await taskLogs(environment.workspace);
+  143 |       const workerLogs = logs.filter(({ content }) => content.split(/\r?\n/u).includes(scenario.workerReadyLine));
+  144 |       expect(workerLogs.length, "more than one worker emitted the unique ready line").toBeLessThanOrEqual(1);
+  145 |       if (workerLogs.length === 0) { await page.waitForTimeout(100); continue; }
+  146 |       const worker = workerLogs[0]!;
+  147 |       const workerPid = pidFromOutput(worker.content, scenario.workerPidPrefix);
+  148 |       if (workerPid === undefined) throw new Error("the ready worker omitted its process ID");
+  149 |       expect(worker.sessionId, "the ready worker did not belong to the audited child").toBe(audit.childSessionId);
+  150 |       const workerProcessGroupId = processGroupFor(workerPid);
+  151 |       const process = { workerOutputFile: worker.path, workerPid, workerProcessGroupId };
+  152 |       expect(await readFile(process.workerOutputFile, "utf8"),
+  153 |         "the worker advanced before the user selected a release window").toBe([
+  154 |         `${scenario.workerPidPrefix}${process.workerPid}`,
+  155 |         scenario.workerReadyLine,
+  156 |         "",
+  157 |       ].join("\n"));
+  158 |       expect(processTargetIsAlive(process.workerPid), "the worker exited before the user choice").toBe(true);
+  159 |       expect(processTargetIsAlive(process.workerProcessGroupId, true),
+  160 |         "the worker process group exited before the user choice").toBe(true);
+  161 |       expect(processGroupFor(process.workerPid), "the worker escaped its captured process group")
+  162 |         .toBe(process.workerProcessGroupId);
+  163 |       return { audit, process };
+  164 |     }
+  165 |     await page.waitForTimeout(100);
+  166 |   }
+> 167 |   throw new Error(`the running collaborator and release-window question did not become ready within ${timeoutMs}ms`);
+      |         ^ Error: the running collaborator and release-window question did not become ready within 240000ms
+  168 | }
+  169 | 
+  170 | async function waitForDeliveryWindow(
+  171 |   page: Page,
+  172 |   environment: EvaluationCaseEnvironment,
+  173 |   rootSessionId: string,
+  174 |   questionWindow: LiveSubagentMessageQuestionWindow,
+  175 |   inputIds: readonly [string, string],
+  176 |   selectedAnswer: string,
+  177 |   process: WorkerProcessEvidence,
+  178 |   timeoutMs: number,
+  179 | ): Promise<LiveSubagentMessageDeliveryWindow> {
+  180 |   const eventLogPath = join(environment.stateDirectory, "event_log.sqlite");
+  181 |   const deadline = Date.now() + timeoutMs;
+  182 |   while (Date.now() < deadline) {
+  183 |     await assertNoQuestion(page, "live-subagent-message delivery window");
+  184 |     const snapshot = await sessionSnapshot(environment, rootSessionId);
+  185 |     if (snapshot.status !== "running" && snapshot.status !== "waiting") {
+  186 |       throw new Error(`live-subagent-message root reached ${snapshot.status} before delivering the selected release window`);
+  187 |     }
+  188 |     if (standardLiveSubagentMessageDeliveryWindowReady(
+  189 |       eventLogPath, rootSessionId, environment.workspace,
+  190 |     )) {
+  191 |       expect(await readFile(process.workerOutputFile, "utf8"),
+  192 |         "the worker advanced before delivery inspection").toBe([
+  193 |         `${STANDARD_LIVE_SUBAGENT_MESSAGE_SCENARIO.workerPidPrefix}${process.workerPid}`,
+  194 |         STANDARD_LIVE_SUBAGENT_MESSAGE_SCENARIO.workerReadyLine,
+  195 |         "",
+  196 |       ].join("\n"));
+  197 |       expect(processTargetIsAlive(process.workerPid), "the worker exited before delivery inspection").toBe(true);
+  198 |       expect(processTargetIsAlive(process.workerProcessGroupId, true),
+  199 |         "the worker process group exited before delivery inspection").toBe(true);
+  200 |       expect(processGroupFor(process.workerPid), "the worker escaped its captured process group")
+  201 |         .toBe(process.workerProcessGroupId);
+  202 |       return auditStandardLiveSubagentMessageDeliveryWindow(
+  203 |         eventLogPath, rootSessionId, environment.workspace, questionWindow, inputIds, selectedAnswer);
+  204 |     }
+  205 |     await page.waitForTimeout(100);
+  206 |   }
+  207 |   throw new Error(`the selected release window did not reach the active collaborator within ${timeoutMs}ms`);
+  208 | }
+  209 | 
+  210 | async function waitForParentWait(
+  211 |   page: Page,
+  212 |   environment: EvaluationCaseEnvironment,
+  213 |   rootSessionId: string,
+  214 |   delivery: LiveSubagentMessageDeliveryWindow,
+  215 |   timeoutMs: number,
+  216 | ): Promise<void> {
+  217 |   const eventLogPath = join(environment.stateDirectory, "event_log.sqlite");
+  218 |   const deadline = Date.now() + timeoutMs;
+  219 |   while (Date.now() < deadline) {
+  220 |     await assertNoQuestion(page, "live-subagent-message parent wait");
+  221 |     const snapshot = await sessionSnapshot(environment, rootSessionId);
+  222 |     if (snapshot.status !== "running" && snapshot.status !== "waiting") {
+  223 |       throw new Error(`live-subagent-message root reached ${snapshot.status} before waiting for its child`);
+  224 |     }
+  225 |     if (standardLiveSubagentMessageParentWaitReady(eventLogPath, rootSessionId, environment.workspace)) {
+  226 |       auditStandardLiveSubagentMessageParentWait(eventLogPath, rootSessionId, environment.workspace, delivery);
+  227 |       return;
+  228 |     }
+  229 |     await page.waitForTimeout(100);
+  230 |   }
+  231 |   throw new Error(`the root did not acknowledge delivery and wait for its running child within ${timeoutMs}ms`);
+  232 | }
+  233 | 
+  234 | export function readyBaselineRechecks(
+  235 |   logs: readonly TaskLog[], childSessionId: string, workspace: string, releasedPids: ReadonlySet<number>,
+  236 | ): readonly WorkerProcessEvidence[] {
+  237 |   if (releasedPids.size === 0) return [];
+  238 |   const scenario = STANDARD_LIVE_SUBAGENT_MESSAGE_SCENARIO;
+  239 |   return logs.flatMap(log => {
+  240 |     if (log.sessionId !== childSessionId) return [];
+  241 |     const pid = pidFromOutput(log.content, scenario.workerPidPrefix);
+  242 |     if (pid === undefined || releasedPids.has(pid)
+  243 |       || log.content !== `${scenario.workerPidPrefix}${pid}\n${scenario.workerReadyLine}\n`) return [];
+  244 |     const command = execFileSync("ps", ["-p", String(pid), "-o", "command="], { encoding: "utf8" }).trim()
+  245 |       .replace(/^\S*\/node\s+/u, "node ");
+  246 |     expect(isStandardLiveSubagentMessageTargetCommand(command, workspace), "refusing to release an unrelated process").toBe(true);
+  247 |     const cwd = execFileSync("lsof", ["-a", "-p", String(pid), "-d", "cwd", "-Fn"], { encoding: "utf8" })
+  248 |       .split("\n").find(line => line.startsWith("n"))?.slice(1);
+  249 |     expect(cwd && realpathSync(cwd), "recheck escaped the isolated workspace").toBe(realpathSync(resolve(workspace)));
+  250 |     return [{ workerOutputFile: log.path, workerPid: pid, workerProcessGroupId: processGroupFor(pid) }];
+  251 |   });
+  252 | }
+  253 | 
+  254 | async function waitForCompletion(
+  255 |   page: Page,
+  256 |   environment: EvaluationCaseEnvironment,
+  257 |   rootSessionId: string,
+  258 |   timeoutMs: number,
+  259 |   childSessionId: string,
+  260 |   releasedWorkers: WorkerProcessEvidence[],
+  261 | ): Promise<void> {
+  262 |   const deadline = Date.now() + timeoutMs;
+  263 |   while (Date.now() < deadline) {
+  264 |     await assertNoQuestion(page, "live-subagent-message completion");
+  265 |     const releasedPids = new Set(releasedWorkers.map(worker => worker.workerPid));
+  266 |     for (const worker of readyBaselineRechecks(await taskLogs(environment.workspace), childSessionId, environment.workspace, releasedPids)) {
+  267 |       releaseWorker(worker); releasedWorkers.push(worker); releasedPids.add(worker.workerPid);
+```

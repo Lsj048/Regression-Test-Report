@@ -1,0 +1,24 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/goal/tools/tools.ts
+    goalTool("record_goal_evidence", {
+      permission: () => ({ action: "record_goal_evidence", resource: "*", mutates: false, permissionRequired: false }),
+      timeoutMs: 300_000,
+      execute: async (raw, context) => {
+        const args = objectValue(raw, "record_goal_evidence");
+        const ids = args["requirementIds"] as string[];
+        const paths = args["paths"] as string[];
+        const before = await context.services.call(WORKSPACE_FILE_DIGEST_SERVICE, { paths });
+        const tool = stringValue(args, "tool");
+        const result = await context.services.call(TOOL_SERVICE, { operation: "invoke", name: tool, arguments: args["arguments"] ?? {} });
+        if (result.operation !== "invoke" || result.isError || result.status !== "succeeded") throw new ContractError("Verification tool did not succeed", "GOAL_EVIDENCE_FAILED");
+        const value = result.value as Record<string, JsonValue> | undefined;
+        if (value && typeof value === "object" && !Array.isArray(value)
+          && ((value["exit_code"] !== undefined && value["exit_code"] !== 0) || value["status"] === "running" || value["status"] === "async_launched" || value["backgroundTaskId"] !== undefined)) throw new ContractError("Verification must finish successfully before it can be evidence", "GOAL_EVIDENCE_FAILED");
+        const after = await context.services.call(WORKSPACE_FILE_DIGEST_SERVICE, { paths });
+        if (canonicalJson(before.files) !== canonicalJson(after.files)) throw new ContractError("Verification changed its input files; finish the changes and verify again", "GOAL_EVIDENCE_CHANGED");
+        const output = result.content.map(block => block.type === "text" ? block.text : "[non-text evidence]").join("\n");
+        return { evidence: { id: context.callId, requirementIds: ids, tool, arguments: args["arguments"] ?? {}, output: output.slice(0, 6000), files: after.files } } as unknown as JsonValue;
+      },
+    }),
+  ];
+}

@@ -1,0 +1,31 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/common/tools/integrations.ts
+      const args = objectValue(raw, "Projects");
+      const method = stringValue(args, "method");
+      const documentPath = (required = true): string => {
+        const input = optionalString(args, "path");
+        if (!input) { if (required) throw new ContractError("path is required for this project operation", "PROJECT_PATH_REQUIRED"); return projectRoot; }
+        const candidate = resolve(projectRoot, input);
+        if (!inside(projectRoot, candidate)) throw new ContractError("Project document paths cannot escape the project store", "PROJECT_PATH_INVALID");
+        return candidate;
+      };
+      if (method === "project_info") {
+        const entries = await files(projectRoot);
+        return { root: projectRoot, documents: entries.map((path) => relative(projectRoot, path)), count: entries.length };
+      }
+      if (method === "project_read") {
+        const path = documentPath();
+        return { path: relative(projectRoot, path), content: await readFile(path, "utf8") };
+      }
+      if (method === "project_search") {
+        const query = stringValue(args, "query").toLowerCase();
+        const maximum = Math.min(100, Math.max(1, Math.floor(optionalNumber(args, "n") ?? 5)));
+        const hits: JsonValue[] = [];
+        for (const path of await files(projectRoot)) {
+          const content = await readFile(path, "utf8");
+          const index = content.toLowerCase().indexOf(query);
+          if (index >= 0) hits.push({ path: relative(projectRoot, path), snippet: content.slice(Math.max(0, index - 120), index + query.length + 240) });
+          if (hits.length >= maximum) break;
+        }
+        return { query, hits };
+      }

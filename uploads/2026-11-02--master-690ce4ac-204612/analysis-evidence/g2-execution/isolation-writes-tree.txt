@@ -1,0 +1,10 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: scripts/evaluation/run-weekly.mjs
+export function prepareSource(repository, destination, masterSha, suiteSha) {
+  const overlay = evaluationTestOverlay(repository, suiteSha);
+  git(repository, "clone", "--no-hardlinks", "--no-checkout", repository, destination);
+  git(destination, "checkout", "--detach", masterSha);
+  git(destination, "restore", `--source=${suiteSha}`, "--staged", "--worktree", "--", ...overlay);
+  assertTestOnlyOverlay(git(destination, "diff", "--name-only", masterSha, "--").split("\n").filter(Boolean), overlay);
+  return git(destination, "write-tree");
+}

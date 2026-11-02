@@ -1,0 +1,18 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/cases/standard-live-manual-context-compaction.ts
+    const compactUrl = `${current.baseUrl}/api/sessions/${encodeURIComponent(session.id)}/commands/compact`;
+    await page.getByTestId("composer-input").fill("/compact");
+    const compactOption = page.getByRole("option", { name: /压缩上下文/u });
+    await expect(compactOption, "the Web UI did not offer the manual compaction command").toBeVisible();
+    const compacted = page.waitForResponse(
+      (response) => response.url() === compactUrl && response.request().method() === "POST",
+      { timeout: manualCompactionBudgetMs },
+    );
+    const manualCompactionStartedAt = Date.now();
+    await compactOption.click();
+    const compactResponse = await compacted;
+    const manualCompactionMs = Date.now() - manualCompactionStartedAt;
+    expect(compactResponse.ok(), "manual-compaction command request failed").toBe(true);
+    expect(manualCompactionMs).toBeLessThan(manualCompactionBudgetMs);
+    const compactResult = await compactResponse.json() as CompactResponse;
+    expect(compactResult.status, "manual compaction made no progress").toBe("completed");

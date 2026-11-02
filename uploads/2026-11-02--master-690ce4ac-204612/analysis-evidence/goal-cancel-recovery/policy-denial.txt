@@ -1,0 +1,20 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/goal/policy/goal-execution-policy.ts
+  async decideAction(input: PolicyInputEnvelope<ActionPoint, ActionSnapshot>): Promise<PolicyResult<ActionEffect>> {
+    if ((input.agent.delegationDepth ?? 0) > 0) return { decision: "abstain", proposals: [] };
+    const goal = readGoal(input.privateState);
+    const control = input.snapshot.candidates.find(item => CONTROL_TOOLS.has(item.name));
+    const proposals: ActionEffect[] = [];
+    for (const candidate of input.snapshot.candidates) {
+      let reason: string | undefined;
+      const args = candidate.parsedArguments as Record<string, unknown> | undefined;
+      if (control && input.snapshot.candidates.length > 1) reason = "Goal control and verification calls must run alone to observe committed state.";
+      else if (!goal) reason = "No user-authorized goal exists.";
+      else if (!running(goal) && candidate.name !== "get_goal") reason = `Goal is ${goal.phase}; wait for a direct user command.`;
+      else if (candidate.name === "create_goal" && args?.["objective"] !== goal.objective) reason = "The original objective is already recorded. Preserve it; only the user can revise scope.";
+      else if (candidate.name === "record_goal_evidence" && (goal.phase !== "active" || !Array.isArray(args?.["requirementIds"]) || !(args["requirementIds"] as unknown[]).length || (args["requirementIds"] as unknown[]).some(id => !goal.requirements.some(item => item.id === id)))) reason = "Evidence must reference existing requirements of an active, planned goal.";
+      else if (candidate.name === "update_goal_plan" && args) {
+        try { validatePlan(goal, args); } catch (error) { reason = error instanceof Error ? error.message : String(error); }
+      } else if (candidate.name === "update_goal" && args?.["action"] === "complete" && (!goal.requirements.length || goal.plan.some(step => step.status !== "done") || goal.requirements.some(item => !goal.evidence.some(proof => proof.requirementIds.includes(item.id))))) reason = "Complete the plan and record evidence for every requirement before requesting acceptance.";
+      if (reason) proposals.push({ kind: "reject_candidate", candidateId: candidate.candidateId, code: "GOAL_ACTION_DENIED", modelResult: [{ type: "text", text: reason }] });
+      else if (goal?.phase === "planning" && !CONTROL_TOOLS.has(candidate.name)) {

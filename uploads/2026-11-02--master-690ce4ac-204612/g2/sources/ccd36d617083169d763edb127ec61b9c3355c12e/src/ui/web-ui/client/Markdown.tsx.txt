@@ -1,0 +1,206 @@
+import { Children, isValidElement, useEffect, useMemo, useState, type ComponentPropsWithoutRef } from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import type { Root, RootContent } from "mdast";
+import "katex/dist/katex.min.css";
+
+/** A standalone $$formula$$ is a display formula even when its fences share a line. */
+function remarkStandaloneMath() {
+  return (tree: Root, file: { readonly value: unknown }): void => {
+    const source = String(file.value);
+    const visit = (node: Root | RootContent): void => {
+      if (node.type === "paragraph" && node.children.length === 1) {
+        const math = node.children[0]!;
+        if (math.type === "inlineMath" && math.position) {
+          const raw = source.slice(math.position.start.offset, math.position.end.offset);
+          if (raw.startsWith("$$") && raw.endsWith("$$")) {
+            math.data = {
+              ...math.data,
+              hProperties: { ...math.data?.hProperties, className: ["language-math", "math-display"] },
+            };
+          }
+        }
+      }
+      if ("children" in node) node.children.forEach(visit);
+    };
+    visit(tree);
+  };
+}
+
+const REMARK_PLUGINS = [remarkGfm, remarkMath, remarkStandaloneMath];
+const KATEX_OPTIONS = { trust: false, strict: "ignore", maxSize: 20, maxExpand: 1000 } as const;
+
+function safeExternalHref(href: string | undefined): string | undefined {
+  if (href && /^(?:https?:|mailto:|#)/iu.test(href)) return href;
+  return undefined;
+}
+
+const INLINE_FILE_PATTERN = /(?:\.(?:c|cc|cpp|css|csv|gif|go|h|hpp|html?|jpeg|jpg|js|json|jsx|md|mjs|pdf|png|py|rs|sh|svg|ts|tsx|txt|webp|xml|ya?ml)|^(?:Dockerfile|LICENSE|Makefile|README))$/iu;
+const IMPLICIT_FILE_INVALID_CHARACTERS = /[\s*?[\]{}<>"'`|;&$]/u;
+
+function isClearImplicitFilePath(path: string): boolean {
+  if (IMPLICIT_FILE_INVALID_CHARACTERS.test(path)) return false;
+  return path.startsWith("/") || path.startsWith("./") || path.includes("/");
+}
+
+export function localFileHref(value: string | undefined, sessionId: string | undefined, workspace: string | undefined, explicitLink: boolean): string | undefined {
+  if (!value || !sessionId || !workspace) return undefined;
+  let path = value.trim();
+  if (!path || /[\r\n\0]/u.test(path)) return undefined;
+  if (explicitLink) {
+    try {
+      path = decodeURIComponent(path);
+    } catch {
+      return undefined;
+    }
+  }
+  if (path.startsWith("file://")) path = path.slice("file://".length);
+  else if (/^[a-z][a-z0-9+.-]*:/iu.test(path)) return undefined;
+  if (!explicitLink && (!isClearImplicitFilePath(path) || !INLINE_FILE_PATTERN.test(path))) return undefined;
+  const workspaceRoot = workspace.replace(/\/+$/u, "");
+  if (path.startsWith("/")) {
+    if (!path.startsWith(`${workspaceRoot}/`)) return undefined;
+    path = path.slice(workspaceRoot.length + 1);
+  } else {
+    path = path.replace(/^\.\//u, "");
+  }
+  const segments = path.split("/").filter((segment) => segment && segment !== ".");
+  if (segments.length === 0 || segments.some((segment) => segment === "..")) return undefined;
+  return `/api/sessions/${encodeURIComponent(sessionId)}/files/${segments.map((segment) => encodeURIComponent(segment)).join("/")}`;
+}
+
+type LocalFileAvailability = "checking" | "available" | "missing";
+
+interface CachedLocalFileAvailability {
+  readonly value: Exclude<LocalFileAvailability, "checking">;
+  readonly expiresAt: number;
+}
+
+const LOCAL_FILE_CACHE_MS = 5_000;
+const localFileAvailabilityCache = new Map<string, CachedLocalFileAvailability>();
+interface PendingLocalFileAvailability {
+  readonly controller: AbortController;
+  readonly promise: Promise<Exclude<LocalFileAvailability, "checking">>;
+  consumers: number;
+}
+
+const localFileAvailabilityRequests = new Map<string, PendingLocalFileAvailability>();
+
+function cachedLocalFileAvailability(href: string): Exclude<LocalFileAvailability, "checking"> | undefined {
+  const cached = localFileAvailabilityCache.get(href);
+  if (!cached) return undefined;
+  if (cached.expiresAt > Date.now()) return cached.value;
+  localFileAvailabilityCache.delete(href);
+  return undefined;
+}
+
+function acquireLocalFileAvailability(href: string): {
+  readonly promise: Promise<Exclude<LocalFileAvailability, "checking">>;
+  readonly release: () => void;
+} {
+  let active = localFileAvailabilityRequests.get(href);
+  if (!active) {
+    const controller = new AbortController();
+    let request!: Promise<Exclude<LocalFileAvailability, "checking">>;
+    request = fetch(href, { method: "HEAD", signal: controller.signal })
+    .then((response): Exclude<LocalFileAvailability, "checking"> => response.ok ? "available" : "missing")
+    .catch((): Exclude<LocalFileAvailability, "checking"> => "missing")
+    .then((value) => {
+      if (!controller.signal.aborted) localFileAvailabilityCache.set(href, { value, expiresAt: Date.now() + LOCAL_FILE_CACHE_MS });
+      return value;
+    })
+    .finally(() => {
+      if (localFileAvailabilityRequests.get(href)?.promise === request) localFileAvailabilityRequests.delete(href);
+    });
+    active = { controller, promise: request, consumers: 0 };
+    localFileAvailabilityRequests.set(href, active);
+  }
+  active.consumers += 1;
+  const pending = active;
+  let released = false;
+  return {
+    promise: pending.promise,
+    release: () => {
+      if (released) return;
+      released = true;
+      pending.consumers -= 1;
+      if (pending.consumers === 0 && localFileAvailabilityRequests.get(href) === pending) {
+        localFileAvailabilityRequests.delete(href);
+        pending.controller.abort();
+      }
+    },
+  };
+}
+
+function LocalFileLink({ href, children, className, title, ...props }: ComponentPropsWithoutRef<"a"> & { readonly href: string }) {
+  const [availability, setAvailability] = useState<LocalFileAvailability>(() => cachedLocalFileAvailability(href) ?? "checking");
+  useEffect(() => {
+    let mounted = true;
+    const cached = cachedLocalFileAvailability(href);
+    if (cached) {
+      setAvailability(cached);
+      return () => { mounted = false; };
+    }
+    setAvailability("checking");
+    const request = acquireLocalFileAvailability(href);
+    void request.promise.then((value) => {
+      if (mounted) setAvailability(value);
+    });
+    return () => {
+      mounted = false;
+      request.release();
+    };
+  }, [href]);
+  const available = availability === "available";
+  return <a
+    {...props}
+    className={`${className ?? ""} ${availability}${available ? "" : " local-file-reference"}`}
+    href={available ? href : undefined}
+    target={available ? "_blank" : undefined}
+    rel={available ? "noreferrer" : undefined}
+    aria-busy={availability === "checking" || undefined}
+    aria-disabled={!available || undefined}
+    title={available ? title : availability === "missing" ? "文件不存在" : "正在检查文件"}
+  >{children}</a>;
+}
+
+function CodeBlock({ children, node: _node, ...props }: ComponentPropsWithoutRef<"pre"> & { readonly node?: unknown }) {
+  const code = Children.toArray(children).find((child) => isValidElement<{ readonly className?: string }>(child));
+  const language = isValidElement<{ readonly className?: string }>(code)
+    ? /^language-(.+)$/u.exec(code.props.className ?? "")?.[1]
+    : undefined;
+  return <div className="code-block"><div className="code-head"><span>{language || "text"}</span></div><pre {...props}>{children}</pre></div>;
+}
+
+function markdownComponents(sessionId?: string, workspace?: string): Components {
+  return {
+    a: ({ node: _node, href, children, ...props }) => {
+      const external = safeExternalHref(href);
+      if (external) return <a {...props} href={external} target="_blank" rel="noreferrer">{children}</a>;
+      const local = localFileHref(href, sessionId, workspace, true);
+      return local
+        ? <LocalFileLink {...props} className="local-file-link" href={local} title="在新标签页中打开文件">{children}</LocalFileLink>
+        : <span>{children}</span>;
+    },
+    code: ({ node: _node, children, className, ...props }) => {
+      const raw = Children.toArray(children).join("");
+      const path = raw.replace(/\n$/u, "");
+      const local = !className && !raw.endsWith("\n") ? localFileHref(path, sessionId, workspace, false) : undefined;
+      const code = <code {...props} className={className}>{children}</code>;
+      return local
+        ? <LocalFileLink className="local-file-link inline-file-link" href={local} title={`打开文件：${path}`}>{code}</LocalFileLink>
+        : code;
+    },
+    pre: CodeBlock,
+    table: ({ node: _node, children, ...props }) => <div className="table-scroll"><table {...props}>{children}</table></div>,
+    input: ({ node: _node, ...props }) => <input {...props} disabled />,
+  };
+}
+
+/** Shared message rendering, including safe, locally bundled LaTeX math. */
+export function Markdown({ children, sessionId, workspace }: { readonly children: string; readonly sessionId?: string; readonly workspace?: string }) {
+  const components = useMemo(() => markdownComponents(sessionId, workspace), [sessionId, workspace]);
+  return <div className="markdown"><ReactMarkdown remarkPlugins={REMARK_PLUGINS} rehypePlugins={[[rehypeKatex, KATEX_OPTIONS]]} components={components}>{children}</ReactMarkdown></div>;
+}

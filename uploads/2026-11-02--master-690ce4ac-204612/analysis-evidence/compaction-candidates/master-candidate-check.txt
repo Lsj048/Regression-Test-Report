@@ -1,0 +1,41 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/compaction/compaction-policy.ts
+        const raw = response.content.trim();
+        const sourceMaterial = JSON.stringify({
+          priorSummary: summary || null,
+          newHistory: chunks[index],
+        });
+        // Some Providers leak reasoning-stream control markers into the content
+        // channel. Try the marker-stripped candidate, but accept it only when the
+        // complete contract still passes; otherwise fall back to the raw candidate
+        // so contamination controls are not weakened.
+        const stripped = stripLeakedProviderControlMarkers(raw, sourceMaterial);
+        const next = stripped.length > 0 && summaryContractError(stripped, sourceMaterial, systemPrompt) === undefined
+          ? stripped
+          : raw;
+        if (next.length === 0 || response.finishReason === "content_filter") {
+          throw new ContractError("Compaction LLM returned no usable summary", "COMPACTION_LLM_EMPTY_RESULT");
+        }
+        if (response.finishReason !== "stop") {
+          repair = {
+            rejectedCandidate: next,
+            validationError: `the candidate ended with finish_reason=${response.finishReason} and may be incomplete`,
+          };
+          candidateRejectedThisAttempt = true;
+          throw new ContractError(`Compaction LLM summary finish_reason=${response.finishReason}`, "COMPACTION_LLM_INCOMPLETE_SUMMARY");
+        }
+        const contractError = summaryContractError(next, sourceMaterial, systemPrompt);
+        if (contractError !== undefined) {
+          repair = { rejectedCandidate: next, validationError: contractError };
+          candidateRejectedThisAttempt = true;
+          throw new ContractError(`Compaction LLM returned an unsafe summary: ${contractError}`, "COMPACTION_LLM_INVALID_SUMMARY");
+        }
+        summary = encodeCompactionProviderControlMarkers(next);
+        lastError = undefined;
+        break;
+      } catch (error) {
+        lastError = error;
+        if (!candidateRejectedThisAttempt || attempt === maxAttempts) break;
+      }
+    }
+    if (lastError !== undefined) throw lastError;

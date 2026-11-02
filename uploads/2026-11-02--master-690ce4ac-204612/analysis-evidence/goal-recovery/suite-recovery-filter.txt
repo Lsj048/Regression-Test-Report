@@ -1,0 +1,41 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/live-goal.ts
+  assert.equal(goal.audit.key, hashJson({ objective: goal.objective, sources: goal.sources, requirements: goal.requirements, plan: goal.plan, evidence: goal.evidence } as unknown as JsonValue));
+}
+
+export function auditLiveGoal(stateDirectory: string, workspace: string, sessionId: string) {
+  const path = join(stateDirectory, "event_log.sqlite"), data = commonAudit(path, join(stateDirectory, "message.sqlite"), sessionId), contract = LIVE_GOAL_COMPLETE_CASE;
+  try {
+    const serviceExchange = (event: EventRow): { event: EventRow; attributes: Record<string, unknown> } => {
+      const settled = payload(path, event), attributes = jsonObject(settled["attributes"], "completed service");
+      const starts = data.events.filter(e => e.turn_id === event.turn_id && e.type === "service.call.started" && payload(path, e)["componentId"] === settled["componentId"] && jsonObject(payload(path, e)["attributes"], "started service")["serviceCallId"] === attributes["serviceCallId"]);
+      assert.equal(starts.length, 1); assert.ok(starts[0]!.seq < event.seq);
+      const start = jsonObject(payload(path, starts[0]!)["attributes"], "started service");
+      assertGoalServicePair(start, attributes);
+      return { event, attributes: { ...attributes, request: start["request"] } };
+    };
+    const rejectedCalls = data.results.filter(r => ["update_goal_plan", "Bash"].includes(r.name) && r.payload["errorCode"] === "GOAL_ACTION_DENIED");
+    const forbidden = assertNoFailures(path, data.events, data.results.filter(r => !rejectedCalls.includes(r)));
+    assert.deepEqual(data.childSessionIds, []);
+    assert.ok(data.calls.every(c => [...contract.requiredTools, ...(contract.allowedOptionalTools ?? [])].includes(c.name)));
+    assert.equal(data.calls.filter(c => c.name === "Write").length, 1, "delivery must not repeat the file mutation");
+    const turns = data.database.prepare("SELECT turn_id,state_json FROM turns WHERE session_id=? ORDER BY created_at").all(sessionId);
+    const finalState = jsonObject(JSON.parse(String(turns.at(-1)!["state_json"])), "final goal turn");
+    const goal = jsonObject(jsonObject(finalState["policyState"], "policies")["goal.execution"], "goal") as unknown as GoalRecord;
+    const businessContent = readFileSync(join(workspace, GOAL_TASK.file), "utf8"); assertCompletedGoal(goal, businessContent);
+    const inputs = data.database.prepare("SELECT input_id,content,claimed_by_turn_id FROM inputs WHERE session_id=? ORDER BY admission_seq").all(sessionId);
+    assert.equal(inputs[0]!["content"], GOAL_TASK.prompt);
+    assert.deepEqual(goal.sources, [{ id: inputs[0]!["input_id"], text: GOAL_TASK.prompt }]);
+    assert.ok(goal.requirements.every(r => r.sourceInputId === inputs[0]!["input_id"]));
+    assert.equal(data.events.filter(e => ["policy.state.published", "policy.state.projected"].includes(e.type)).length, 0, "goal UI must not persist a second state record");
+    const rounds = turns.map(t => mainModelRounds(path, data.events.filter(e => e.turn_id === t["turn_id"]), sessionId, String(t["turn_id"])));
+    const plans = rounds.flatMap(r => r.plans), completions = rounds.flatMap(r => r.completions);
+    assertTurnInputOverlay(path, data.events, plans[0]!.event, plans[0]!.plan, GOAL_TASK.prompt, "goal input");
+    const final = payload(path, completions.at(-1)!); assert.equal(final["finishReason"], "stop"); assert.deepEqual(final["toolCalls"], []);
+    const finalAnswer = messageContent(final["content"]); assert.ok(finalAnswer.trim());
+    const messages = data.messages.prepare("SELECT message_json,source_event_seq,placement_json FROM messages WHERE session_id=? ORDER BY seq").all(sessionId)
+      .map(r => ({ message: jsonObject(JSON.parse(String(r["message_json"])), "message"), source: r["source_event_seq"], placement: jsonObject(JSON.parse(String(r["placement_json"])), "placement") }));
+    const recoveryEvents = data.events.map(e => ({ seq: e.seq, turnId: e.turn_id, type: e.type, body: payload(path, e) }));
+    const recoveryMessages = messages.map(m => ({ seq: Number(m.source), message: m.message }));
+    for (const result of rejectedCalls) {
+      const source = assertGoalPolicyRejectionRecovery(result, recoveryEvents, recoveryMessages, completions.at(-1)!.seq, result.name === "Bash" ? "Bash" : "update_goal_plan");

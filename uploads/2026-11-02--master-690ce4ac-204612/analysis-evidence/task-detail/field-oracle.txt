@@ -1,0 +1,14 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/standard-live-task-detail-readback.ts
+    const createCall = createCalls[0]!;
+    const createResult = resultFor(resultsById, createCall);
+
+    const createArgs = jsonObject(createCall.payload["arguments"], "TaskCreate arguments");
+    assert.equal(createArgs["subject"], scenario.subject, "TaskCreate changed the fixed subject");
+    assert.equal(createArgs["description"], scenario.description, "TaskCreate changed the fixed description");
+    assert.deepEqual(Object.keys(createArgs).filter((key) => !["subject", "description", "metadata"].includes(key)), [],
+      "TaskCreate added an active form or unknown field");
+    if (createArgs["metadata"] !== undefined) assert.deepEqual(createArgs["metadata"], {}, "TaskCreate added metadata");
+    const createValue = jsonObject(createResult.payload["canonicalValue"], "TaskCreate canonical value");
+    const createdTask = storedTask(createValue["task"], "created task");
+    assert.equal(createdTask.updatedAt, createdTask.createdAt, "the newly created task has already been updated");

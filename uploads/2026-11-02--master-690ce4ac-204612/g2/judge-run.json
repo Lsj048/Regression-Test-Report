@@ -1,0 +1,28 @@
+{
+  "startedAt": "2026-11-02T16:57:42.143Z",
+  "inputManifestSha256": "87858482ebe75650e81e471c086ab17d353de5095a623138bc50059c483cd1e9",
+  "status": "FAILED",
+  "requestedModel": "Codex configured default",
+  "command": [
+    "codex",
+    "-c",
+    "approval_policy=\"never\"",
+    "exec",
+    "--sandbox",
+    "read-only",
+    "--ephemeral",
+    "--skip-git-repo-check",
+    "-C",
+    "./g2",
+    "--output-schema",
+    "./runner/g2/judge-schema.json",
+    "--output-last-message",
+    "./g2/judge.raw.json",
+    "-"
+  ],
+  "cliVersion": "codex-cli 0.147.0",
+  "pid": 37320,
+  "exit": 1,
+  "error": "Codex judge did not complete successfully; retained log and original checks",
+  "completedAt": "2026-11-02T16:57:51.312Z"
+}

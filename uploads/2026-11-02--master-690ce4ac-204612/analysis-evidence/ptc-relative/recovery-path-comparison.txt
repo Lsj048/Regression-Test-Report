@@ -1,0 +1,36 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/ptc-live-file-handoff-summary.ts
+  return failures.map((failure) => {
+    assert.deepEqual(toolMessageTexts(finalPlan, failure.call.callId), [failure.errorText],
+      "a failed RunCode result was not consumed by the successful final decision");
+    const recoveryCandidates = calls.filter((call) => call.name === "RunCode" && call.turnId === failure.call.turnId
+      && call.seq > failure.result.seq).flatMap((call) => {
+      const result = resultForCall(resultsById, call);
+      if (result.payload["status"] !== "succeeded" || result.payload["isError"] === true) return [];
+      const completeReads = calls.filter((nested) => nested.payload["parentCallId"] === call.callId && nested.name === "Read")
+        .filter((read) => {
+          const args = jsonObject(read.payload["arguments"], "recovery PTC Read arguments");
+          if (args["file_path"] !== inputPath) return false;
+          const canonical = jsonObject(successfulResult(resultsById, read).payload["canonicalValue"], "recovery PTC Read result");
+          if (canonical["type"] !== "text") return false;
+          const file = jsonObject(canonical["file"], "recovery PTC source file");
+          return file["startLine"] === 1 && file["truncatedByTokenCap"] !== true
+            && String(file["content"]).trim() === expectedInput.trim();
+        });
+      const canonical = jsonObject(result.payload["canonicalValue"], "recovery RunCode result");
+      const verifiedOutputReads = calls.filter((read) => read.payload["parentCallId"] === call.callId && read.name === "Read")
+        .filter((read) => {
+          if (jsonObject(read.payload["arguments"], "recovery Read arguments")["file_path"] !== outputPath) return false;
+          const value = jsonObject(successfulResult(resultsById, read).payload["canonicalValue"], "recovery output Read");
+          if (value["type"] !== "text") return false;
+          const file = jsonObject(value["file"], "recovery output file");
+          if (file["startLine"] !== 1 || file["truncatedByTokenCap"] === true) return false;
+          try { return isDeepStrictEqual(parsePtcFileHandoffSummary(String(file["content"])), expectedSummary); }
+          catch { return false; }
+        });
+      if (completeReads.length === 0 && verifiedOutputReads.length === 0) return [];
+      const carriesSummary = programDataEvidence(canonical["result"], canonical["output"], "summary")
+        .some(({ value }) => isDeepStrictEqual(value, expectedSummary));
+      const carriesSource = programDataEvidence(canonical["result"], canonical["output"], "source")
+        .some(({ value }) => isDeepStrictEqual(value, jsonObject(JSON.parse(expectedInput), "PTC expected source")["items"]));
+      const createsSummary = calls.filter((nested) => nested.payload["parentCallId"] === call.callId && nested.name === "Write")

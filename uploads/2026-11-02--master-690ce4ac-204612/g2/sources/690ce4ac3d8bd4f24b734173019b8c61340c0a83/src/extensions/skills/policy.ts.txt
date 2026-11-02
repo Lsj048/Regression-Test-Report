@@ -1,0 +1,59 @@
+import { hashJson, type JsonValue } from "../../kernel/api/foundation/json.js";
+import type { ContentBlock } from "../../kernel/api/model/types.js";
+import type { ContextEffectForPoint, ContextPoint, ContextPolicy, ContextSnapshot, PolicyExecutionContext, PolicyInputEnvelope, PolicyResult } from "../../kernel/api/policy/types.js";
+import { createLocalSkillRegistry } from "./local-skill-registry.js";
+import { createDescriptor } from "../../kernel/api/policy/descriptor.js";
+
+export class SkillsPolicy implements ContextPolicy<"assemble"> {
+  readonly descriptor = createDescriptor({
+    apiVersion: "policy.longcat/v1",
+    id: "builtin.skills",
+    version: "1.0.0",
+    configSchema: { type: "object", properties: { materialize: { type: "boolean" } }, additionalProperties: false },
+    implementedInterfaces: ["context/v1"],
+    points: ["assemble"],
+    claims: [{ kind: "key_prefix", resource: "context.system.section", prefix: "skills" }],
+    replayMode: "recorded_external_io",
+  });
+
+  constructor(private readonly workspaceRoot: string) {}
+
+  async decideContext(input: PolicyInputEnvelope<ContextPoint, ContextSnapshot>, execution: PolicyExecutionContext): Promise<PolicyResult<ContextEffectForPoint<"assemble">>> {
+    if (input.point !== "assemble") return { decision: "abstain", proposals: [] };
+    let content: readonly ContentBlock[] | undefined = input.snapshot.runtimeContextRefs["skills"]?.content ?? input.snapshot.runtimeContextRefs["skill_catalog"]?.content;
+    const config = input.config as { materialize?: boolean };
+    if (content === undefined && config.materialize !== false) {
+      execution.signal.throwIfAborted();
+      const skills = (await (await createLocalSkillRegistry({ workspaceRoot: this.workspaceRoot })).list())
+        .filter((skill) => skill.modelInvocable);
+      execution.signal.throwIfAborted();
+      content = skills.length === 0 ? [] : [{
+        type: "text",
+        text: [
+          "The following skills are available through the Skill tool:",
+          ...skills.map((skill) => `- ${skill.name}: ${skill.description}`),
+          "Invoke Skill with an exact catalog name to load its complete instructions. Do not load SKILL.md through general file tools.",
+        ].join("\n"),
+      }];
+    }
+    if (content !== undefined) {
+      const digest = hashJson(content as unknown as JsonValue);
+      const previous = input.privateState && typeof input.privateState === "object" && !Array.isArray(input.privateState)
+        ? (input.privateState as Readonly<Record<string, JsonValue>>)["digest"]
+        : undefined;
+      if (content.length === 0) return { decision: "abstain", proposals: [], privateState: { digest } };
+      const rendered = content.map((block) => block.type === "text" ? block.text : `[image: ${block.imageUrl}]`).join("\n");
+      const proposals: ContextEffectForPoint<"assemble">[] = [{
+        kind: "upsert_system_section",
+        key: "skills.catalog",
+        order: 114,
+        content: typeof previous === "string" && previous !== digest
+          ? `${rendered}\nThe available skill catalog changed. Re-check it before invoking a skill.`
+          : rendered,
+        mode: "replace_key",
+      }];
+      return { decision: "propose", proposals, privateState: { digest } };
+    }
+    return { decision: "abstain", proposals: [] };
+  }
+}

@@ -1,0 +1,109 @@
+# 系统规范的符合性记录
+
+手动压缩标题恢复（2026-10-19，CTX-02/03/05、AC-07/10）：扩展恢复控制标记中断后立即重写的无正文模板标题；仅删除严格匹配的残缺模板前缀，正文、代码围栏、源历史标记、异号或自定义标题不适用，其他语义与净收益检查保持。新增两项修前失败、修后通过，核心编译及压缩专项 38 项通过；覆盖 SQLite 冷读、下一轮消费、原始响应及消息保留和已有负例。保存的真实失败响应在 standard 手动维护入口原样回放，首次摘要请求哈希一致，摘要一次成功、释放 4537 tokens。不是新增真实模型通过率，任意模型坏摘要及两次耗尽仍可能失败；详见[压缩修复记录](../docs/bugfix/compaction-summary-retry-budget.md)。
+
+上述独立修复 `9d9844ae` 经原版 prepareSource 装配未修改套件 `21e20cc6`，完整构建及原审计 25 项通过；确定性摘要修复/超限恢复 2/2 通过。真实手动压缩首跑 PASS（32.715 秒、释放 4487 tokens），召回、审计、刷新恢复通过。真实样本未触发新增残缺标题恢复，该路径由真实失败响应回放覆盖；不是所有坏摘要均可恢复或全量资格。工具链 Node 25.3.0 / Chromium 1243，零 runner 重试。
+
+要求及验收结果以[规范入口](README.md)和[验收场景](acceptance.md)为准。本文为非规范性记录，仅维护当前实现证据、验证边界和开放差距，不能修改或豁免开发约束。
+
+核对日期：2026-10-15。已关闭或撤销的差距移出当前清单，修复证据保留在下表和测试中，历史过程通过版本记录追溯；差距编号不复用。不在这里累计修复流水账。
+
+当前验证：2026-10-15，合入最新主分支 `d5288a3` 后，在独立临时副本安装锁定依赖，以 Node.js 24.7.0 运行类型检查、主包与网页构建，均通过；完整后端单元及集成测试（并发度 2）990 通过、0 失败、1 跳过，网页 20 文件、167/167 通过。跳过项为需显式开启的 macOS 原生选择窗口测试。覆盖会话模型切换的实际模型请求、旧绑定及消息保留、重启恢复、未结束执行和排队拒绝，以及主分支的故障报告、恢复和停止控制。未重跑浏览器端到端测试或真实模型评测，未改变 8088 稳定实例。
+
+任务结果读取修复已验证（STA-01、AC-24/26）：会话状态通知不再覆盖已保存的完整轮次结果；缺少状态的真实结束事件保留具体失败原因，并仍能表示尚未创建轮次的新启动失败。已有轮次的结果以已提交状态为准，单独的结束事件不伪造结算；状态读取与结算竞争时重新读取状态，保留完整原因和细节，重读失败则报告存储错误。旧轮次及子任务事件不替换当前轮次结果，旧会话仅有状态通知时保留兼容兜底。对应控制见[会话结果读取](../test/unit/session-catalog.test.ts)、[Host 故障控制](../test/unit/host-failure-settlement.test.ts)及[终端失败结果](../test/integration/tui-failure-settlement.test.ts)，均已纳入本页当前验证。
+
+同轮恢复后的 Host 故障失效修复已验证（STA-01、DATA-06、AC-24/26）：审批恢复启动时保存已知根轮次版本，后续提交更新该版本，收尾读取失败仍能关联故障；在释放会话占用前固定最终故障版本。列表与详情共用临时故障投影及失效判断，审计写入失败时也保持一致；观察到同轮后续推进或新轮次时失效，普通查询及元数据更新不使故障失效。历史审计保留，恢复后的新故障仍报告；发生时间优先使用故障正文的 occurredAt，旧记录缺少该字段时回退事件时间。双宿主控制覆盖等待通知失败、收尾读取失败、恢复首次提交前失败且收尾读取失败，分别组合首次审计写入成功／失败和恢复后再次故障；延迟审计写入后仍逐字段比较两个宿主的状态。修订号仅用于 Host 内部和故障审计，不扩展公开会话摘要；旧审计无修订号时保留原有兼容方式。
+
+审计读取与展示转换分离修复已验证（EDGE-01、DATA-06、AC-26）：通用事件转换保留原始类型、正文及摘要，Host 故障转换为会话失败通知仅在实时及历史展示入口执行。公开查询控制以 Host 故障为样本逐字段对照数据库记录，并覆盖跨会话分页、关闭重开及读取无写入；真实故障控制同时对照原始审计、实时通知和恢复后的展示。相关测试见[公开审计读取](../test/integration/web-usage.test.ts)及[Host 故障展示](../test/unit/host-failure-settlement.test.ts)，均已纳入本页当前验证。
+
+Host 故障补充控制（STA-01、AC-24/26）：错误上报结束后才释放跨 Host 会话占用，释放错误仍向等待方报告。故障关联其对应的会话轮次，另一个 Host 开始新轮次后，旧故障及临时错误不覆盖新状态；覆盖错误审计写入成功及失败两种情况。已有 Host 故障记录派生成现有会话失败通知，实时订阅和关闭重开均可读取错误说明，原完成结果独立保留。[Host 故障控制](../test/unit/host-failure-settlement.test.ts)新增四项；网页状态更新及故障提示分别由[生命周期测试](../src/ui/web-ui/tests/session-lifecycle-ui.test.tsx)和[对话投影测试](../src/ui/web-ui/tests/project-session.test.ts)覆盖。未新增输入队列、故障恢复或展示协议。
+
+后台完成检查已撤除：不再自动等待后台作业、投递结果或阻塞模型结束，也没有为这项检查新增的工具参数与工具包服务入口。Bash、Monitor 保留有限作业应确认最终状态的引导，TaskOutput、TaskStop、进程组清理、persistent 生命周期及启动探测保留原有行为。该引导不保证模型取得最终结果，后台测试提前交差的风险仍存在；不将撤除记作该问题已解决。已有消息、事件和历史绑定不删除、不改写，未结束旧轮次仍遵守 AC-30 的绑定校验。
+
+受控模型功能验证：standard、evaluation 分别使用仅含原有 `background_lifecycle=persistent` 声明的 Bash 参数启动真实 HTTP 服务，确认就绪后均以 completed 结束，模型请求各两次；关闭运行实例后 HTTP 仍可访问，再清理本次服务。该验证确认旧参数不会再触发后台完成检查的等待或阻塞，不代表原评测四题已恢复通过。
+
+## 当前开放差距
+
+“部分覆盖”表示验证尚不充分，不等于已发现缺陷，也不代表未检查的范围已经符合。本轮修复范围内没有尚未关闭的已复现缺陷；未穷尽的场景仍见下文各验收项的验证边界。
+
+历史候选按规范、设计与独立控制复核；不把非空输出等同成功，也不把合法无提案视为缺失决策。当前修复及撤销证据见下文，未由这些定向控制推定所有组合均符合。
+
+新发现的差距须记录所违反的规范、复现证据及关闭条件；达到关闭条件后移出清单，并更新相关验证证据。
+
+## 要求与验证证据
+
+会话模型切换（STA-01、EDGE-01/03、COMP-02，AC-26）：宿主通过可选模型字段更新会话元信息，保留历史消息与已提交轮次绑定，后续新轮次重新装配所选模型；复用会话目录已有的元信息折叠恢复。运行、审批、排队、维护和归档路径拒绝模型变更，重复选择不新增事件。验证见[模型切换集成](../test/integration/session-model-switch.test.ts)、[审批集成](../test/integration/web-session-steering.test.ts)及[界面会话测试](../src/ui/web-ui/tests/session-lifecycle-ui.test.tsx)：检查实际模型服务请求、旧绑定及消息事实、重启恢复、未知模型、归档、无本地驱动器的未结束执行和排队输入，以及切换后页面投影。本轮验证结果见上方当前验证；未据此验证真实模型服务容量、推理质量或全部跨宿主竞争。
+
+HARNESS-048：Host 在公开中断操作接收时固定问题、轮次及排队输入的身份，关闭待答问题并取消其所属审批轮次；取消完成后才提交后续输入。执行归属依据持久化委派及同会话续轮关系，不从分叉展示历史推导。重试和恢复不扩大原范围；旧收据不猜测补充身份，越界收据明确拒绝，不自动撤销既有误取消。实现保持领域无关，未修改存储 Schema。对应 STA-01/03/05、EDGE-02、COMP-02；方案与修复边界见[修复说明](../docs/bugfix/goal-cancel-pending-question.md)。
+
+验证证据：[Goal 集成](../test/integration/goal-web.test.ts)、[独立公开操作](../test/integration/published-actions.test.ts)、[子任务取消](../test/integration/published-action-child-cancellation.test.ts)、[分叉隔离](../test/integration/published-action-fork-isolation.test.ts)及[问题历史](../test/unit/user-question-history.test.ts)，共 22 项定向测试通过。覆盖普通问题关闭、子任务审批与普通／排队／嵌套续轮、旧回答拒绝、唯一工具结果、零派发、SQLite 恢复、重复提交保留新任务和分叉来源隔离。对应 AC-17/19/25/26/31/34。
+
+停止状态修复（STA-01/03、DATA-06、EDGE-01/03，AC-17/24/26）：维护者已明确批准 `session-manager.ts` 的状态派生／活动停止快路径及本页证据同步，未修改规范行为条款或存储。停止后的清理驱动不再覆盖耐久中止结果，执行占用仍保留到清理结束。[停止集成控制](../test/integration/web-session-interrupt.test.ts)覆盖等待响应头／流式输出两时点的排队续问和冷重启，共 4/4；检查中止提交前的真实运行状态、重复停止、占用拒绝、后续输入不抢跑和恢复不重放。普通标准模式问答的浏览器停止／刷新／重开／续问也通过，使用本地受控 Provider，不是生产模型稳定性证据。实现原因、代码溯源和边界见[修复说明](../docs/bugfix/stop-status-during-transport-cleanup.md)。
+
+master 分支 2026-10-10 验证结果：类型检查、构建通过；Node24.12.0 的完整 `npm test` 通过，后端 865 PASS / 0 FAIL / 1 SKIP，Web UI 20 文件、156/156；Node26.5.0 调度与停止专项 12/12。唯一跳过项为需显式开启的 macOS 原生选择窗口测试，本次未验证。调度测试兼容处理不改变生产实现或业务断言。验证边界：当前版本未重跑 Playwright 全集，未穷尽跨宿主竞争或取消时序；`web-session-steering` SQLite 锁异常尚未稳定复现、根因未确认，不计为已修复。
+
+合并前修复分支的历史验证记录如下；其中旧失败结果不代表合并后的状态。
+
+2026-10-09 验证结果：Node26.5.0 类型检查及核心构建通过；后端全量 861 PASS / 2 FAIL / 1 SKIP，Web UI 独立 156/156。两项失败为上表既有停止状态问题，`npm test` 未通过；另有未稳定复现、未确认根因的 `web-session-steering` SQLite 锁异常，不计为已修复。定向证据不覆盖所有跨宿主竞争或取消时序，当前版本未重跑真实模型 Playwright 全集。
+
+后台评测异常收尾修复已收敛：内核读取状态纳入错误处理；保存失败状态时再次出错，保留最初错误和保存错误，只重试版本冲突。事件库已有工具结果但消息库没写成功时，按原模型调用的已保存步骤补消息；已存消息保留原步骤，不重新执行工具。完成状态已保存后发生的通知错误交给 Host，用户中止仍保留中止结果。启动及错误日志写入同时失败时保留两者。Host 分别报告已保存的任务结果与读取、通知、关闭资源或失败结算错误；当前执行的错误事件写不进去时，临时保留错误供查询，下一次执行开始时清除临时记录，数据库中的历史错误仍保留。输入沿用既有轮次校验与串行处理，仅在新输入等待上一轮收尾这一处处理已经报告的旧错误，不改变入队及排队顺序。Host 完成 Promise 仍会抛出当前执行错误，其他等待操作不统一改成成功。释放会话占用及错误记录结束后才移除执行记录，避免旧错误写回新一次执行。关闭沿用原有逻辑，不新增临时错误的单次报告及清空行为。不增加执行树及待补消息扫描，不因历史故障永久拒绝输入。CLI 定期查询状态，当前宿主故障返回非零退出码。通知重放、重复关闭 Promise 和旧日志投影兼容已撤出此修复。对应 STA-01、DATA-05、AC-24/26。
+
+验证材料：[内核失败结算](../test/integration/kernel-failure-settlement.test.ts)、[Host 故障报告与后续执行](../test/unit/host-failure-settlement.test.ts)、[终端漏通知](../test/integration/tui-failure-settlement.test.ts)。2026-10-12 在当前工作区的临时副本以 Node25.2.1 验证：类型检查、完整构建通过；第 2 项关键功能控制 21/21；Web UI 156/156；浏览器 deterministic 模型的基础 Web 往返 1/1，通过临时服务启动、页面操作、结果和存储检查及清理，确认 8088 稳定实例未被改变。覆盖原步骤缺消息／已有消息后的下一步骤、完成提交后的通知失败、启动和日志同时失败、释放会话占用及错误记录期间的新输入，以及其他等待方仍接收原错误。
+
+全量验证先发现两项旧审批回调的错误：新执行器已完成轮次，旧执行器晚返回后仍尝试推进。仅在工具执行后的推进处补充已结束轮次的判断，保留正常错误传播，未改审批协议或测试断言；[已有审批恢复控制](../test/integration/kernel.test.ts) 的普通工具及动态工具两项现通过。最终后端全量 896 PASS / 6 FAIL / 1 SKIP；6 项为已在原 HEAD `117d3fa3` 独立复现的 4 项模拟计时器 `close` 类型错误及 2 项中断状态／历史读取问题，全量测试未通过。功能验证使用模拟模型，未重跑真实模型评测，不声称原评测 82 例均已修复。
+
+测试链接指向源码文件；检索测试名称片段即可定位。结论仅适用于实际覆盖的条件，不能由同名测试或一次全绿推断全仓库符合。
+
+| 场景 | 现有证据 | 结论与边界 |
+|---|---|---|
+| <a id="ac-01"></a>[AC-01](acceptance.md#ac-01) | [包依赖检查](../test/unit/package-boundaries.test.ts)：`core API and execution runtime`、`extensions depend on public core contracts`；[独立状态发布示例](../test/integration/policy-public-state.test.ts)：`independent counter policy`。 | 部分覆盖。检查了源码依赖及通用续轮、公开状态；新增完整领域的装卸仍需对应功能验收，核心通用性还需审查。跨领域独立演进及间接业务耦合另按 AC-32 核对，不能由直接导入检查推断。 |
+| <a id="ac-02"></a>[AC-02](acceptance.md#ac-02) | [执行限制协议](../test/unit/tool-constraint-protocol.test.ts)：`a new domain protocol`；[规划包装配](../test/unit/planning-package.test.ts)：`package registration does not activate siblings`。 | 有新协议及独立选择证据；不同小组件的安装组合需按变更补充。 |
+| <a id="ac-03"></a>[AC-03](acceptance.md#ac-03) | [策略运行时](../test/unit/policy-runtime.test.ts)：`rolls back already-created components`、`overlapping exclusive claims`、`relative chain ordering applies only to installed members`；[规划包](../test/unit/planning-package.test.ts)：`undeclared or duplicate components`。 | 部分覆盖。已验证排序目标缺席或不参与同链时允许装配且不隐式安装；实际成员的顺序冲突、循环以及显式列表引用未知组件仍拒绝。并非全部包、版本与顺序错误组合；子智能体逐项选择见 AC-25，提示词构建失败的资源释放另由[装配清理测试](../test/unit/mode-assembly-cleanup.test.ts)验证。 |
+| <a id="ac-04"></a>[AC-04](acceptance.md#ac-04) | [规划包](../test/unit/planning-package.test.ts)：`without`；[规划集成](../test/integration/plan-mode.test.ts)：`without`；[标准工具](../test/unit/standard-tools.test.ts)：完整工具集合及缺少外部适配器的调用拒绝。 | 模式已选工具保持身份，缺失适配器时明确拒绝且不派发、不进入规划状态；跨入口交互和整体替换见 AC-26、AC-31。 |
+| <a id="ac-05"></a>[AC-05](acceptance.md#ac-05) | [模式配置](../test/unit/mode-config.test.ts)：`mode discovery includes new declarations`；[目标模式](../test/unit/goal-mode.test.ts)；[内核集成](../test/integration/kernel.test.ts)：`a deferred MCP tool`。 | 已有模式发现、组合分离及动态工具场景证据；历史绑定完整性需结合 AC-30。 |
+| <a id="ac-06"></a>[AC-06](acceptance.md#ac-06) | [策略运行时](../test/unit/policy-runtime.test.ts)：`wrong point`、`fails open`、`shadow policies cannot publish`。 | 部分覆盖；所有扩展点的失败关闭、超时、取消及影子效果组合仍需针对性验证。 |
+| <a id="ac-07"></a>[AC-07](acceptance.md#ac-07) | [消息追加集成](../test/integration/message-content-append.test.ts)：`ordered fit policies`；[策略运行时](../test/unit/policy-runtime.test.ts)：`message_overlay`、`ordered fit Policies compose`。 | 已有顺序物化、临时投影及逻辑消息身份场景证据。 |
+| <a id="ac-08"></a>[AC-08](acceptance.md#ac-08) | [内容追加](../test/unit/message-content-append.test.ts)、[消息存储](../test/unit/message-store.test.ts)：`idempotency conflict`。 | 已有冲突及不部分修改的场景证据。 |
+| <a id="ac-09"></a>[AC-09](acceptance.md#ac-09) | [请求计数](../test/integration/token-counting.test.ts)、[分词计数器](../test/unit/model-token-counter.test.ts)、[模型适配器](../test/unit/provider.test.ts)；[内核集成](../test/integration/kernel.test.ts)：`deterministic Provider encoding`。 | 部分覆盖；不能由计数或编码测试推断所有组件生命周期稳定，也不证明所有日志路径无敏感字段。 |
+| <a id="ac-10"></a>[AC-10](acceptance.md#ac-10) | [内核集成](../test/integration/kernel.test.ts)：`provider context overflow`、`Compaction LLM failures`、`rate limits`、`max-steps hard boundary`。 | 部分覆盖；没有把所有“不变修复＋重试预算＋取消”组合视为已验证。 |
+| <a id="ac-11"></a>[AC-11](acceptance.md#ac-11) | [策略运行时](../test/unit/policy-runtime.test.ts)：`evaluates the full chain`、`does not depend on Policy evaluation order`、`hard failure outranks`、`every Policy abstains`。 | 已有核心仲裁场景证据；继续扩展指令时须覆盖对应扩展点。 |
+| <a id="ac-12"></a>[AC-12](acceptance.md#ac-12) | [策略运行时](../test/unit/policy-runtime.test.ts)：`equal-priority waiting expectations`、`public state follows arbitration`；[续轮](../test/unit/turn-advancement.test.ts)：`multiple advance_turn proposals`、`conflicting wait payloads`、`retry arbitration`。 | 已验证同标识等待与暂停载荷整项取稳定末项，以及重试类别、最长退避和去重理由分别合并；调换评估顺序后结果不变，续轮请求不拼接不同提议的字段。 |
+| <a id="ac-13"></a>[AC-13](acceptance.md#ac-13) | [工具运行时](../test/unit/tool-runtime.test.ts)：`parallel tool pool is bounded`；[策略运行时](../test/unit/policy-runtime.test.ts)：`action dependencies`、`ordered Context stages`。 | 部分覆盖；四类工具事件与两级结果投影的完整关联须结合相关内核测试检查，不能只看调度器。 |
+| <a id="ac-14"></a>[AC-14](acceptance.md#ac-14) | [内核集成](../test/integration/kernel.test.ts)：`always turns an Action Policy rejection into a durable tool response`。 | 已有拒绝、消息提交及模型继续场景证据。 |
+| <a id="ac-15"></a>[AC-15](acceptance.md#ac-15) | [执行限制协议](../test/unit/tool-constraint-protocol.test.ts)：`unsupported protocols`、`preflight uses rewritten arguments`、`registration requires executable enforcement`。 | 已有硬拒绝和实际执行前校验场景证据；各领域工具的真实约束见[执行限制测试](../test/unit/tool-execution-constraints.test.ts)。 |
+| <a id="ac-16"></a>[AC-16](acceptance.md#ac-16) | [执行限制协议](../test/unit/tool-constraint-protocol.test.ts)：`nested calls inherit all constraints`、`scoped tool replacement`；[公共服务](../test/unit/core-service-runtime.test.ts)：`shadows a granted Tool name`。 | 已有嵌套继承及同名替换隔离场景证据。 |
+| <a id="ac-17"></a>[AC-17](acceptance.md#ac-17) | [会话状态](../test/unit/state-and-session.test.ts)：`FIFO input`、`enforces state CAS`、`distinct Turns serially`；[内核集成](../test/integration/kernel.test.ts)：`host interruption`、`AskUserQuestion settles`；[连续执行](../test/integration/kernel-continuation.test.ts)。 | 已有串行、冲突提交、普通等待及取消场景证据；连续工具任务覆盖内存与 SQLite 中 210 次工具调用后的完成、取消、后续输入及显式步骤预算；[共享宿主输入](../test/integration/host-input-admission.test.ts)还验证重复及并发输入只消费一次、排队顺序、冲突拒绝及重启后重试。跨宿主执行归属保护见 AC-24，不代表所有并发时序穷尽。 |
+| <a id="ac-18"></a>[AC-18](acceptance.md#ac-18) | [目标集成](../test/integration/goal-mode.test.ts)、[独立续轮](../test/integration/policy-public-state.test.ts)、[续轮规则](../test/unit/turn-advancement.test.ts)、[续轮竞争](../test/integration/turn-advance-races.test.ts)。 | 已验证重复触发、用户优先、取消及冷启动不重放后继。新增创建提交边界的用户输入与取消注入，在内存和 SQLite 中都阻止自动轮次；不以这些离散时序声称穷尽全部并发。 |
+| <a id="ac-19"></a>[AC-19](acceptance.md#ac-19) | [通用人工交互恢复](../test/unit/human-input-recovery.test.ts)：`checkpoint/answer crashes`；[交互竞争与旧检查点](../test/integration/human-input-races.test.ts)；[内核集成](../test/integration/kernel.test.ts)：`recovered approval resumes`；[网页审批](../test/integration/web-plan-approval.test.ts)。 | 已验证请求关联、重复回答和派发前恢复；真实 SQLite 中两种先后顺序的回答/取消竞争都保留停止事实，关闭并重开后不恢复执行。旧业务权限检查点保留查询、取消和原事实，拒绝未经迁移的新回答。[网页输入恢复测试](../test/integration/web-session-steering.test.ts)另覆盖旧进程被终止后恢复回答，核对只派发一次。 |
+| <a id="ac-20"></a>[AC-20](acceptance.md#ac-20) | [公共服务](../test/unit/core-service-runtime.test.ts)：`registered, enumerated, schema checked`、`lifecycle control does not inherit`、`external I/O cannot be granted`。 | 已有服务授权、调用者隔离及结构校验场景证据。 |
+| <a id="ac-21"></a>[AC-21](acceptance.md#ac-21) | [策略运行时](../test/unit/policy-runtime.test.ts)：`external I/O replays`、`projectors isolate replay by call id`；[公共服务](../test/unit/core-service-runtime.test.ts)：`cold restart refuses unresolved recorded service I/O`。 | 已验证已完成结果重放与作用域隔离；在真实 SQLite 中注入提供方已执行、结果尚未持久化的故障，关闭并重建运行时后明确拒绝未决调用，提供方仅执行一次，原开始事实保留。 |
+| <a id="ac-22"></a>[AC-22](acceptance.md#ac-22) | [内核集成](../test/integration/kernel.test.ts)：`outbox after a crash boundary`、`message-surface replacement`；[追加恢复集成](../test/integration/message-content-append.test.ts)：`startup restores ordered content additions`；[迁移顺序](../test/unit/state-and-session.test.ts)：`timestamps tie`。 | 已有多种提交间隙与顺序证据；故障注入不等于证明任意硬件掉电条件。 |
+| <a id="ac-23"></a>[AC-23](acceptance.md#ac-23) | [动作恢复](../test/unit/action-recovery.test.ts)、[动态工具注册恢复](../test/unit/dynamic-tool-registration.test.ts)、[内核集成](../test/integration/kernel.test.ts)：`recovered approval resumes`。 | 已有未派发续接、未知副作用合成中断及结果复用证据。 |
+| <a id="ac-24"></a>[AC-24](acceptance.md#ac-24) | [孤立轮次恢复](../test/unit/orphaned-turn-recovery.test.ts)、[事件正文](../test/unit/state-and-session.test.ts)：`verified sidecar files`；[内核集成](../test/integration/kernel.test.ts)：`interrupted model result`；[故障收尾](../test/integration/kernel-failure-settlement.test.ts)。 | 已有模型中断、审批保留及存储校验场景证据；故障注入覆盖读写失败、版本冲突重试、原步骤补消息及后续输入；[执行归属测试](../test/unit/session-execution-ownership.test.ts)覆盖存活进程保护及真实进程终止接管，[会话管理测试](../test/unit/web-session-manager.test.ts)覆盖旧数据显式迁移。备份恢复组合仍需独立验证。 |
+| <a id="ac-25"></a>[AC-25](acceptance.md#ac-25) | [子智能体集成](../test/integration/subagent.test.ts)：`inherits the policy binding`、`root interruption`、`tool filters narrow`、`cold-resumed from SQLite`。 | 已有执行树、权限收窄、取消与恢复场景证据；另有[子智能体包](../test/unit/subagent-package.test.ts)证明启用运行原语不自动安装工具、逐项服务授权及调用归属。 |
+| <a id="ac-26"></a>[AC-26](acceptance.md#ac-26) | [网页输入](../test/integration/web-session-steering.test.ts)、[乐观输入](../src/ui/web-ui/tests/optimistic-input.test.tsx)、[会话处理分组](../src/ui/web-ui/tests/timeline-groups.test.tsx)、[终端进程](../test/integration/tui-non-interactive.test.ts)、[通用编码](../test/unit/interaction-presentation-compatibility.test.ts)、[终端事件去重](../test/unit/tui-event-ledger.test.ts)；[原生选择器](../test/unit/web-directory-picker.test.ts)、[真实原生窗口](../test/integration/web-native-picker.test.ts)。 | 网页另覆盖提交首帧、失败撤回及处理状态衔接。网页和终端已共用宿主操作及数据协议。实际交互终端验证计划编辑批准、取消、多问题多选/自由文本、权限允许、拒绝及允许后仍受只读硬限制约束，并核对事件和产物；共六个场景，模型由确定性本地提供方驱动。不能外推到所有终端平台。网页专有文件选择另验证取消、辅助进程异常及窗口复用；真实窗口测试需显式启用桌面环境。 |
+| <a id="ac-27"></a>[AC-27](acceptance.md#ac-27) | [只读状态视图](../test/integration/policy-state-views.test.ts)、[目标网页](../test/integration/goal-web.test.ts)、[策略仲裁](../test/unit/policy-runtime.test.ts)：`public state follows arbitration`。 | 已验证读取已提交状态、私有字段隔离、影子和未安装组件不显示、撤回后冷恢复不复活旧操作。原有状态提交及仲裁规则保留；新增视图没有独立可提前提交的公开状态。这些场景不穷尽所有策略与仲裁的组合。 |
+| <a id="ac-28"></a>[AC-28](acceptance.md#ac-28) | [长期记忆](../test/unit/long-term-memory.test.ts)、[网页审批](../test/integration/web-plan-approval.test.ts)、[子智能体集成](../test/integration/subagent.test.ts)。 | 部分覆盖。来源、审批与通知各有检查；尚未声明覆盖所有“通知＋回答＋重载”的跨入口组合。 |
+| <a id="ac-29"></a>[AC-29](acceptance.md#ac-29) | [包边界](../test/unit/package-boundaries.test.ts)、[模式配置](../test/unit/mode-config.test.ts)、[规划包](../test/unit/planning-package.test.ts)。 | 部分覆盖。源码重构时还须直接对比变更前后模式装配、工具、提示词和绑定材料；仅当前版本测试通过不能证明前后等价。 |
+| <a id="ac-30"></a>[AC-30](acceptance.md#ac-30) | [存储兼容](../test/unit/message-store.test.ts)、[事件迁移](../test/unit/state-and-session.test.ts)、[执行限制协议](../test/unit/tool-constraint-protocol.test.ts)、[内核恢复](../test/integration/kernel.test.ts)。 | 部分覆盖。有具体旧格式拒绝及迁移证据；不能据此承诺任意旧版本绑定无条件恢复。 |
+| <a id="ac-31"></a>[AC-31](acceptance.md#ac-31) | [源码边界](../test/unit/package-boundaries.test.ts)、[通用展示](../test/unit/interaction-presentation-compatibility.test.ts)、[公开操作](../test/integration/published-actions.test.ts)、[网页审批](../test/integration/web-plan-approval.test.ts)。 | 独立领域复用页面和终端协议，旧格式只读转换，实际输入与文件验证通过。新增控件、故障窗口仍须补对应验证。 |
+| <a id="ac-32"></a>[AC-32](acceptance.md#ac-32) | [包依赖检查](../test/unit/package-boundaries.test.ts)：`extensions depend on public core contracts`、`other extensions do not branch on goal component IDs or commands`；[提醒策略组合](../test/unit/strategy-policies.test.ts)：`review reminders work without each other and compose in either declared order`。 | 部分覆盖。已移除重复失败提醒与契约检查之间写死的相互顺序，验证二者独立装配、双向组合时均能实际产生提醒，判断不消费对方本次追加的提醒，输出按模式顺序保留。其余领域的装卸及通过共享业务包、回调、服务注入、存储访问、公开状态解释形成的间接耦合仍需验证，不能据此宣称全部解耦。 |
+| <a id="ac-33"></a>[AC-33](acceptance.md#ac-33) | [扩展依赖](../test/unit/extension-dependencies.test.ts)、[策略装配](../test/unit/policy-runtime.test.ts)、[公共服务](../test/unit/core-service-runtime.test.ts)。 | 已验证实际选择的消费者、缺失/版本/循环/影子提供方、依赖不决定顺序，以及依赖不能代替服务授权。[扩展契约集成](../test/integration/extension-contracts.test.ts)及[工作区结果契约](../test/unit/workspace-result-contracts.test.ts)另验证可选能力缺席、工具来源和持久化；不承诺未来变更自动符合。 |
+| <a id="ac-34"></a>[AC-34](acceptance.md#ac-34) | [独立文件导入视图](../test/integration/policy-state-views.test.ts)、[目标网页与恢复](../test/integration/goal-web.test.ts)、[跨入口及历史兼容](../test/unit/interaction-presentation-compatibility.test.ts)、[终端事件](../test/unit/tui-event-ledger.test.ts)、[规划审批](../test/integration/web-plan-approval.test.ts)；[网页用量与审计查询](../test/integration/web-usage.test.ts)、[用量汇总](../test/unit/model-usage.test.ts)。 | 目标和独立示例不保存展示副本，重复查询不写事实，关闭并重开数据库可恢复，旧来源版本及跨轮操作原子拒绝。真实网页验证刷新后打开会话、实时暂停/继续/取消；终端消费同一视图并对重复快照去重。既有规划审批验证材料变化和原请求恢复；本次保留多版本管理，没有审计全仓库所有历史快照或扩展的存储。网页用量另验证跨来源去重、分页与参数拒绝、外置正文及重启重建不写事件；冷查询仍逐会话读取匹配事件，未验证超大历史的性能上限。 |
+
+## 验证范围与维护
+
+- 2026-09-24 HARNESS-047：维护者明确授权调度生命周期文件及本页证据同步。生产服务在arm、回调开始和投递返回后核对closed与当前实例身份；删除或关闭不撤回已开始投递，但禁止旧回调再次安排执行或写回旧记录。[永久集成控制](../test/integration/scheduler-lifecycle.test.ts)旧实现2 PASS/6 FAIL、修复后8/8；与原服务隔离控制合计18/18，另经真实计时器验证在途删除和关闭后均无第二次投递。完整后端831 PASS/1既有SKIP、Web156/156，类型检查及构建通过。隔离Web冒烟3/3只证明基础交互未回归，不是047网页竞态验收；历史213/213及真实模型资格未因此更新。范围及可复现命令见[047修复说明](../docs/bugfix/scheduler-recurring-cancellation-race.md)。
+
+- 2026-09-24 修复分支基于 master 5181cb27。历史首版后端 807 PASS / 1 既有 skip / 0 FAIL；PR60 评审者在 15cd663b 独立复测后端 811 PASS / 1 SKIP、Web 151 PASS，属于评审者提供的辅助证据，不是当前补丁重跑结果。本次新增[孤立恢复控制](../test/unit/orphaned-turn-recovery.test.ts)及[同轮重复调用投影控制](../src/ui/web-ui/tests/project-session.test.ts)，当前执行结果单列在[PR60 复审记录](../docs/bugfix/kernel-deterministic-repair-stage.md#pr60-review)。
+- AC-19/26：HARNESS-038 冷恢复事件实时发布、039 授权等待取消；AC-13/14/16/26：030 嵌套冷历史、040 动作拒绝展示；AC-23/24：045 派发后未知结果及已知结果补消息；AC-18/25/28：042 整树取消与后台通知。以上六项缺陷对应的 12 个确定性 Web Case 各取得一次零重试 3/3，修复说明分别位于 docs/bugfix/。通知竞争仅覆盖已实现控制，不声称穷尽所有后代创建时序。
+- 历史网页实验使用独立测试分支叠加对应产品补丁，两条分支不是整体相同源码，不能据此声明 master 全量 Playwright 准出。第一次70项业务加smoke三轮为204 PASS/9 FAIL；修正夹具故障窗口及045消息元数据后，定向18/18通过。这些历史运行不与后续成绩拼接。
+- 最近一次70项业务加smoke的完整确定性实验是冻结快照 `5c9f5032caae19ea02a569ebe60cce4e6f9e3d52`：原始JUnit已重新核对，71项各3个样本，共213 PASS、0 failure/error/skip，1 worker、0 retry。JUnit SHA-256 为 `80d1dcc22833d5cbdc03fbce27e6e680e7f0c4de994def07234dd31d85454de9`。Node26.5.0/npm11.17.0，与正式固定工具链不同；这是PR60评审修改之前的阶段全集证据，不是本次补丁后的全量资格，也不包含047竞争修复。冻结引用、复现命令与本次定向复验见[交付记录](../docs/bugfix/kernel-deterministic-repair-stage.md)。真实模型全集未重跑。
+- AC-03/24：正常关闭的全部资源尝试与错误传播见[装配清理](../test/unit/mode-assembly-cleanup.test.ts)、[Host/Web关闭](../test/unit/web-session-manager.test.ts)。AC-23：工具结果与投影私态同事务检查点，在[动作投影恢复](../test/integration/action-projection-recovery.test.ts)中覆盖内存/SQLite的批次结算冲突及结果落盘后消息前的故障，四项通过。AC-25/28：[子智能体集成](../test/integration/subagent.test.ts)覆盖完成通知与同一子任务追加消息的受控互等、失败前部分输出不冒充成功。AC-06/11：[策略运行时](../test/unit/policy-runtime.test.ts)覆盖合法无提案诊断/私态与外抛异常的区别。
+- 本次未修改规范性行为条款、公共包身份或存储 Schema；复用现有消息、结果、取消与输入协议。既有规范下的实现修复无新增产品语义待确认；待确认项和实测边界见[第一版交付说明](../docs/bugfix/kernel-deterministic-repair-stage.md)。
+
+- 2026-09-17 新增 `glm-5v-turbo`、`kimi-k3` 默认模型选项，由宿主按所选模型装配图片能力；`kimi-k3` 请求使用上游要求的 `temperature: 1`。[模型设置测试](../test/unit/settings.test.ts)验证实际传输中的图片、采样参数及切回仅文本模型后的图片降级；[会话管理测试](../test/unit/web-session-manager.test.ts)验证模型保存、重启恢复、未知模型拒绝及沿用密钥而不公开密钥。独立副本构建、类型检查、56 项相关后端测试和 140 项界面测试通过；网页菜单及两个真实模型的“读取图片工具→识别字符、数量、位置”链路通过。未据此验证视频、音频、最大上下文或长期供应商可用性。
+- 需要继续核对的范围包括：其他领域的独立装配与间接业务耦合、全仓库数据和历史快照的归属，以及历史绑定、异常和并发的更多组合。具体边界见上表；发现可复现的规范违反后再登记为开放差距。
+- 历史未完成轮次仍须验证原绑定，不因当前装配通过就保证可恢复。本轮未实施猜测性绑定迁移；支持范围和拒绝行为见[恢复说明](../docs/bugfix/architecture-conformance-recovery.md)。
+- 更早的历史完整校验曾通过 `npm run check`、后端及网页构建、520项常规后端测试、140项界面测试和1项显式启用的原生窗口测试；不再作为最新统计。该次真实网页使用确定性提供方验证目标恢复和暂停、继续、取消，不包含生产模型推理质量。
+- 项目完整校验使用 `npm run check`、`npm test`；针对变更选择相关场景，代码或边界变化后更新证据。构建和测试在独立副本中执行，不覆盖日常实例的构建产物，不占用或重启 `8088`。

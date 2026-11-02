@@ -1,0 +1,28 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/ptc-live-file-handoff-summary.ts
+    for (const read of sourceReads) {
+      const parent = runCodeById.get(String(read.payload["parentCallId"]))!;
+      if (seenSourceParents.has(parent.callId)) continue;
+      seenSourceParents.add(parent.callId);
+      if (recoverableFailureIds.has(parent.callId)) continue;
+      const result = successfulResult(resultsById, parent);
+      if (result.seq >= writePlan.event.seq) continue;
+      const canonical = jsonObject(result.payload["canonicalValue"], "PTC reading canonical value");
+      const sourceEvidenceKeys = programDataEvidence(canonical["result"], canonical["output"], "source")
+        .filter(({ value }) => isDeepStrictEqual(value, JSON.parse(scenario.inputContent).items)).map(({ key }) => key);
+      const summaryEvidenceKeys = programDataEvidence(canonical["result"], canonical["output"], "summary")
+        .filter(({ value }) => isDeepStrictEqual(value, scenario.outputValue)).map(({ key }) => key);
+      const hasSource = sourceEvidenceKeys.length > 0;
+      const hasSummary = summaryEvidenceKeys.length > 0;
+      if (!hasSource && !hasSummary) continue;
+      assert.deepEqual(toolMessageValues(writePlan.plan, parent.callId), [result.payload["canonicalValue"]],
+        "the actual PTC writing request did not receive the unique complete source parent result");
+      const code = textValue(jsonObject(parent.payload["arguments"], "PTC reading program arguments")["code"], "PTC reading program");
+      if (hasSource) proofCandidates.push({ sourceRead: read, sourceParent: parent, kind: "source_through_model", code,
+        evidenceKeys: sourceEvidenceKeys });
+      if (hasSummary) proofCandidates.push({ sourceRead: read, sourceParent: parent, kind: "summary_through_model", code,
+        evidenceKeys: summaryEvidenceKeys });
+    }
+    if (sameProgramReads.length > 0) {
+      const code = textValue(jsonObject(writeParent.payload["arguments"], "PTC writing program arguments")["code"],
+        "PTC writing program");

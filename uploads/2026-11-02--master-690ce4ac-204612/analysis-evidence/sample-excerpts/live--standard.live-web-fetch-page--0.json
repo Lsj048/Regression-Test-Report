@@ -1,0 +1,258 @@
+{
+  "kind": "derived-causal-event-excerpt",
+  "scope": "Selected original durable events cited by manual attribution. Reasoning text is omitted where marked. This is a readable excerpt, not a full trace or a new G1 sample.",
+  "sampleDirectory": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model",
+  "sourceTrajectory": "live/artifacts/test-results/web-regression-standard-li-ceeea-blic-page-with-a-live-model/trajectory.jsonl.gz",
+  "sourceTrajectorySha256": "ba092a687001ec34933909d257d47584b0920da687e8c96624f6870972093cfe",
+  "manifest": {
+    "kind": "manifest",
+    "schemaVersion": 1,
+    "sample": {
+      "caseId": "standard.live-web-fetch-page",
+      "mode": "standard",
+      "model": {
+        "execution": "live",
+        "name": "LongCat-2.0",
+        "revision": "provider-unreported",
+        "providerBaseUrl": "https://aigc.sankuai.com/v1/openai/native",
+        "settings": {
+          "maxOutputTokens": 4096,
+          "contextWindowTokens": 1048576,
+          "temperature": 0,
+          "thinking": {
+            "enabled": true,
+            "budgetTokens": 1024
+          }
+        }
+      },
+      "repeatEachIndex": 0,
+      "retry": 0,
+      "testStatus": "failed"
+    },
+    "capturedAt": "2026-11-02T14:15:07.159Z",
+    "cleanupStartedAt": "2026-11-02T14:15:07.099Z",
+    "processesStopped": true,
+    "source": "durable SQLite facts; ordered within each table; includes cleanup events; not raw HTTP",
+    "redaction": "known credential values replaced; original payload hashes verified before redaction"
+  },
+  "complete": {
+    "kind": "complete",
+    "events": 110,
+    "turns": 1,
+    "messages": 8
+  },
+  "selectedSequences": [
+    39,
+    71,
+    90,
+    98,
+    100
+  ],
+  "events": [
+    {
+      "kind": "event",
+      "seq": 39,
+      "event_id": "event_9a275d8b-c7be-46da-8718-ca455b067848",
+      "session_id": "session_c24202f6-2f80-431c-ad2e-c60da00f989b",
+      "turn_id": "turn_b734f0f2-7026-4e73-9d9b-ac68e732dacd",
+      "type": "tool.result",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 975,
+      "payload_sha256": "5f06a8949b426eb3fbfd133feeccbd6ad29a217daa9656ebf09ed4706c03df4b",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:14:57.568Z",
+      "payload": {
+        "actionId": "action:call_b20539dc4190efcd",
+        "actionPlanId": "plan_820fa39b-9864-4800-91bb-eb967dc75f05",
+        "callId": "call_b20539dc4190efcd",
+        "canonicalValue": {
+          "contentType": "text/html; charset=utf-8",
+          "prompt": "Extract the page title (the text inside the <title> tag) and the first sentence of the main body text. Return them exactly as they appear in English.",
+          "text": "Example Domain This domain is for use in documentation examples without needing permission. This is not a service; avoid relying on it for testing and monitoring purposes.",
+          "url": "https://example.com/"
+        },
+        "content": [
+          {
+            "text": "Fetched https://example.com/\n\nExample Domain This domain is for use in documentation examples without needing permission. This is not a service; avoid relying on it for testing and monitoring purposes.",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "name": "WebFetch",
+        "ordinal": 0,
+        "origin": {
+          "component": "WebFetch",
+          "kind": "tool",
+          "package": "@longcat/tools-builtin",
+          "version": "1.0.0"
+        },
+        "status": "succeeded"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 71,
+      "event_id": "event_bf53b189-d94b-45bb-b3fa-dbebc9525851",
+      "session_id": "session_c24202f6-2f80-431c-ad2e-c60da00f989b",
+      "turn_id": "turn_b734f0f2-7026-4e73-9d9b-ac68e732dacd",
+      "type": "tool.result",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 929,
+      "payload_sha256": "b8bce6846af8ddb038dd0fb29cd7563193b8df30b801a63b3b3e9c6e22e52955",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:15:02.450Z",
+      "payload": {
+        "actionId": "action:call_8f3f462d02b7a9d3",
+        "actionPlanId": "plan_efb4e835-f4cb-439e-a174-fafce8eafbcc",
+        "callId": "call_8f3f462d02b7a9d3",
+        "canonicalValue": {
+          "contentType": "text/html; charset=utf-8",
+          "prompt": "Return the exact content of the HTML title tag and the exact first sentence of the body text, verbatim.",
+          "text": "Example Domain This domain is for use in documentation examples without needing permission. This is not a service; avoid relying on it for testing and monitoring purposes.",
+          "url": "https://example.com/"
+        },
+        "content": [
+          {
+            "text": "Fetched https://example.com/\n\nExample Domain This domain is for use in documentation examples without needing permission. This is not a service; avoid relying on it for testing and monitoring purposes.",
+            "type": "text"
+          }
+        ],
+        "isError": false,
+        "name": "WebFetch",
+        "ordinal": 0,
+        "origin": {
+          "component": "WebFetch",
+          "kind": "tool",
+          "package": "@longcat/tools-builtin",
+          "version": "1.0.0"
+        },
+        "status": "succeeded"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 90,
+      "event_id": "event_9c00a588-9edc-4b7d-9476-186af645a52e",
+      "session_id": "session_c24202f6-2f80-431c-ad2e-c60da00f989b",
+      "turn_id": "turn_b734f0f2-7026-4e73-9d9b-ac68e732dacd",
+      "type": "model.completed",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 1122,
+      "payload_sha256": "c969c504f68dca702557b3b6d47e8e7eeb75ecefde0c07ab971175e0922bf25f",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:15:06.948Z",
+      "payload": {
+        "attemptId": "attempt_aa411327-5b2e-4315-81ee-1d09d409610c",
+        "content": "",
+        "finishReason": "tool_calls",
+        "outcomeId": "outcome_3e74b855-e5d8-4cc0-828e-f80de50ee921",
+        "request": {
+          "attempt": 0,
+          "planId": "plan_263919e5-003f-4df7-939a-729d87c5837c",
+          "requestHash": "62536305a4a48820521f6bf4e127e96b7bd46ed30cc91d6365936d92fc78ce65"
+        },
+        "responseMetadata": {
+          "responseId": "f694e10c-6082-49fa-bc85-b925cbd1d00b"
+        },
+        "toolCalls": [
+          {
+            "arguments": "{\"command\": \"curl -s https://example.com/\", \"description\": \"Fetch raw HTML from example.com\"}",
+            "id": "call_a1a5afee0d6fe908",
+            "name": "Bash"
+          }
+        ],
+        "usage": {
+          "cachedTokens": 8320,
+          "completionTokens": 124,
+          "promptTokens": 8506,
+          "reasoningTokens": 87,
+          "totalTokens": 8630
+        }
+      },
+      "omittedFields": [
+        "payload.reasoningContent"
+      ]
+    },
+    {
+      "kind": "event",
+      "seq": 98,
+      "event_id": "event_573fee04-55bf-4951-8c7a-df682c7734cc",
+      "session_id": "session_c24202f6-2f80-431c-ad2e-c60da00f989b",
+      "turn_id": "turn_b734f0f2-7026-4e73-9d9b-ac68e732dacd",
+      "type": "tool.call",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 490,
+      "payload_sha256": "946f049e128024fd4c00314886df7c39318b860b12efa2d5fa8b380e537e5ac8",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:15:06.982Z",
+      "payload": {
+        "actionId": "action:call_a1a5afee0d6fe908",
+        "actionPlanId": "plan_567e773f-39ff-4a21-abca-5261f539a529",
+        "arguments": {
+          "command": "curl -s https://example.com/",
+          "description": "Fetch raw HTML from example.com"
+        },
+        "callId": "call_a1a5afee0d6fe908",
+        "name": "Bash",
+        "nestingDepth": 0,
+        "ordinal": 0,
+        "origin": {
+          "component": "Bash",
+          "kind": "tool",
+          "package": "@longcat/tools-builtin",
+          "version": "1.0.0"
+        },
+        "sessionId": "session_c24202f6-2f80-431c-ad2e-c60da00f989b",
+        "turnId": "turn_b734f0f2-7026-4e73-9d9b-ac68e732dacd"
+      }
+    },
+    {
+      "kind": "event",
+      "seq": 100,
+      "event_id": "event_9f199bf9-0d58-4bb1-8122-6a6dd0902638",
+      "session_id": "session_c24202f6-2f80-431c-ad2e-c60da00f989b",
+      "turn_id": "turn_b734f0f2-7026-4e73-9d9b-ac68e732dacd",
+      "type": "permission.approval.requested",
+      "payload_ref": null,
+      "payload_codec": "inline-json",
+      "payload_bytes": 747,
+      "payload_sha256": "3089f7048965382ec82e3babdef6fdc39e5e59ab9f21f5fbfb607668ce02ac1f",
+      "trace_id": null,
+      "created_at": "2026-11-02T14:15:06.985Z",
+      "payload": {
+        "execution": {
+          "actionId": "action:call_a1a5afee0d6fe908",
+          "arguments": {
+            "command": "curl -s https://example.com/",
+            "description": "Fetch raw HTML from example.com"
+          },
+          "callId": "call_a1a5afee0d6fe908",
+          "name": "Bash",
+          "nestingDepth": 0,
+          "ordinal": 0,
+          "origin": {
+            "component": "Bash",
+            "kind": "tool",
+            "package": "@longcat/tools-builtin",
+            "version": "1.0.0"
+          },
+          "sessionId": "session_c24202f6-2f80-431c-ad2e-c60da00f989b",
+          "turnId": "turn_b734f0f2-7026-4e73-9d9b-ac68e732dacd"
+        },
+        "requestId": "approval:turn_b734f0f2-7026-4e73-9d9b-ac68e732dacd:action:call_a1a5afee0d6fe908",
+        "suggestedRule": "Bash(curl -s https://example.com/)",
+        "target": {
+          "action": "Bash",
+          "description": "curl -s https://example.com/",
+          "mutates": true,
+          "permissionRequired": true,
+          "resource": "curl -s https://example.com/"
+        }
+      }
+    }
+  ]
+}

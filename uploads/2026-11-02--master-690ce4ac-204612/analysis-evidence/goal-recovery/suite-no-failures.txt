@@ -1,0 +1,27 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/sqlite-audit.ts
+export function assertNoFailures(
+  eventLogPath: string,
+  events: readonly EventRow[],
+  results: readonly ToolFact[],
+  supportingPolicies?: Readonly<{ database: DatabaseSync; sessionIds: readonly string[]; contract: EvaluationCaseContract }>,
+): readonly string[] {
+  const recovered = new Set(recoveredModelRequests(events.map(event => ({ ...event, body: payload(eventLogPath, event) }))));
+  // No caller-provided sequence whitelist: exceptions must pass the full Policy audit.
+  const supportingFailures = new Set(supportingPolicies === undefined ? [] :
+    assertNoRecordedContractPolicyErrors(eventLogPath, supportingPolicies.database, events,
+      supportingPolicies.sessionIds, supportingPolicies.contract)
+      .flatMap(diagnostic => diagnostic.serviceExchanges)
+      .flatMap(exchange => exchange.outcome === "failed" ? [exchange.failureSeq] : []));
+  const forbiddenEvents = events
+    .filter((event) => !recovered.has(event.seq) && !supportingFailures.has(event.seq) && (event.type.endsWith(".failed") || STRICT_FAILURE_EVENT_TYPES.has(event.type)))
+    .map((event) => `${event.seq}:${event.type}`);
+  assert.deepEqual(forbiddenEvents, [], `unexpected failure, retry, blocked, or interrupted events: ${forbiddenEvents.join(", ")}`);
+  const failedResults = results.filter((result) =>
+    result.payload["isError"] === true || result.payload["status"] !== "succeeded");
+  assert.deepEqual(failedResults.map((result) => ({ name: result.name, payload: result.payload })), [], "one or more tools failed");
+  for (const result of results) payload(eventLogPath, events.find((event) => event.seq === result.seq)!);
+  return forbiddenEvents;
+}
+
+const PLAN_MODE_COMPONENT = "builtin.plan_mode";

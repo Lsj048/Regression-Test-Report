@@ -1,0 +1,135 @@
+import type { ContentBlock } from "../../kernel/api/model/types.js";
+import type {
+  ContextEffectForPoint,
+  ContextPoint,
+  ContextPolicy,
+  ContextSnapshot,
+  PolicyExecutionContext,
+  PolicyInputEnvelope,
+  PolicyResult,
+} from "../../kernel/api/policy/types.js";
+import { createDescriptor } from "../../kernel/api/policy/descriptor.js";
+
+interface MicroCompactionConfig {
+  readonly enabled?: boolean;
+  /** Recent tool-result tokens retained in addition to protected turns. */
+  readonly protectRecentToolTokens?: number;
+  /** Do not rewrite tool results belonging to this many latest model steps. */
+  readonly protectRecentSteps?: number;
+  /** Avoid durable rewrites whose estimated token saving is negligible. */
+  readonly minimumReclaimTokens?: number;
+  readonly clearedText?: string;
+  readonly protectedTools?: readonly string[];
+}
+
+interface ToolResultCandidate {
+  readonly messageId: string;
+  readonly toolCallId: string;
+  readonly turnId?: string;
+  readonly step: number;
+  readonly seq: number;
+  readonly tokens: number;
+}
+
+const DEFAULT_CLEARED_TEXT = "[Old tool result content cleared]";
+
+function hasText(content: string | readonly ContentBlock[]): boolean {
+  if (typeof content === "string") return content.length > 0;
+  return content.some((block) => block.type === "text" && block.text.length > 0);
+}
+
+/**
+ * Incrementally clears old Tool-result bodies while retaining the latest turn
+ * and a rolling token window of recent evidence. Each cleared result remains a
+ * syntactically valid Tool message and is persisted as an independent
+ * replace_range operation, so full compaction can still compose afterwards.
+ */
+export class MicroCompactionPolicy implements ContextPolicy<"fit"> {
+  readonly descriptor = createDescriptor({
+    apiVersion: "policy.longcat/v1",
+    id: "builtin.micro_compaction",
+    version: "1.1.0",
+    configSchema: {
+      type: "object",
+      properties: {
+        enabled: { type: "boolean" },
+        protectRecentToolTokens: { type: "integer", minimum: 0 },
+        protectRecentSteps: { type: "integer", minimum: 0 },
+        minimumReclaimTokens: { type: "integer", minimum: 1 },
+        clearedText: { type: "string", minLength: 1 },
+        protectedTools: { type: "array", items: { type: "string", minLength: 1 }, uniqueItems: true },
+      },
+      additionalProperties: false,
+    },
+    implementedInterfaces: ["context/v1"],
+    points: ["fit"],
+    claims: [],
+    deterministic: true,
+  });
+
+  async decideContext(
+    input: PolicyInputEnvelope<ContextPoint, ContextSnapshot>,
+    execution: PolicyExecutionContext,
+  ): Promise<PolicyResult<ContextEffectForPoint<"fit">>> {
+    if (input.point !== "fit") return { decision: "abstain", proposals: [] };
+    execution.signal.throwIfAborted();
+    const config = input.config as MicroCompactionConfig;
+    if (config.enabled !== true) return { decision: "abstain", proposals: [] };
+    const protectRecentToolTokens = config.protectRecentToolTokens ?? 20_000;
+    const protectRecentSteps = config.protectRecentSteps ?? 1;
+    const minimumReclaimTokens = config.minimumReclaimTokens ?? 5_000;
+    const clearedText = config.clearedText ?? DEFAULT_CLEARED_TEXT;
+    const protectedTools = new Set(config.protectedTools ?? []);
+    const protectedCallIds = new Set(input.snapshot.surfaceMessages.flatMap((entry) => (
+      entry.message.role === "assistant"
+        ? (entry.message.toolCalls ?? []).filter((call) => protectedTools.has(call.name)).map((call) => call.id)
+        : []
+    )));
+    const candidates: ToolResultCandidate[] = input.snapshot.surfaceMessages.flatMap((entry) => {
+      if (entry.message.role !== "tool" || entry.message.content === clearedText) return [];
+      if (protectedCallIds.has(entry.message.toolCallId)) return [];
+      if (!hasText(entry.message.content)) return [];
+      return [{
+        messageId: entry.messageId,
+        toolCallId: entry.message.toolCallId,
+        ...(entry.producingTurnId === undefined ? {} : { turnId: entry.producingTurnId }),
+        step: entry.step,
+        seq: entry.seq,
+        tokens: Math.max(1, entry.messageTokenCount),
+      }];
+    });
+    if (candidates.length === 0) return { decision: "abstain", proposals: [] };
+    const latestStep = Math.max(...input.snapshot.surfaceMessages
+      .filter((entry) => entry.producingTurnId === input.agent.turnId)
+      .map((entry) => entry.step));
+    const older = candidates
+      .filter((candidate) => protectRecentSteps === 0
+        || candidate.turnId !== input.agent.turnId
+        || candidate.step <= latestStep - protectRecentSteps)
+      .sort((left, right) => left.seq - right.seq);
+    let recentTokens = 0;
+    let split = older.length;
+    while (split > 0 && recentTokens < protectRecentToolTokens) {
+      split -= 1;
+      recentTokens += older[split]!.tokens;
+    }
+    const selected = older.slice(0, split);
+    const reclaimTokens = selected.reduce((total, candidate) => total + candidate.tokens, 0);
+    if (selected.length === 0 || reclaimTokens < minimumReclaimTokens) return { decision: "abstain", proposals: [] };
+    return {
+      decision: "propose",
+      proposals: selected.map((candidate) => ({
+        kind: "replace_range" as const,
+        startMessageId: candidate.messageId,
+        endMessageId: candidate.messageId,
+        message: { role: "tool" as const, toolCallId: candidate.toolCallId, content: clearedText },
+        reasonCode: "micro_compaction_tool_result_budget",
+      })),
+      diagnostics: [{
+        severity: "info",
+        code: "MICRO_COMPACTION_REPLACE_RANGES_PROPOSED",
+        message: `Proposed clearing ${selected.length} old Tool results (about ${reclaimTokens} tokens); protected ${protectRecentSteps} recent model step(s) plus about ${protectRecentToolTokens} recent Tool-result tokens`,
+      }],
+    };
+  }
+}

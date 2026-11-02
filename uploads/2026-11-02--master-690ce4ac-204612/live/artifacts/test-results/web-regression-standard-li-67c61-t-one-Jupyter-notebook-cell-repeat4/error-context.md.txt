@@ -1,0 +1,326 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> standard.live-notebook-cell-edit >> standard mode uses a live model to edit one Jupyter notebook cell
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+AssertionError: Read did not recognize the ipynb file as a notebook
+
+'text' !== 'notebook'
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-1k2P0C/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "请在应用中打开并完整查看当前项目的 notebooks/… 刚刚" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]: 请在应用中打开并完整查看当前项目的 notebooks/…
+          - time [ref=e59]: 刚刚
+        - button "请在应用中打开并完整查看当前项目的 notebooks/… 的会话操作" [ref=e60] [cursor=pointer]
+    - button "归档会话" [ref=e65] [cursor=pointer]
+    - button "设置" [ref=e69] [cursor=pointer]
+  - main [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 请在应用中打开并完整查看当前项目的 notebooks/…
+        - button "复制会话 ID session_1f5715ca-1991-4c90-98ed-3fd0a9f8049b" [ref=e78] [cursor=pointer]:
+          - generic [ref=e79]: session_1f5715ca-1991-4c90-98ed-3fd0a9f8049b
+      - generic [ref=e83]:
+        - button "对话" [ref=e84] [cursor=pointer]
+        - button "轨迹" [ref=e87] [cursor=pointer]
+    - generic [ref=e90]:
+      - generic [ref=e93]:
+        - generic [ref=e96]:
+          - generic [ref=e97]: 请在应用中打开并完整查看当前项目的 notebooks/discount-audit.ipynb。这个 Jupyter notebook 已确认存在。 其中包含 final_price = base_price + fixed_discount 的代码单元计算错误。请按 Jupyter 单元格方式编辑它，不要直接编辑 .ipynb 文件文本；只把这个单元的完整代码改为下面四行，并保留末行换行： base_price = 100 fixed_discount = 15 final_price = base_price - fixed_discount print(final_price) 除这个单元的代码外，保留 notebook 的其他所有内容，包括单元类型、执行次数、已有输出和元数据。不要运行 notebook 或终端命令，不要创建、删除或修改其他文件，也不要联网、向我提问或启动子任务。 完成后简要说明修改了什么。
+          - generic:
+            - time: 00:21
+            - button "复制消息"
+        - group [ref=e99]:
+          - generic "用时 11 秒" [ref=e100] [cursor=pointer]
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - paragraph [ref=e106]: 已修改完成。
+            - paragraph [ref=e107]:
+              - strong [ref=e108]: 修改内容：
+              - text: 在
+              - code [ref=e109]: notebooks/discount-audit.ipynb
+              - text: 的代码单元格
+              - code [ref=e110]: cell-7f3a9c
+              - text: 中，将错误的计算式
+              - code [ref=e111]: final_price = base_price + fixed_discount
+              - text: （加法，结果为 115）更正为
+              - code [ref=e112]: final_price = base_price - fixed_discount
+              - text: （减法，正确结果应为 85）。
+            - paragraph [ref=e113]:
+              - text: 其余所有内容包括单元格类型（code）、执行次数（
+              - code [ref=e114]: "execution_count: 7"
+              - text: ）、已有输出（
+              - code [ref=e115]: "115"
+              - text: ）、元数据（
+              - code [ref=e116]: "tags: verified-inputs"
+              - text: ）、markdown 单元格以及 notebook 级元数据均保持不变。
+          - generic [ref=e117]:
+            - button "复制回答" [ref=e118] [cursor=pointer]
+            - button "赞" [ref=e122] [cursor=pointer]
+            - button "踩" [ref=e125] [cursor=pointer]
+            - button "从此回答分叉会话" [ref=e128] [cursor=pointer]
+      - generic [ref=e136]:
+        - textbox "继续输入消息" [ref=e137]
+        - generic [ref=e138]:
+          - generic [ref=e139]:
+            - button "添加" [ref=e141] [cursor=pointer]
+            - generic [ref=e144] [cursor=pointer]: 标准模式
+            - button "权限：工作区写入" [ref=e150] [cursor=pointer]:
+              - generic [ref=e153]: 工作区写入
+          - generic [ref=e156]:
+            - button "模型：LongCat-2.0" [ref=e158] [cursor=pointer]:
+              - generic [ref=e159]: LongCat-2.0
+              - generic [ref=e160]: 思考
+            - generic "模型缓存与上下文用量" [ref=e163]:
+              - meter "最近一次模型请求缓存命中 8,960 / 9,361 输入令牌（95.7%）" [ref=e164]:
+                - generic [ref=e165]: 缓存
+                - strong [ref=e166]: 96%
+              - meter "上下文已使用 9,361 / 1,048,576 令牌（0.9%）；最近一次模型请求" [ref=e167]:
+                - generic [ref=e168]: 令牌
+                - strong [ref=e169]: 1%
+            - button "发送消息" [disabled] [ref=e170]
+    - generic [ref=e173]:
+      - generic [ref=e176]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e177] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  219 |         const actions = arrayValue(value["actions"], `action plan #${event.seq} actions`);
+  220 |         return actions.some((raw) => {
+  221 |           const action = jsonObject(raw, `action plan #${event.seq} action`);
+  222 |           return jsonObject(action["intent"], `action plan #${event.seq} intent`)["callId"] === call.callId;
+  223 |         }) ? [{ event, value, actions }] : [];
+  224 |       });
+  225 |       assert.equal(matchingPlans.length, 1, `${call.name} has no unique executable action plan`);
+  226 |       const matchingActions = matchingPlans[0]!.actions.filter((raw) =>
+  227 |         jsonObject(jsonObject(raw, `${call.name} action`)["intent"], `${call.name} intent`)["callId"] === call.callId);
+  228 |       assert.equal(matchingActions.length, 1, `${call.name} has no unique executable action intent`);
+  229 |       const action = jsonObject(matchingActions[0], `${call.name} action`);
+  230 |       const intent = jsonObject(action["intent"], `${call.name} intent`);
+  231 |       assert.equal(matchingPlans[0]!.value["planId"], call.payload["actionPlanId"],
+  232 |         `${call.name} changed action-plan identity`);
+  233 |       assert.equal(action["actionId"], call.payload["actionId"], `${call.name} changed actionId`);
+  234 |       assert.equal(intent["actionId"], call.payload["actionId"], `${call.name} intent changed actionId`);
+  235 |       assert.equal(intent["kind"], "invoke_tool", `${call.name} has the wrong action kind`);
+  236 |       assert.equal(intent["name"], call.name, `${call.name} changed name in its action plan`);
+  237 |       assert.equal(intent["callId"], call.callId, `${call.name} changed callId in its action plan`);
+  238 |       assert.deepEqual(intent["arguments"], call.payload["arguments"], `${call.name} changed arguments in its action plan`);
+  239 |       const batchCalls = modelToolCalls.filter(({ event }) => event.seq === modelCalls[0]!.event.seq);
+  240 |       const ordinal = batchCalls.findIndex(({ call: candidate }) => candidate["id"] === call.callId);
+  241 |       assert.equal(call.payload["ordinal"], ordinal, `${call.name} changed its model batch ordinal`);
+  242 |       assert.equal(jsonObject(matchingPlans[0]!.actions[ordinal], `${call.name} ordered action`)["actionId"],
+  243 |         call.payload["actionId"], `${call.name} reordered its model batch`);
+  244 |       const groups = arrayValue(matchingPlans[0]!.value["executionGroups"], "notebook execution groups")
+  245 |         .map((raw) => {
+  246 |           const group = jsonObject(raw, "notebook execution group");
+  247 |           assert.ok(group["kind"] === "parallel" || group["kind"] === "exclusive", "the notebook action plan has an invalid group");
+  248 |           const actionIds = arrayValue(group["actionIds"], "notebook execution group actions");
+  249 |           assert.ok(actionIds.length > 0 && actionIds.every((id) => typeof id === "string"), "the notebook action plan has invalid group actions");
+  250 |           return { kind: group["kind"], actionIds };
+  251 |         });
+  252 |       assert.deepEqual(groups.flatMap(({ actionIds }) => actionIds).sort(),
+  253 |         matchingPlans[0]!.actions.map((raw) => jsonObject(raw, "notebook grouped action")["actionId"]).sort(),
+  254 |       "the notebook execution groups do not cover its actions exactly once");
+  255 |       const matchingGroups = groups.map((group, index) => ({ group, index }))
+  256 |         .filter(({ group }) => group.actionIds.includes(String(call.payload["actionId"])));
+  257 |       assert.equal(matchingGroups.length, 1, `${call.name} has no unique execution group`);
+  258 |       if (call.name === "NotebookEdit") {
+  259 |         assert.equal(action["concurrency"], "exclusive", "NotebookEdit lost exclusive scheduling");
+  260 |         assert.equal(matchingGroups[0]!.group.kind, "exclusive", "NotebookEdit ran in a non-exclusive group");
+  261 |         assert.deepEqual(matchingGroups[0]!.group.actionIds, [call.payload["actionId"]], "NotebookEdit shared its exclusive group");
+  262 |       }
+  263 | 
+  264 |       const decisionEvents = rootEvents.filter((event) => event.turn_id === turnId
+  265 |         && event.type === "permission.decision"
+  266 |         && jsonObject(payload(eventLogPath, event)["execution"], "permission execution")["callId"] === call.callId);
+  267 |       assert.equal(decisionEvents.length, 1, `${call.name} has no unique permission decision`);
+  268 |       const decision = payload(eventLogPath, decisionEvents[0]!);
+  269 |       const execution = jsonObject(decision["execution"], `${call.name} permission execution`);
+  270 |       for (const field of ["sessionId", "turnId", "actionId", "callId", "name", "arguments", "ordinal", "nestingDepth", "parentCallId"] as const) {
+  271 |         assert.deepEqual(execution[field], call.payload[field], `${call.name} permission execution changed ${field}`);
+  272 |       }
+  273 |       const target = jsonObject(decision["target"], `${call.name} permission target`);
+  274 |       assert.equal(target["action"], permissionActionForTool(call.name),
+  275 |         `${call.name} was classified as the wrong permission action`);
+  276 |       assert.equal(target["resource"], notebookPath, `${call.name} permission targeted the wrong file`);
+  277 |       assert.equal(target["mutates"], call.name === "NotebookEdit", `${call.name} has the wrong mutation classification`);
+  278 |       assert.equal(target["permissionRequired"], call.name === "NotebookEdit",
+  279 |         `${call.name} has the wrong approval-required classification`);
+  280 |       assert.equal(decision["suggestedRule"], `${permissionActionForTool(call.name)}(${notebookPath})`,
+  281 |         `${call.name} produced the wrong suggested permission rule`);
+  282 |       assert.equal(decision["allowed"], true, `${call.name} was not authorized`);
+  283 |       assert.equal(decision["configuredEffect"], "allow", `${call.name} did not resolve to allow`);
+  284 |       assert.equal(decision["source"], "mode_default", `${call.name} used the wrong permission source`);
+  285 | 
+  286 |       const dispatch = uniqueLifecycleEvent(eventLogPath, rootEvents, "tool.dispatch.started", call);
+  287 |       const rawResult = uniqueLifecycleEvent(eventLogPath, rootEvents, "tool.raw_result", call);
+  288 |       assert.deepEqual(payload(eventLogPath, dispatch), call.payload,
+  289 |         `${call.name} changed execution identity before dispatch`);
+  290 |       const rawPayload = payload(eventLogPath, rawResult);
+  291 |       for (const field of ["callId", "actionPlanId", "name", "ordinal", "status", "isError", "content", "canonicalValue", "errorCode"] as const) {
+  292 |         assert.deepEqual(rawPayload[field], result.payload[field],
+  293 |           `${call.name} changed ${field} between raw and durable result`);
+  294 |       }
+  295 |       assert.ok(
+  296 |         modelCalls[0]!.event.seq < matchingPlans[0]!.event.seq
+  297 |           && matchingPlans[0]!.event.seq < call.seq
+  298 |           && call.seq < decisionEvents[0]!.seq
+  299 |           && decisionEvents[0]!.seq < dispatch.seq
+  300 |           && dispatch.seq < rawResult.seq
+  301 |           && rawResult.seq < result.seq,
+  302 |         `${call.name} lifecycle facts are out of order`,
+  303 |       );
+  304 |       executionByCall.set(call.callId, {
+  305 |         dispatch, rawResult, planSeq: matchingPlans[0]!.event.seq, groupIndex: matchingGroups[0]!.index,
+  306 |       });
+  307 |     }
+  308 | 
+  309 |     const notebookCalls = data.calls.filter(({ name }) => name === "NotebookEdit")
+  310 |       .sort((left, right) => executionByCall.get(left.callId)!.dispatch.seq - executionByCall.get(right.callId)!.dispatch.seq);
+  311 |     assert.ok(notebookCalls.length > 0, "the notebook Case did not edit its target cell");
+  312 |     const firstEditExecution = executionByCall.get(notebookCalls[0]!.callId)!;
+  313 |     const readCalls = data.calls.filter(({ name }) => name === "Read");
+  314 |     assert.ok(readCalls.length > 0, "the notebook Case must read the target before editing it");
+  315 |     for (const [index, call] of readCalls.entries()) {
+  316 |       const args = jsonObject(call.payload["arguments"], `Read #${index + 1} arguments`);
+  317 |       assert.equal(resolve(String(args["file_path"] ?? "")), notebookPath, "Read targeted the wrong notebook");
+  318 |       const value = jsonObject(resultsById.get(call.callId)!.payload["canonicalValue"], `Read #${index + 1} value`);
+> 319 |       assert.equal(value["type"], "notebook", "Read did not recognize the ipynb file as a notebook");
+      |              ^ AssertionError: Read did not recognize the ipynb file as a notebook
+  320 |       const file = jsonObject(value["file"], `Read #${index + 1} notebook file`);
+  321 |       assert.equal(file["filePath"], notebookPath, "Read reported the wrong notebook path");
+  322 |       const readExecution = executionByCall.get(call.callId)!;
+  323 |       const beforeEdit = readExecution.dispatch.seq < firstEditExecution.dispatch.seq;
+  324 |       assert.ok(beforeEdit ? readExecution.rawResult.seq < firstEditExecution.dispatch.seq
+  325 |         : firstEditExecution.rawResult.seq < readExecution.dispatch.seq,
+  326 |       `Read #${index + 1} raced the initial NotebookEdit execution`);
+  327 |       const expectedCells = beforeEdit ? originalDocument["cells"] : expectedDocument["cells"];
+  328 |       assert.deepEqual(file["cells"], expectedCells, `Read #${index + 1} returned the wrong notebook cells`);
+  329 |       const renderedRead = jsonObject(
+  330 |         JSON.parse(messageContent(resultsById.get(call.callId)!.payload["content"])) as unknown,
+  331 |         `Read #${index + 1} model-visible notebook`,
+  332 |       );
+  333 |       assert.deepEqual(renderedRead, file,
+  334 |         `Read #${index + 1} did not expose its complete notebook result to the model`);
+  335 |     }
+  336 | 
+  337 |     for (const [index, notebookCall] of notebookCalls.entries()) {
+  338 |       const editResult = resultsById.get(notebookCall.callId)!;
+  339 |       const notebookDecision = modelToolCalls.find(({ call }) => call["id"] === notebookCall.callId)!.event;
+  340 |       const notebookRequest = jsonObject(payload(eventLogPath, notebookDecision)["request"], "NotebookEdit model request");
+  341 |       const notebookRequestPlans = canonicalPlans.filter(({ event, plan }) => event.turn_id === turnId
+  342 |         && plan["planId"] === notebookRequest["planId"] && plan["requestHash"] === notebookRequest["requestHash"]);
+  343 |       assert.equal(notebookRequestPlans.length, 1, "NotebookEdit has no unique canonical request plan");
+  344 |       const notebookRequestPlan = notebookRequestPlans[0]!;
+  345 |       if (index === 0) {
+  346 |         const priorReadCalls = readCalls.filter((call) => resultsById.get(call.callId)!.seq < notebookRequestPlan.event.seq);
+  347 |         assert.ok(priorReadCalls.length > 0, "the model requested NotebookEdit before receiving a Read result");
+  348 |         const causalRead = priorReadCalls.slice()
+  349 |           .sort((left, right) => resultsById.get(left.callId)!.seq - resultsById.get(right.callId)!.seq).at(-1)!;
+  350 |         const causalReadResult = resultsById.get(causalRead.callId)!;
+  351 |         assert.deepEqual(toolMessageContent(notebookRequestPlan.plan, causalRead.callId, "NotebookEdit request plan"),
+  352 |           [messageContent(causalReadResult.payload["content"])],
+  353 |         "the first NotebookEdit decision did not receive the exact complete Read result");
+  354 |         assert.ok(causalReadResult.seq < notebookRequestPlan.event.seq && notebookRequestPlan.event.seq < notebookDecision.seq
+  355 |           && notebookDecision.seq < notebookCall.seq, "the initial Read and NotebookEdit decision are out of order");
+  356 |       } else {
+  357 |         const previousCall = notebookCalls[index - 1]!;
+  358 |         const previousExecution = executionByCall.get(previousCall.callId)!;
+  359 |         const execution = executionByCall.get(notebookCall.callId)!;
+  360 |         assert.ok(previousExecution.rawResult.seq < execution.dispatch.seq, "NotebookEdit resubmissions overlapped their actual execution");
+  361 |         if (previousExecution.planSeq === execution.planSeq) {
+  362 |           assert.ok(previousExecution.groupIndex < execution.groupIndex, "same-batch NotebookEdit resubmissions reordered their exclusive groups");
+  363 |         } else {
+  364 |           const previousResult = resultsById.get(previousCall.callId)!;
+  365 |           assert.deepEqual(toolMessageContent(notebookRequestPlan.plan, previousCall.callId, "NotebookEdit resubmission request"),
+  366 |             [messageContent(previousResult.payload["content"])], "a later NotebookEdit decision did not receive its preceding edit result");
+  367 |           assert.ok(previousResult.seq < notebookRequestPlan.event.seq, "a later NotebookEdit decision preceded its prior durable edit result");
+  368 |         }
+  369 |       }
+  370 |       const editArgs = jsonObject(notebookCall.payload["arguments"], "NotebookEdit arguments");
+  371 |       assert.deepEqual(Object.keys(editArgs).sort().filter((key) => !["cell_type", "edit_mode"].includes(key)).sort(),
+  372 |         ["cell_id", "new_source", "notebook_path"], "NotebookEdit received an unexpected argument");
+  373 |       assert.equal(resolve(String(editArgs["notebook_path"] ?? "")), notebookPath, "NotebookEdit targeted the wrong file");
+  374 |       assert.equal(editArgs["cell_id"], scenario.targetCellId, "NotebookEdit targeted the wrong cell");
+  375 |       assert.equal(editArgs["new_source"], scenario.newSource, "NotebookEdit used the wrong replacement source");
+  376 |       assert.ok(editArgs["cell_type"] === undefined || editArgs["cell_type"] === "code", "NotebookEdit changed the target cell type");
+  377 |       assert.ok(editArgs["edit_mode"] === undefined || editArgs["edit_mode"] === "replace", "NotebookEdit used a non-replacement edit mode");
+  378 |       const editValue = jsonObject(editResult.payload["canonicalValue"], "NotebookEdit canonical value");
+  379 |       assert.deepEqual(editValue, {
+  380 |         notebook_path: notebookPath, cell_id: scenario.targetCellId, cell_type: "code", edit_mode: "replace", language: "python",
+  381 |         old_source: index === 0 ? scenario.oldSource : scenario.newSource, new_source: scenario.newSource,
+  382 |         original_file: index === 0 ? originalNotebook : expectedNotebook, updated_file: expectedNotebook,
+  383 |       }, "NotebookEdit did not preserve the exact original-to-expected notebook chain");
+  384 |       assert.deepEqual(JSON.parse(messageContent(editResult.payload["content"])), editValue,
+  385 |         "NotebookEdit exposed a rendered result inconsistent with its canonical value");
+  386 |     }
+  387 | 
+  388 |     const durableRows = data.messages.prepare(`
+  389 |       SELECT producing_turn_id, role, message_json, source_event_seq FROM messages
+  390 |       WHERE session_id = ? ORDER BY seq
+  391 |     `).all(rootSessionId) as unknown as readonly {
+  392 |       readonly producing_turn_id: string | null;
+  393 |       readonly role: string;
+  394 |       readonly message_json: string;
+  395 |       readonly source_event_seq: number | null;
+  396 |     }[];
+  397 |     const messages = durableRows.map((row) => ({
+  398 |       ...row,
+  399 |       message: jsonObject(JSON.parse(row.message_json), "notebook durable message"),
+  400 |     }));
+  401 |     const userMessages = messages.filter(({ producing_turn_id, role }) => producing_turn_id === turnId && role === "user");
+  402 |     assert.deepEqual(userMessages.map(({ message }) => messageContent(message["content"])), [scenario.prompt],
+  403 |       "the notebook durable user message changed");
+  404 |     for (const result of data.results) {
+  405 |       const linked = messages.filter(({ producing_turn_id, role, source_event_seq, message }) =>
+  406 |         producing_turn_id === turnId && role === "tool" && source_event_seq === result.seq
+  407 |         && message["toolCallId"] === result.callId);
+  408 |       assert.equal(linked.length, 1, `${result.name} result has no unique durable Tool message`);
+  409 |       assert.equal(messageContent(linked[0]!.message["content"]), messageContent(result.payload["content"]),
+  410 |         `${result.name} durable Tool message changed its rendered result`);
+  411 |     }
+  412 |     assert.equal(messages.filter(({ role }) => role === "tool").length, data.results.length,
+  413 |       "the notebook Case persisted an unexpected Tool message");
+  414 | 
+  415 |     const assistantMessages = messages.filter(({ producing_turn_id, role, message }) => producing_turn_id === turnId
+  416 |       && role === "assistant" && messageContent(message["content"]).trim().length > 0);
+  417 |     assert.ok(assistantMessages.length > 0, "the notebook Case has no durable Assistant answer");
+  418 |     const finalAssistant = assistantMessages.at(-1)!;
+  419 |     assert.equal(typeof finalAssistant.source_event_seq, "number", "the notebook answer has no source event");
+```

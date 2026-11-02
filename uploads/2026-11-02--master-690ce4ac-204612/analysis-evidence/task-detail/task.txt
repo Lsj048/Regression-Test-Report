@@ -1,0 +1,18 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/evaluation-cases.ts
+export const STANDARD_LIVE_TASK_DETAIL_READBACK_SCENARIO = Object.freeze({
+  subject: "核对回归结果",
+  description: "确认回归结果已经归档。",
+  finalMarkers: Object.freeze([
+    "task-id=1",
+    "task-subject=核对回归结果",
+    "task-description=确认回归结果已经归档。",
+    "task-status=pending",
+  ] as const),
+  finalAnswer: "task-id=1 task-subject=核对回归结果 task-description=确认回归结果已经归档。 task-status=pending",
+  prompt: [
+    "请在当前会话登记一条待办，标题只能是“核对回归结果”，说明只能是“确认回归结果已经归档。”，保持初始待处理状态，不添加其他字段。",
+    "登记成功后，请务必使用系统返回的新编号重新打开这条待办的完整详情进行核对；不要查看整个任务清单，也不要仅凭登记时的返回内容作答。",
+    "不要访问文件、执行命令、联网、修改待办、向我提问或启动子任务。",
+    "最后只输出一行，依次给出 task-id=<实际编号> task-subject=<实际标题> task-description=<实际说明> task-status=<实际状态>，字段之间只保留一个空格，不要输出其他内容。",
+  ].join("\n"),

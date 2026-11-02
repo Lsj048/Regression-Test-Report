@@ -1,0 +1,19 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/workspace/process.ts
+      // Frames arrive through the socket and are written by append(), so outputBytes/tail are live.
+      const task: ProcessTask = { id, type: "monitor", description, outputPath, done, socket, status: "running", outputBytes: 0, tail: "", persistent: false, piped: true, cwdTracking: false, commitCwd: false, groupSettled: true, stopRequested: false };
+      tasks.set(id, task);
+      socket.addEventListener("message", (event) => {
+        const line = typeof event.data === "string" ? event.data : `[binary frame]`;
+        append(task, stream, `${line}\n`);
+        if (context.services.has(EXECUTION_UPDATE_SERVICE)) void context.services.call(EXECUTION_UPDATE_SERVICE, { kind: "diagnostic", message: description, detail: { taskId: id, line } }).catch(() => undefined);
+      });
+      socket.addEventListener("close", () => {
+        if (task.stopRequested) task.status = "stopped";
+        else if (task.status === "running") task.status = "completed";
+        stream.end(settle);
+      });
+      socket.addEventListener("error", () => { if (!task.stopRequested) task.status = "failed"; });
+      scheduleTermination(task, timeout);
+      return { taskId: id, timeoutMs: timeout, ...(persistent ? { persistent: true } : {}) };
+    },

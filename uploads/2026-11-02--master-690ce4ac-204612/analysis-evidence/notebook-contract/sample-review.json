@@ -1,0 +1,235 @@
+{
+  "expectedNotebookSha256": "b4a1d2ed67b40c8a53d8dd22075ebed1c31a0601a960b23ccefb7b498b3cbed7",
+  "samples": [
+    {
+      "profile": "live",
+      "ordinal": 1,
+      "repeatEachIndex": 0,
+      "sampleKind": "initial",
+      "sampleDirectory": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell",
+      "category": "套件契约过期（断言/结果格式兼容）",
+      "firstDivergence": "Read 结果 seq 39 的 type=text 符合 master 新契约，旧审计 :319 要求 notebook；目标编辑 seq 74、完成 seq 100 已发生。",
+      "eventChain": [
+        {
+          "seq": 39,
+          "type": "tool.result",
+          "readType": "text"
+        },
+        {
+          "seq": 56,
+          "type": "context.plan.committed",
+          "readConsumed": true
+        },
+        {
+          "seq": 74,
+          "type": "tool.result",
+          "exactUpdatedNotebook": true
+        },
+        {
+          "seq": 100,
+          "type": "turn.completed"
+        }
+      ],
+      "processesStopped": true,
+      "externalDecision": {
+        "external": false,
+        "evidence": [],
+        "candidateEvidence": [],
+        "decision": "no gateway or network failure evidence"
+      },
+      "knownLimitations": [
+        "原 Driver 已通过精确文件和工作区快照，完整审计在旧类型断言中止；之后工具详情和刷新未执行。"
+      ],
+      "evidence": [
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell/failure-diagnostics.json",
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell/trajectory.jsonl.gz",
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell/isolated-service.log",
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell/trace.zip"
+      ]
+    },
+    {
+      "profile": "live",
+      "ordinal": 2,
+      "repeatEachIndex": 1,
+      "sampleKind": "initial",
+      "sampleDirectory": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat1",
+      "category": "套件契约过期（断言/结果格式兼容）",
+      "firstDivergence": "Read 结果 seq 39 的 type=text 符合 master 新契约，旧审计 :319 要求 notebook；目标编辑 seq 74、完成 seq 132 已发生。",
+      "eventChain": [
+        {
+          "seq": 39,
+          "type": "tool.result",
+          "readType": "text"
+        },
+        {
+          "seq": 56,
+          "type": "context.plan.committed",
+          "readConsumed": true
+        },
+        {
+          "seq": 74,
+          "type": "tool.result",
+          "exactUpdatedNotebook": true
+        },
+        {
+          "seq": 132,
+          "type": "turn.completed"
+        }
+      ],
+      "processesStopped": true,
+      "externalDecision": {
+        "external": false,
+        "evidence": [],
+        "candidateEvidence": [],
+        "decision": "no gateway or network failure evidence"
+      },
+      "knownLimitations": [
+        "原 Driver 已通过精确文件和工作区快照，完整审计在旧类型断言中止；之后工具详情和刷新未执行。"
+      ],
+      "evidence": [
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat1/failure-diagnostics.json",
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat1/trajectory.jsonl.gz",
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat1/isolated-service.log",
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat1/trace.zip"
+      ]
+    },
+    {
+      "profile": "live",
+      "ordinal": 3,
+      "repeatEachIndex": 2,
+      "sampleKind": "initial",
+      "sampleDirectory": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat2",
+      "category": "套件契约过期（断言/结果格式兼容）",
+      "firstDivergence": "Read 结果 seq 39 的 type=text 符合 master 新契约，旧审计 :319 要求 notebook；目标编辑 seq 74、完成 seq 100 已发生。",
+      "eventChain": [
+        {
+          "seq": 39,
+          "type": "tool.result",
+          "readType": "text"
+        },
+        {
+          "seq": 56,
+          "type": "context.plan.committed",
+          "readConsumed": true
+        },
+        {
+          "seq": 74,
+          "type": "tool.result",
+          "exactUpdatedNotebook": true
+        },
+        {
+          "seq": 100,
+          "type": "turn.completed"
+        }
+      ],
+      "processesStopped": true,
+      "externalDecision": {
+        "external": false,
+        "evidence": [],
+        "candidateEvidence": [],
+        "decision": "no gateway or network failure evidence"
+      },
+      "knownLimitations": [
+        "原 Driver 已通过精确文件和工作区快照，完整审计在旧类型断言中止；之后工具详情和刷新未执行。"
+      ],
+      "evidence": [
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat2/failure-diagnostics.json",
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat2/trajectory.jsonl.gz",
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat2/isolated-service.log",
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat2/trace.zip"
+      ]
+    },
+    {
+      "profile": "live",
+      "ordinal": 4,
+      "repeatEachIndex": 3,
+      "sampleKind": "initial",
+      "sampleDirectory": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat3",
+      "category": "套件契约过期（断言/结果格式兼容）",
+      "firstDivergence": "Read 结果 seq 39 的 type=text 符合 master 新契约，旧审计 :319 要求 notebook；目标编辑 seq 74、完成 seq 132 已发生。",
+      "eventChain": [
+        {
+          "seq": 39,
+          "type": "tool.result",
+          "readType": "text"
+        },
+        {
+          "seq": 56,
+          "type": "context.plan.committed",
+          "readConsumed": true
+        },
+        {
+          "seq": 74,
+          "type": "tool.result",
+          "exactUpdatedNotebook": true
+        },
+        {
+          "seq": 132,
+          "type": "turn.completed"
+        }
+      ],
+      "processesStopped": true,
+      "externalDecision": {
+        "external": false,
+        "evidence": [],
+        "candidateEvidence": [],
+        "decision": "no gateway or network failure evidence"
+      },
+      "knownLimitations": [
+        "原 Driver 已通过精确文件和工作区快照，完整审计在旧类型断言中止；之后工具详情和刷新未执行。"
+      ],
+      "evidence": [
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat3/failure-diagnostics.json",
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat3/trajectory.jsonl.gz",
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat3/isolated-service.log",
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat3/trace.zip"
+      ]
+    },
+    {
+      "profile": "live",
+      "ordinal": 5,
+      "repeatEachIndex": 4,
+      "sampleKind": "initial",
+      "sampleDirectory": "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat4",
+      "category": "套件契约过期（断言/结果格式兼容）",
+      "firstDivergence": "Read 结果 seq 39 的 type=text 符合 master 新契约，旧审计 :319 要求 notebook；目标编辑 seq 74、完成 seq 100 已发生。",
+      "eventChain": [
+        {
+          "seq": 39,
+          "type": "tool.result",
+          "readType": "text"
+        },
+        {
+          "seq": 56,
+          "type": "context.plan.committed",
+          "readConsumed": true
+        },
+        {
+          "seq": 74,
+          "type": "tool.result",
+          "exactUpdatedNotebook": true
+        },
+        {
+          "seq": 100,
+          "type": "turn.completed"
+        }
+      ],
+      "processesStopped": true,
+      "externalDecision": {
+        "external": false,
+        "evidence": [],
+        "candidateEvidence": [],
+        "decision": "no gateway or network failure evidence"
+      },
+      "knownLimitations": [
+        "原 Driver 已通过精确文件和工作区快照，完整审计在旧类型断言中止；之后工具详情和刷新未执行。"
+      ],
+      "evidence": [
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat4/failure-diagnostics.json",
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat4/trajectory.jsonl.gz",
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat4/isolated-service.log",
+        "live/artifacts/test-results/web-regression-standard-li-67c61-t-one-Jupyter-notebook-cell-repeat4/trace.zip"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/fixtures/live-model-proxy.mjs
+function upstreamFailureReason(error) {
+  const codes = upstreamFailureCodes(error);
+  for (const [reason, knownCodes] of Object.entries(NETWORK_FAILURE_CODES)) {
+    if (codes.some((code) => knownCodes.has(code))) return reason;
+  }
+  if (codes.some((code) => code === "ENOTFOUND"
+    || code === "EAI_FAIL"
+    || code === "EAI_NODATA"
+    || code === "ERR_INVALID_URL"
+    || code.startsWith("CERT_")
+    || code.startsWith("ERR_TLS_")
+    || code.startsWith("ERR_SSL_")
+    || [
+      "DEPTH_ZERO_SELF_SIGNED_CERT",
+      "SELF_SIGNED_CERT_IN_CHAIN",
+      "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+    ].includes(code))) return "configuration_error";
+  return "internal_error";

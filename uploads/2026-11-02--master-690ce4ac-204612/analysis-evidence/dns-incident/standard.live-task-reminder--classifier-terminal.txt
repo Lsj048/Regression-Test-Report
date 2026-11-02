@@ -1,0 +1,15 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/failure-diagnostics.ts
+
+  // Do not void a business/assertion failure merely because an unrelated
+  // request failed earlier or during teardown. The external request must be
+  // the unrecovered final request, must have driven the Turn to `failed`, or
+  // must be the exact model failure rejected by the test assertion.
+  const lastTerminal = terminalPhases.at(-1);
+  const unrecoveredExternalRequest = lastTerminal !== undefined
+    && ((lastTerminal.phase === "stream_failed" && explicitNetworkFailureReasons.has(lastTerminal.reason))
+      || (lastTerminal.phase === "stream_timed_out" && lastTerminal.reason === "proxy_timeout")
+      || (lastTerminal.phase === "upstream_response_rejected"
+        && isRetryableUpstreamStatus(lastTerminal.status))
+      || (lastTerminal.phase === "stream_aborted"
+        && (["upstream_error", "network_error", "timeout"].includes(lastTerminal.reason)

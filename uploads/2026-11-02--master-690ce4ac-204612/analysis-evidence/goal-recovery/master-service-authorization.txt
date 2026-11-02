@@ -1,0 +1,28 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/kernel/runtime/services/tool-service.ts
+export function createToolServiceProvider(runtime: ToolRuntime, repository: TurnRepository): CoreServiceProvider<ToolServiceRequest, ToolServiceResponse> {
+  return {
+    definition: TOOL_SERVICE,
+    callers: ["tool"],
+    validateGrant: (grant: CoreServiceGrant) => { permissions(grant.permissions); },
+    authorize: (context, request, grant) => {
+      const allowed = permissions(grant.permissions);
+      if (request.operation === "list") return { allowed: true };
+      if (!admitted(allowed, request.name)) {
+        return { allowed: false, code: "CORE_TOOL_NOT_GRANTED", reason: `Tool is not granted to ${context.componentId}: ${request.name}` };
+      }
+      if ((context.nestingDepth ?? 0) >= allowed.maxDepth) {
+        return { allowed: false, code: "CORE_TOOL_MAX_DEPTH", reason: `Nested Tool depth exceeds ${allowed.maxDepth}` };
+      }
+      let target: ToolPermissionTarget | undefined;
+      try {
+        target = permissionTarget(runtime, context.sessionId, request.name, request.arguments);
+      } catch (error) {
+        return { allowed: false, code: "CORE_TOOL_PERMISSION_TARGET_FAILED", reason: errorMessage(error) };
+      }
+      if (target === undefined) return { allowed: false, code: "TOOL_NOT_VISIBLE", reason: `Tool is not visible: ${request.name}` };
+      if (target.mutates && !allowed.allowMutating) {
+        return { allowed: false, code: "CORE_TOOL_MUTATION_DENIED", reason: `Mutating Tool is not granted to ${context.componentId}: ${request.name}` };
+      }
+      return { allowed: true };
+    },

@@ -1,0 +1,52 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/memory/policy.ts
+    if (input.point !== "after_model_without_actions") return {};
+    const config = input.config as LongTermMemoryConfig;
+    if (config.capture?.enabled === false || ((input.agent.delegationDepth ?? 0) > 0 && config.capture?.includeSubagents !== true)) return {};
+    const userText = currentUserText(input.snapshot.currentTurnMessages, config.capture?.maxUserChars ?? 24_000);
+    if (!userText || this.store.hasCapture(input.snapshot.modelOutcome.outcomeId)) return {};
+    try {
+      const existing = this.store.listActive(namespace(config), config.capture?.maxExistingMemories ?? 200);
+      const response = await execution.services.call(MODEL_COMPLETION_SERVICE, {
+        purpose: "long_term_memory_capture",
+        temperature: 0,
+        maxOutputTokens: config.capture?.maxOutputTokens ?? 1_024,
+        messages: buildCaptureMessages({
+          userText,
+          memories: existing,
+          maxExistingChars: config.capture?.maxExistingChars ?? 24_000,
+        }),
+      });
+      if (response.finishReason !== "stop") throw new Error(`memory extraction finish_reason=${response.finishReason}`);
+      const operations = parseOperations(response.content, userText);
+      const applied = this.store.applyCapture({
+        outcomeId: input.snapshot.modelOutcome.outcomeId,
+        namespace: namespace(config),
+        sessionId: input.agent.sessionId,
+        turnId: input.agent.turnId,
+        operations,
+      });
+      const diagnostics = applied
+        .filter((item) => item.event !== "NONE")
+        .map((item) => ({
+          severity: "info" as const,
+          code: `LONG_TERM_MEMORY_${item.event}`,
+          message: `${item.event} ${item.key}${item.memoryId === undefined ? "" : ` (${item.memoryId})`}`,
+        }));
+      return diagnostics.length === 0 ? {} : { diagnostics };
+    } catch (error) {
+      execution.signal.throwIfAborted();
+      return {
+        diagnostics: [{
+          severity: "warning",
+          code: "LONG_TERM_MEMORY_CAPTURE_FAILED_OPEN",
+          message: error instanceof Error ? error.message : String(error),
+        }],
+      };
+    }
+  }
+
+  dispose(): void {
+    this.store.close();
+  }
+}

@@ -1,0 +1,40 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/cases/standard-live-subagent-interrupt.ts
+      expect(child.turnIds).toEqual([audit.childTurnId]);
+      expect(child.settledAt).toBeUndefined();
+      expect(child.eventCount).toBe(child.events.length);
+      expect(child.events.length).toBeGreaterThan(0);
+      expect(child.events.every((event) => event.sessionId === rootSessionId
+        && event.sourceSessionId === audit.childSessionId
+        && event.turnId === audit.childTurnId)).toBe(true);
+      for (const type of ["tool.call", "tool.dispatch.started"] as const) {
+        expect(child.events.some((event) => event.type === type
+          && eventCallId(event) === audit.childBashCallId), `the child detail omitted ${type}`).toBe(true);
+      }
+      expect(child.events.some((event) => event.type === "tool.result"
+        && eventCallId(event) === audit.childBashCallId), "the child detail settled Bash before the user's page decision")
+        .toBe(false);
+
+      const workerProcessGroupId = processGroupFor(workerPid);
+      expect(processGroupFor(workerChildPid), "the observer child escaped the worker process group")
+        .toBe(workerProcessGroupId);
+      for (const [label, pid] of [["observer", workerPid], ["observer child", workerChildPid]] as const) {
+        expect(processTargetIsAlive(pid), `${label} exited before the user's page decision`).toBe(true);
+        expect(processGroupFor(pid), `${label} escaped its captured process group`).toBe(workerProcessGroupId);
+      }
+      expect(processTargetIsAlive(workerProcessGroupId, true), "the observer process group exited before the user's page decision")
+        .toBe(true);
+      return {
+        audit,
+        process: {
+          workerOutputFile: worker.path,
+          workerPid,
+          workerChildPid,
+          workerProcessGroupId,
+        },
+      };
+    }
+    await page.waitForTimeout(100);
+  }
+  throw new Error(`the interrupt ready window did not open within ${timeoutMs}ms`);
+}

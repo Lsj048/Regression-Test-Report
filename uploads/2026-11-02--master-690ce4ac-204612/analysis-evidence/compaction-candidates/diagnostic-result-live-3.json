@@ -1,0 +1,25 @@
+{
+  "kind": "compaction-candidate-contract-diagnostic",
+  "status": "VERIFIED",
+  "scope": "Pure validation of recorded candidates with the frozen master implementation. Imports are made absolute and a private pure validator is exported only in a separate diagnostic copy. The summary system prompt is empty: this checks independent structural failures conservatively; it does not reconstruct missing auxiliary request messages or change G1.",
+  "compiledSourceSha256": "96e3e80ce2c94aa9d1280462aa583a3a90bdd1728a5f38d2f7540092ee88cc9b",
+  "adaptedSourceSha256": "cc8044fa71ea0ed79da8d96c942b55d1e3fa99648e402c59b1e55da164f737d1",
+  "rows": [
+    {
+      "seq": 54,
+      "rawSha256": "00ffff8d7b455b8e677e758dc42bf00a3c9495c9251472a3b4e45a590fb787ef",
+      "strippedSha256": "6528ef0793b4260aba836484e55a8d5cfc59a8a32ed132e2e7ffad2c6e2ee175",
+      "strippedContractError": "the candidate has duplicate or out-of-order continuation-summary section numbers",
+      "selected": "raw",
+      "selectedContractError": "the candidate contains a provider control marker not grounded in source history"
+    },
+    {
+      "seq": 58,
+      "rawSha256": "53997590d771e0ad3023fd814397d854acd8f2899507de10bd7a34dea3e81b2f",
+      "strippedSha256": "ceca1c997dac341c166199113e466b96828c32abc7e559c5f3700bc0c354aadf",
+      "strippedContractError": "the candidate contains repair narration before its first semantic section",
+      "selected": "raw",
+      "selectedContractError": "the candidate contains a provider control marker not grounded in source history"
+    }
+  ]
+}

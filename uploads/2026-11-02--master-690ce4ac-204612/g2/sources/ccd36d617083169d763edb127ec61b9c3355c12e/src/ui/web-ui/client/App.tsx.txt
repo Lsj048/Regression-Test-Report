@@ -1,0 +1,1429 @@
+import { PublishedPanels } from "./PublishedPanels.js";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ClipboardEvent, type CSSProperties, type DragEvent, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { UserQuestionDock } from "./UserQuestionDock.js";
+import { QuestionHistoryCard } from "./QuestionHistoryCard.js";
+import { HumanInputCard } from "./HumanInputCard.js";
+import { pendingUserQuestions } from "../shared/user-questions.js";
+import { api } from "./api.js";
+import { attachmentCandidatesFromDrop, imagesFromClipboard, parseAttachmentMessage, pastedTextMetrics, serializeAttachments, serializePastedTexts, shouldFoldPastedText, type AttachedItem, type AttachmentCandidate, type PastedTextContent } from "./attachments.js";
+import { AttachmentCard } from "./AttachmentCard.js";
+import { useComposerAttachments } from "./useComposerAttachments.js";
+import { CatLogo, Icon } from "./Icons.js";
+import { Markdown } from "./Markdown.js";
+import { PixelBlastBackground } from "./PixelBlastBackground.js";
+import { SettingsDialog, type ThemeChoice } from "./SettingsDialog.js";
+import { matchingSlashCommands, nextSlashCommandIndex, SlashCommandMenu, type SlashCommand } from "./SlashCommandMenu.js";
+import { isNearScrollEnd } from "./scroll-follow.js";
+import { formatDateTime, formatFullDateTime } from "./date-time.js";
+import { formatProcessingDuration, groupTimelineItems, processingDurationMs, type TimelineAssistantItem } from "./timeline-groups.js";
+import { Trajectory } from "./Trajectory.js";
+import { DeleteWorkspaceDialog, RenameSessionDialog, RenameWorkspaceDialog, Sidebar, WorkspaceDialog, type SessionFilter } from "./WorkspaceSidebar.js";
+import { formatUsageRatio, sessionUsageAfterEvent, usageMetrics, type WebTokenUsage } from "../shared/context-usage.js";
+import type { WebContextUsage } from "../shared/protocol.js";
+import { projectSession, projectSubagentFlow, rootSessionStatusFromEvent, toolResultText } from "../shared/project-session.js";
+import { WEB_MODELS, type ProjectedSubagent, type ProjectedSubagentFlowStep, type TimelineItem, type WebEvent, type WebJson, type WebMessageFeedback, type WebModeSummary, type WebModel, type WebPermissionMode, type WebServerConfig, type WebSessionDetail, type WebSessionSummary, type WebWorkspaceSummary } from "../shared/protocol.js";
+
+type ToolItem = Extract<TimelineItem, { readonly kind: "tool" }>;
+type SubagentTimelineItem = Extract<TimelineItem, { readonly kind: "subagent" }>;
+type UserTimelineItem = Extract<TimelineItem, { readonly kind: "user" }>;
+type DetailItem = ToolItem | ProjectedSubagent;
+type OptimisticInput = {
+  readonly inputId: string;
+  readonly content: string;
+  readonly createdAt: string;
+  readonly sessionId?: string;
+  readonly replyToRequestId?: string;
+  readonly delivery: "submitting" | "failed";
+};
+type DraftPastedText = PastedTextContent & { readonly id: string };
+const EVENT_CONNECTION_ERROR = "与本地服务的事件连接已断开，正在自动重连";
+const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+export function sessionCanStop(status: WebSessionSummary["status"], running: boolean, hasPendingQuestion: boolean): boolean {
+  return running || (status === "waiting" && hasPendingQuestion);
+}
+
+function clientPerformanceTrace(stage: string, fields: Readonly<Record<string, string | number | undefined>> = {}): void {
+  if (new URLSearchParams(window.location.search).get("perf") !== "1") return;
+  const payload = {
+    stage,
+    clientTimestamp: new Date().toISOString(),
+    clientMonotonicMs: performance.now(),
+    ...fields,
+  };
+  console.info("[web-perf]", payload);
+  void fetch("/api/diagnostics/performance", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    keepalive: true,
+  }).catch(() => undefined);
+}
+
+function newWebInputId(): string {
+  return `input_web_${crypto.randomUUID()}`;
+}
+
+function optimisticUserItem(input: OptimisticInput, failed = false): UserTimelineItem {
+  return {
+    kind: "user",
+    id: `input:${input.inputId}`,
+    content: input.content,
+    delivery: failed ? "failed" : input.delivery,
+    createdAt: input.createdAt,
+  };
+}
+
+async function copyText(text: string): Promise<void> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+  } catch {
+    // Fall through to the selection-based copy path.
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.append(textarea);
+  textarea.select();
+  const copied = document.execCommand("copy");
+  textarea.remove();
+  if (!copied) throw new Error("当前浏览器无法复制内容");
+}
+
+export function SessionIdentity({ sessionId }: { readonly sessionId: string }) {
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const resetTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => () => {
+    if (resetTimer.current) clearTimeout(resetTimer.current);
+  }, []);
+
+  const copy = async () => {
+    if (resetTimer.current) clearTimeout(resetTimer.current);
+    try {
+      await copyText(sessionId);
+      setCopyState("copied");
+    } catch {
+      setCopyState("failed");
+    }
+    resetTimer.current = setTimeout(() => setCopyState("idle"), 1_800);
+  };
+
+  const label = copyState === "copied" ? "会话 ID 已复制" : copyState === "failed" ? "复制会话 ID 失败" : `复制会话 ID ${sessionId}`;
+  return <button type="button" className={`session-identity ${copyState}`} aria-label={label} title={label} onClick={() => { void copy(); }}>
+    <span>{sessionId}</span>
+    <Icon name={copyState === "copied" ? "check" : copyState === "failed" ? "close" : "copy"} size={12} />
+  </button>;
+}
+
+const PERMISSION_OPTIONS: readonly { readonly value: WebPermissionMode; readonly label: string; readonly description: string }[] = [
+  { value: "read-only", label: "只读", description: "可读取文件并运行只读命令" },
+  { value: "workspace-write", label: "工作区写入", description: "仅可写入工作区" },
+  { value: "danger-full-access", label: "完整权限", description: "终端和文件系统不受限制" },
+];
+
+export function UsageMetrics({ usage, contextUsage, contextWindowTokens }: { readonly usage?: WebTokenUsage; readonly contextUsage?: WebContextUsage; readonly contextWindowTokens: number }) {
+  const contextTokens = contextUsage?.tokenCount ?? usage?.promptTokens;
+  if (contextTokens === undefined) return null;
+  const metrics = usageMetrics(usage, contextWindowTokens, contextUsage);
+  const contextRatio = metrics.contextUsageRatio ?? 0;
+  const cacheTitle = metrics.cacheHitRatio === undefined
+    ? "模型服务没有返回缓存令牌数据"
+    : `最近一次模型请求缓存命中 ${usage!.cachedTokens!.toLocaleString()} / ${usage!.promptTokens!.toLocaleString()} 输入令牌（${(metrics.cacheHitRatio * 100).toFixed(1)}%）`;
+  const contextSource = contextUsage?.source === "compaction" ? `；压缩后${contextUsage.accuracy === "exact" ? "测量" : "估算"}，包含当前消息和工具定义；下一次请求以实际输入为准` : "；最近一次模型请求";
+  const contextTitle = `上下文已使用 ${contextTokens.toLocaleString()} / ${contextWindowTokens.toLocaleString()} 令牌（${(contextRatio * 100).toFixed(1)}%）${contextSource}`;
+  return <div className="usage-metrics" aria-label="模型缓存与上下文用量">
+    <span className={`usage-metric cache ${metrics.cacheHitRatio === undefined ? "unavailable" : ""}`} title={cacheTitle} {...(metrics.cacheHitRatio === undefined ? {} : { role: "meter", "aria-label": cacheTitle, "aria-valuemin": 0, "aria-valuemax": 100, "aria-valuenow": Math.round(metrics.cacheHitRatio * 100) })}><small>缓存</small><strong>{formatUsageRatio(metrics.cacheHitRatio)}</strong></span>
+    <span className={`usage-metric context ${contextRatio >= .9 ? "danger" : contextRatio >= .75 ? "warning" : ""}`} title={contextTitle} role="meter" aria-label={contextTitle} aria-valuemin={0} aria-valuemax={contextWindowTokens} aria-valuenow={Math.min(contextTokens, contextWindowTokens)}><small>令牌</small><strong>{formatUsageRatio(metrics.contextUsageRatio)}</strong></span>
+  </div>;
+}
+
+function toolLabel(name: string): string { return name; }
+
+function toolSubject(tool: ToolItem): string {
+  if (!tool.arguments || typeof tool.arguments !== "object" || Array.isArray(tool.arguments)) return "";
+  return Object.entries(tool.arguments).filter(([, value]) => typeof value === "string" || typeof value === "number" || typeof value === "boolean")
+    .slice(0, 2).map(([key, value]) => `${key}: ${String(value)}`).join(" · ").slice(0, 96);
+}
+
+function upsertSummary(sessions: readonly WebSessionSummary[], summary: WebSessionSummary): readonly WebSessionSummary[] {
+  return [summary, ...sessions.filter((session) => session.id !== summary.id)]
+    .sort((left, right) => Number(Boolean(right.pinned)) - Number(Boolean(left.pinned)) || right.updatedAt.localeCompare(left.updatedAt));
+}
+
+export function sessionSummaryAfterEvent(session: WebSessionDetail, event: WebEvent): WebSessionDetail;
+export function sessionSummaryAfterEvent(session: WebSessionSummary, event: WebEvent): WebSessionSummary;
+export function sessionSummaryAfterEvent(session: WebSessionSummary, event: WebEvent): WebSessionSummary {
+  if (session.id !== event.sessionId || event.transient) return session;
+  const payload = event.payload !== null && typeof event.payload === "object" && !Array.isArray(event.payload) ? event.payload as Readonly<Record<string, WebJson>> : undefined;
+  const waitingForAnswer = event.type === "turn.waiting" && Array.isArray(payload?.["expectations"])
+    && payload["expectations"].some((expectation) => expectation !== null && typeof expectation === "object" && !Array.isArray(expectation) && "kind" in expectation && expectation.kind === "user_input");
+  const lifecycleEvent = waitingForAnswer || event.type === "turn.created" || event.type === "turn.interrupted" || event.type === "ui.session.status.changed";
+  return {
+    ...session,
+    status: lifecycleEvent ? rootSessionStatusFromEvent(event) ?? session.status : session.status,
+    ...(event.type === "turn.interrupted" && (event.sourceSessionId === undefined || event.sourceSessionId === event.sessionId)
+      ? { sessionStatus: { kind: "idle" as const } } : {}),
+    updatedAt: event.sessionUpdatedAt ?? session.updatedAt,
+    lastCursor: Math.max(session.lastCursor, event.cursor),
+    ...(event.type === "input.promoted" ? { blank: false, turnCount: Math.max(1, session.turnCount) } : {}),
+  };
+}
+
+function preserveWorkspaceOrder(previous: readonly WebWorkspaceSummary[], incoming: readonly WebWorkspaceSummary[]): readonly WebWorkspaceSummary[] {
+  const incomingByPath = new Map(incoming.map((workspace) => [workspace.path, workspace]));
+  const previousPaths = new Set(previous.map((workspace) => workspace.path));
+  const newlyCreated = incoming.filter((workspace) => !previousPaths.has(workspace.path));
+  const existing = previous.flatMap((workspace) => {
+    const updated = incomingByPath.get(workspace.path);
+    return updated ? [updated] : [];
+  });
+  return [...newlyCreated, ...existing];
+}
+
+function useTheme(): readonly [ThemeChoice, (value: ThemeChoice) => void] {
+  const [theme, setTheme] = useState<ThemeChoice>(() => {
+    const stored = localStorage.getItem("longcat.theme");
+    return stored === "light" || stored === "dark" ? stored : "system";
+  });
+  useEffect(() => {
+    localStorage.setItem("longcat.theme", theme);
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => { document.body.dataset.theme = theme === "system" ? media.matches ? "dark" : "light" : theme; };
+    apply();
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, [theme]);
+  return [theme, setTheme] as const;
+}
+
+function PermissionSelect({ value, disabled, onChange }: {
+  readonly value: WebPermissionMode;
+  readonly disabled: boolean;
+  readonly onChange: (value: WebPermissionMode) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [confirmingFullAccess, setConfirmingFullAccess] = useState(false);
+  const [riskAccepted, setRiskAccepted] = useState(false);
+  const control = useRef<HTMLDivElement>(null);
+  const selected = PERMISSION_OPTIONS.find((option) => option.value === value)!;
+  useEffect(() => {
+    const close = (event: PointerEvent) => {
+      if (!control.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, []);
+  const apply = async (next: WebPermissionMode) => {
+    setOpen(false);
+    setPending(true);
+    try {
+      await onChange(next);
+    } finally {
+      setPending(false);
+    }
+  };
+  const select = (next: WebPermissionMode) => {
+    if (next === value) { setOpen(false); return; }
+    if (next === "danger-full-access") {
+      setOpen(false);
+      setRiskAccepted(false);
+      setConfirmingFullAccess(true);
+      return;
+    }
+    void apply(next);
+  };
+  return <>
+    <div className="permission-select" ref={control}>
+      <button type="button" className="mode-chip permission-trigger" data-testid="permission-select" aria-label={`权限：${selected.label}`} aria-haspopup="listbox" aria-expanded={open} disabled={disabled || pending} onClick={() => setOpen((current) => !current)}><Icon name="shield" size={15} /><span>{selected.label}</span><Icon className="permission-chevron" name="chevronDown" size={12} /></button>
+      {open && <div className="permission-menu" role="listbox" aria-label="会话权限">{PERMISSION_OPTIONS.map((option) => <button type="button" role="option" aria-selected={option.value === value} className={option.value === value ? "selected" : ""} key={option.value} onClick={() => select(option.value)}><Icon name="shield" size={20} /><span><strong>{option.label}</strong><small>{option.description}</small></span>{option.value === value && <Icon className="permission-check" name="check" size={19} />}</button>)}</div>}
+    </div>
+    {confirmingFullAccess && <div className="modal-backdrop permission-risk-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !pending) setConfirmingFullAccess(false); }}><div className="permission-risk-dialog" role="dialog" aria-modal="true" aria-label="确认完整权限"><div className="risk-icon"><Icon name="shield" size={25} /></div><h2>启用完整权限？</h2><p>完整权限会让模型生成的命令以当前用户身份运行，并可访问工作区以外的文件。只在你信任当前任务时启用。</p><label><input type="checkbox" checked={riskAccepted} onChange={(event) => setRiskAccepted(event.target.checked)} />我了解并接受上述风险</label><div><button type="button" className="secondary-button" disabled={pending} onClick={() => setConfirmingFullAccess(false)}>取消</button><button type="button" className="primary-button" disabled={!riskAccepted || pending} onClick={() => void apply("danger-full-access").then(() => setConfirmingFullAccess(false))}>{pending ? "切换中…" : "启用完整权限"}</button></div></div></div>}
+  </>;
+}
+
+function ModelSelect({ value, models, onChange }: {
+  readonly value: string;
+  readonly models: readonly WebModel[];
+  readonly onChange: (value: WebModel) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const control = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const close = (event: PointerEvent) => {
+      if (!control.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, []);
+  const select = (model: WebModel) => {
+    onChange(model);
+    setOpen(false);
+  };
+  return <div className="model-select" ref={control}><button type="button" className="model-chip model-trigger" data-testid="model-select" aria-label={`模型：${value}`} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((current) => !current)}><span>{value}</span><small>思考</small><Icon className="model-chevron" name="chevronDown" size={12} /></button>{open && <div className="model-menu" role="listbox" aria-label="选择模型">{models.map((model) => <button type="button" role="option" aria-selected={model === value} className={model === value ? "selected" : ""} key={model} onClick={() => select(model)}><span>{model}</span>{model === value && <Icon name="check" size={16} />}</button>)}</div>}</div>;
+}
+
+function ModeSelect({ value, modes, onChange }: {
+  readonly value: string;
+  readonly modes: readonly WebModeSummary[];
+  readonly onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const control = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const close = (event: PointerEvent) => {
+      if (!control.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, []);
+  const selected = modes.find((mode) => mode.id === value) ?? modes[0];
+  if (!selected) return null;
+  return <div className="model-select mode-select" ref={control}><button type="button" className="mode-chip model-trigger" data-testid="mode-select" aria-label={`模式：${selected.label}`} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((current) => !current)}><Icon name="sliders" size={14} /><span>{selected.label}</span><Icon className="model-chevron" name="chevronDown" size={12} /></button>{open && <div className="model-menu mode-menu" role="listbox" aria-label="选择模式">{modes.map((mode) => <button type="button" role="option" data-testid={`mode-option-${mode.id}`} aria-selected={mode.id === value} className={mode.id === value ? "selected" : ""} key={mode.id} onClick={() => { onChange(mode.id); setOpen(false); }}><span><strong>{mode.label}</strong>{mode.description && <small>{mode.description}</small>}</span>{mode.id === value && <Icon name="check" size={16} />}</button>)}</div>}</div>;
+}
+
+export function WorkspaceSelectionControl({ label, selected, onManage, onClear }: {
+  readonly label: string;
+  readonly selected: boolean;
+  readonly onManage: () => void;
+  readonly onClear: () => void;
+}) {
+  return <div className="hero-workspace-control">
+    <button type="button" className="hero-workspace-trigger" data-testid="workspace-select" onClick={onManage}><Icon name="folder" size={16} />{label}<Icon name="chevronDown" size={12} /></button>
+    {selected && <button type="button" className="hero-workspace-clear" aria-label={`移除工作区 ${label}`} title="不使用工作区" onClick={onClear}><Icon name="close" size={13} /></button>}
+  </div>;
+}
+
+function StopTaskButton({ onInterrupt }: { readonly onInterrupt: () => Promise<void> }) {
+  const [stopping, setStopping] = useState(false);
+  const pending = useRef(false);
+  const stop = async () => {
+    if (pending.current) return;
+    pending.current = true;
+    setStopping(true);
+    try { await onInterrupt(); }
+    catch { /* The session controller displays the error; allow the user to retry. */ }
+    finally { pending.current = false; setStopping(false); }
+  };
+  const label = stopping ? "正在停止任务…" : "停止任务";
+  return <button type="button" className="send-button stop-button" data-testid="stop-task" aria-label={label} title={label} disabled={stopping} aria-busy={stopping} onClick={() => void stop()}><Icon name="stop" size={12} />{stopping && <span role="status">正在停止…</span>}</button>;
+}
+
+function Composer({ hero, running, stoppable = running, configured, disabledReason, mode, modes, model, models, workspacePath, workspaceLabel, workspaceSelected, permissionMode, tokenUsage, contextUsage, contextWindowTokens, activeTab, onModeChange, onModelChange, onPermissionChange, onManageWorkspace, onClearWorkspace, onSubmit, onCompact, onInterrupt, onNewSession, onOpenSettings, onOpenChat, onOpenTrajectory, onArchive }: {
+  readonly hero: boolean;
+  readonly running: boolean;
+  readonly stoppable?: boolean;
+  readonly configured: boolean;
+  readonly disabledReason?: string;
+  readonly mode: string;
+  readonly modes: readonly WebModeSummary[];
+  readonly model: string;
+  readonly models: readonly WebModel[];
+  readonly workspacePath: string;
+  readonly workspaceLabel: string;
+  readonly workspaceSelected: boolean;
+  readonly permissionMode: WebPermissionMode;
+  readonly tokenUsage?: WebTokenUsage;
+  readonly contextUsage?: WebContextUsage;
+  readonly contextWindowTokens: number;
+  readonly activeTab?: "chat" | "trajectory";
+  readonly onModelChange?: (model: WebModel) => void;
+  readonly onModeChange?: (mode: string) => void;
+  readonly onPermissionChange: (mode: WebPermissionMode) => Promise<void>;
+  readonly onManageWorkspace: () => void;
+  readonly onClearWorkspace: () => void;
+  readonly onSubmit: (content: string) => Promise<void>;
+  readonly onCompact?: () => Promise<void>;
+  readonly onInterrupt: () => Promise<void>;
+  readonly onNewSession: () => void;
+  readonly onOpenSettings: () => void;
+  readonly onOpenChat?: () => void;
+  readonly onOpenTrajectory?: () => void;
+  readonly onArchive?: () => Promise<void>;
+}) {
+  const [value, setValue] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const { attachments, appendAttachments, clearAttachments, removeAttachment, pasteImages, retryUpload, attachmentsPending } = useComposerAttachments();
+  const [pastedTexts, setPastedTexts] = useState<readonly DraftPastedText[]>([]);
+  const [attachmentError, setAttachmentError] = useState<string>();
+  const [pickingAttachments, setPickingAttachments] = useState(false);
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [slashMenuDismissed, setSlashMenuDismissed] = useState(false);
+  const [activeSlashIndex, setActiveSlashIndex] = useState<number>();
+  const textarea = useRef<HTMLTextAreaElement>(null);
+  const slashMenu = useRef<HTMLDivElement>(null);
+  const addControl = useRef<HTMLDivElement>(null);
+  const dragDepth = useRef(0);
+  const dragPathPromise = useRef<Promise<readonly AttachedItem[]> | undefined>();
+  const slashMenuId = useMemo(() => `slash-commands-${hero ? "new" : "session"}`, [hero]);
+  const contextRatio = usageMetrics(tokenUsage, contextWindowTokens, contextUsage).contextUsageRatio;
+  const contextUsageLabel = contextRatio === undefined ? undefined : formatUsageRatio(contextRatio);
+  const slashCommands = useMemo<readonly SlashCommand[]>(() => [
+    {
+      id: "compact",
+      keyword: "compact",
+      label: "压缩上下文",
+      description: hero
+        ? "开始会话后可用"
+        : running
+          ? "当前任务结束后可用"
+          : `压缩此会话的上下文${contextUsageLabel ? `（已使用 ${contextUsageLabel}）` : ""}`,
+      icon: "brain",
+      disabled: hero || running || onCompact === undefined,
+    },
+    { id: "new", keyword: "new", label: "新会话", description: "开启一个空白会话", icon: "circlePlus" },
+    ...(onOpenChat === undefined ? [] : [{ id: "chat", keyword: "chat", label: "打开对话", description: activeTab === "chat" ? "当前已在对话页面" : "返回当前会话的对话页面", icon: "message", disabled: activeTab === "chat" } as const]),
+    ...(onOpenTrajectory === undefined ? [] : [{ id: "trajectory", keyword: "trajectory", label: "打开轨迹", description: activeTab === "trajectory" ? "当前已在轨迹页面" : "查看当前会话的完整执行轨迹", icon: "activity", disabled: activeTab === "trajectory" } as const]),
+    ...(onArchive === undefined ? [] : [{ id: "archive", keyword: "archive", label: "归档会话", description: running ? "当前任务结束后可用" : "归档当前会话", icon: "archive", disabled: running } as const]),
+    { id: "settings", keyword: "settings", label: "设置", description: "打开模型与界面设置", icon: "settings" },
+  ], [activeTab, contextUsageLabel, hero, onArchive, onCompact, onOpenChat, onOpenTrajectory, running]);
+  const matchingCommands = useMemo(() => slashMenuDismissed || attachments.length > 0
+    ? []
+    : matchingSlashCommands(value, slashCommands), [attachments.length, slashCommands, slashMenuDismissed, value]);
+  const slashQueryActive = !slashMenuDismissed && attachments.length === 0 && /^\/[^\s/]*$/u.test(value);
+  useEffect(() => {
+    const element = textarea.current;
+    if (!element) return;
+    element.style.height = "0px";
+    element.style.height = `${Math.min(280, Math.max(hero ? 52 : 28, element.scrollHeight))}px`;
+  }, [value, hero]);
+  useEffect(() => {
+    if (!slashQueryActive) {
+      setActiveSlashIndex(undefined);
+      return;
+    }
+    setActiveSlashIndex((current) => current !== undefined && matchingCommands[current] !== undefined && !matchingCommands[current]!.disabled
+      ? current
+      : nextSlashCommandIndex(matchingCommands, undefined, 1));
+  }, [matchingCommands, slashQueryActive]);
+  useEffect(() => {
+    const close = (event: PointerEvent) => {
+      if (!addControl.current?.contains(event.target as Node)) setAddMenuOpen(false);
+      if (!textarea.current?.contains(event.target as Node) && !slashMenu.current?.contains(event.target as Node)) setSlashMenuDismissed(true);
+    };
+    const escape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") setAddMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", escape);
+    };
+  }, []);
+  const submit = async (commandContent?: string) => {
+    if (((!value.trim() && attachments.length === 0 && pastedTexts.length === 0) && commandContent === undefined) || submitting || disabledReason || attachmentsPending) return;
+    setSubmitting(true);
+    const prompt = commandContent ?? (value.trim() || (pastedTexts.length > 0 ? "请阅读并处理所附文本。" : "请阅读并处理所附文件。"));
+    const content = commandContent !== undefined ? commandContent : [
+      prompt,
+      pastedTexts.length > 0 ? serializePastedTexts(pastedTexts) : "",
+      attachments.length > 0 ? serializeAttachments(attachments) : "",
+    ].filter(Boolean).join("\n\n");
+    setValue("");
+    clearAttachments();
+    setPastedTexts([]);
+    setSlashMenuDismissed(true);
+    try {
+      await onSubmit(content);
+    } catch {
+      // The failed optimistic message keeps the content available for retry.
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  const addAttachments = async (candidates: readonly AttachmentCandidate[]) => {
+    if (candidates.length === 0) return;
+    setAttachmentError(undefined);
+    try {
+      const resolved = await Promise.all(candidates.map(async (candidate) => candidate.path
+        ? api.referenceAttachment(candidate.path)
+        : (await api.resolveDroppedAttachment(workspacePath, candidate.name)).attachment));
+      appendAttachments(resolved.filter((item): item is AttachedItem => item !== null));
+      const missing = candidates.filter((_candidate, index) => !resolved[index]);
+      if (missing.length > 0) setAttachmentError(`${missing.map((item) => item.name).join("、")}：无法取得本地路径`);
+    } catch (reason) {
+      setAttachmentError(reason instanceof Error ? reason.message : String(reason));
+    }
+  };
+  const pickAttachments = async () => {
+    if (pickingAttachments) return;
+    setAddMenuOpen(false);
+    setAttachmentError(undefined);
+    setPickingAttachments(true);
+    try { appendAttachments((await api.pickAttachments()).attachments); }
+    catch (reason) { setAttachmentError(reason instanceof Error ? reason.message : String(reason)); }
+    finally { setPickingAttachments(false); }
+  };
+  const removePastedText = (id: string) => {
+    setPastedTexts((current) => current.filter((item) => item.id !== id));
+  };
+  const updatePastedText = (id: string, content: string) => {
+    setPastedTexts((current) => current.map((item) => item.id === id ? { ...item, content } : item));
+  };
+  const paste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const images = imagesFromClipboard(event.clipboardData);
+    const content = event.clipboardData.getData("text/plain");
+    if (images.length > 0) {
+      event.preventDefault();
+      setAttachmentError(undefined);
+      pasteImages(images);
+      if (content && !shouldFoldPastedText(content)) {
+        const { selectionStart, selectionEnd } = event.currentTarget;
+        setValue(current => current.slice(0, selectionStart) + content + current.slice(selectionEnd));
+        requestAnimationFrame(() => textarea.current?.setSelectionRange(selectionStart + content.length, selectionStart + content.length));
+      }
+    }
+    if (!shouldFoldPastedText(content)) return;
+    event.preventDefault();
+    setPastedTexts((current) => [...current, { id: `pasted_text_${crypto.randomUUID()}`, content }]);
+  };
+  const hasFiles = (event: DragEvent<HTMLFormElement>) => Array.from(event.dataTransfer.types).includes("Files");
+  const dragEnter = (event: DragEvent<HTMLFormElement>) => {
+    if (!hasFiles(event)) return;
+    event.preventDefault();
+    if (dragDepth.current === 0) {
+      dragPathPromise.current = api.draggedAttachmentPaths()
+        .then((result) => result.attachments)
+        .catch(() => []);
+    }
+    dragDepth.current += 1;
+    setDragActive(true);
+  };
+  const dragOver = (event: DragEvent<HTMLFormElement>) => {
+    if (!hasFiles(event)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "link";
+  };
+  const dragLeave = (event: DragEvent<HTMLFormElement>) => {
+    if (!hasFiles(event)) return;
+    event.preventDefault();
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+    if (dragDepth.current === 0) {
+      setDragActive(false);
+      dragPathPromise.current = undefined;
+    }
+  };
+  const drop = async (event: DragEvent<HTMLFormElement>) => {
+    if (!hasFiles(event)) return;
+    event.preventDefault();
+    dragDepth.current = 0;
+    setDragActive(false);
+    setAddMenuOpen(false);
+    if (disabledReason) {
+      setAttachmentError(disabledReason);
+      return;
+    }
+    try {
+      const hostReferences = await (dragPathPromise.current ?? Promise.resolve([]));
+      dragPathPromise.current = undefined;
+      if (hostReferences.length > 0) appendAttachments(hostReferences);
+      else await addAttachments(attachmentCandidatesFromDrop(event.dataTransfer));
+    } catch (reason) {
+      setAttachmentError(reason instanceof Error ? reason.message : String(reason));
+    }
+  };
+  const runSlashCommand = async (command: SlashCommand) => {
+    if (command.disabled) return;
+    setSlashMenuDismissed(true);
+    setValue("");
+    if (command.id === "compact") {
+      try {
+        await onCompact?.();
+      } catch (reason) {
+        setAttachmentError(reason instanceof Error ? reason.message : String(reason));
+      }
+      return;
+    }
+    clearAttachments();
+    if (command.id === "new") onNewSession();
+    else if (command.id === "chat") onOpenChat?.();
+    else if (command.id === "trajectory") onOpenTrajectory?.();
+    else if (command.id === "archive") await onArchive?.();
+    else if (command.id === "settings") onOpenSettings();
+    requestAnimationFrame(() => textarea.current?.focus());
+  };
+  const keyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (slashQueryActive && !event.nativeEvent.isComposing) {
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        setActiveSlashIndex((current) => nextSlashCommandIndex(matchingCommands, current, event.key === "ArrowDown" ? 1 : -1));
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setSlashMenuDismissed(true);
+        return;
+      }
+      if ((event.key === "Enter" || event.key === "Tab") && activeSlashIndex !== undefined) {
+        const command = matchingCommands[activeSlashIndex];
+        if (command && !command.disabled) {
+          event.preventDefault();
+          void runSlashCommand(command);
+          return;
+        }
+      }
+      if ((event.key === "Enter" || event.key === "Tab") && matchingCommands.length > 0) {
+        event.preventDefault();
+        return;
+      }
+    }
+    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      void submit();
+    }
+  };
+  return (
+    <div className={`composer-wrap ${hero ? "hero-composer" : ""}`}>
+      {hero && <div className="hero-options"><WorkspaceSelectionControl label={workspaceLabel} selected={workspaceSelected} onManage={onManageWorkspace} onClear={onClearWorkspace} /></div>}
+      <form className={`composer ${dragActive ? "drag-active" : ""}`} onSubmit={(event: FormEvent) => { event.preventDefault(); void submit(); }} onDragEnter={dragEnter} onDragOver={dragOver} onDragLeave={dragLeave} onDrop={(event) => void drop(event)}>
+        {slashQueryActive && <div ref={slashMenu}><SlashCommandMenu commands={matchingCommands} activeIndex={activeSlashIndex} onActiveIndex={setActiveSlashIndex} onSelect={(command) => void runSlashCommand(command)} menuId={slashMenuId} /></div>}
+        {dragActive && <div className="attachment-drop-overlay" aria-hidden="true"><Icon name="folder" size={20} /><strong>松开以添加文件或文件夹</strong></div>}
+        {attachments.length > 0 && <div className="attachment-list" aria-label="待发送附件">{attachments.map(item => <AttachmentCard key={item.draftId} attachment={item} previewUrl={item.previewUrl} status={item.status} error={item.error} onRemove={() => removeAttachment(item.draftId)} onRetry={() => void retryUpload(item)} />)}</div>}
+        {attachments.filter(item => item.status === "failed").map(item => <div className="attachment-error" role="alert" key={item.draftId}>{item.name}：{item.error}</div>)}
+        {pastedTexts.length > 0 && <div className="pasted-text-drafts" aria-label="粘贴的文本">{pastedTexts.map((item, index) => <PastedTextBlock key={item.id} content={item.content} index={index} onChange={(content) => updatePastedText(item.id, content)} onRemove={() => removePastedText(item.id)} />)}</div>}
+        <textarea ref={textarea} data-testid="composer-input" aria-label={hero ? "描述你想要完成的任务" : "继续输入消息"} aria-autocomplete="list" aria-controls={slashQueryActive ? slashMenuId : undefined} aria-expanded={slashQueryActive} aria-activedescendant={slashQueryActive && activeSlashIndex !== undefined ? `${slashMenuId}-${matchingCommands[activeSlashIndex]?.id}` : undefined} placeholder={disabledReason ?? (configured ? running ? "追加消息，任务会在当前步骤结束后处理" : hero ? "描述你想要完成的任务" : "继续输入消息" : "请先在服务端配置模型密钥")} value={value} disabled={!configured || Boolean(disabledReason)} onChange={(event) => { setValue(event.target.value); setSlashMenuDismissed(false); }} onPaste={paste} onKeyDown={keyDown} rows={1} />
+        {attachmentError && <div className="attachment-error">{attachmentError}</div>}
+        <div className="composer-actions"><div className="composer-left"><div className="add-menu-control" ref={addControl}><button type="button" className="round-add" aria-label={pickingAttachments ? "正在选择文件" : "添加"} aria-haspopup="menu" aria-expanded={addMenuOpen} disabled={pickingAttachments || Boolean(disabledReason)} onClick={() => setAddMenuOpen((current) => !current)}><Icon name="plus" size={15} /></button>{addMenuOpen && <div className="attachment-menu" role="menu" aria-label="添加"><span>添加</span><button type="button" className="attachment-menu-choice" role="menuitem" onClick={() => void pickAttachments()}><Icon name="paperclip" size={18} /><strong>文件和文件夹</strong></button></div>}</div>{onModeChange ? <ModeSelect value={mode} modes={modes} onChange={onModeChange} /> : <span className="mode-chip"><Icon name="sliders" size={14} />{modes.find((candidate) => candidate.id === mode)?.label ?? mode}</span>}<PermissionSelect value={permissionMode} disabled={running || submitting || Boolean(disabledReason)} onChange={onPermissionChange} /></div><div className="composer-right">{onModelChange ? <ModelSelect value={model} models={models} onChange={onModelChange} /> : <span className="model-chip">{model}<small>思考</small></span>}<UsageMetrics usage={tokenUsage} contextUsage={contextUsage} contextWindowTokens={contextWindowTokens} /><button className="send-button" data-testid="send-message" aria-label={running ? "追加消息" : "发送消息"} title={running ? "追加到当前任务" : "发送消息"} disabled={(!value.trim() && attachments.length === 0 && pastedTexts.length === 0) || attachmentsPending || submitting || !configured || Boolean(disabledReason)}><Icon name="arrowUp" size={15} /></button>{stoppable && <StopTaskButton onInterrupt={onInterrupt} />}</div></div>
+      </form>
+    </div>
+  );
+}
+
+export function ToolCard({ tool, selected, onSelect }: { readonly tool: ToolItem; readonly selected: boolean; readonly onSelect: () => void }) {
+  const subject = toolSubject(tool);
+  const active = tool.status === "running" || tool.status === "started";
+  return <button className={`tool-card ${selected ? "selected" : ""}`} onClick={onSelect}><span className={`tool-state ${tool.questionStatus === "waiting" ? "waiting" : tool.status}`}><Icon name={tool.questionStatus === "waiting" ? "message" : tool.status === "succeeded" ? "check" : active ? "activity" : "close"} size={14} /></span><span className="tool-copy"><strong>{toolLabel(tool.name)}</strong>{subject && <small>{subject}</small>}</span><span className="tool-status">{tool.questionStatus === "waiting" ? "等待回答" : tool.questionStatus === "answered" ? "已回答" : active ? "运行中" : tool.status === "succeeded" ? "已完成" : "未完成"}</span></button>;
+}
+
+function subagentStatusLabel(status: ProjectedSubagent["status"]): string {
+  if (status === "running") return "运行中";
+  if (status === "waiting") return "等待输入";
+  if (status === "completed") return "已完成";
+  if (status === "stopped") return "已停止";
+  return "失败";
+}
+
+function SubagentMarker({ marker, subagent, selected, onSelect }: {
+  readonly marker: SubagentTimelineItem;
+  readonly subagent: ProjectedSubagent;
+  readonly selected: boolean;
+  readonly onSelect: () => void;
+}) {
+  const active = subagent.status === "running" || subagent.status === "waiting";
+  const style = { "--subagent-depth": String(Math.max(0, subagent.depth - 1)) } as CSSProperties;
+  return <div className="subagent-marker" style={style} data-subagent-id={marker.subagentId}>
+    <span>开启了一个子 Agent</span>
+    <button className={selected ? "selected" : ""} aria-label={`查看子 Agent：${subagent.label}`} onClick={onSelect}>
+      <Icon name="branch" size={13} />
+      <strong>{subagent.label}</strong>
+      <i className={subagent.status}>{active ? <Icon name="activity" size={12} /> : <Icon name={subagent.status === "completed" ? "check" : subagent.status === "stopped" ? "stop" : "close"} size={12} />}{subagentStatusLabel(subagent.status)}</i>
+    </button>
+  </div>;
+}
+
+function AssistantActions({ item, rating, onFeedback, onFork }: {
+  readonly item: Extract<TimelineItem, { readonly kind: "assistant" }>;
+  readonly rating?: WebMessageFeedback;
+  readonly onFeedback: (messageId: string, rating: WebMessageFeedback | null) => Promise<void>;
+  readonly onFork: (messageId: string) => Promise<void>;
+}) {
+  const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const [pending, setPending] = useState(false);
+  const rate = async (next: WebMessageFeedback) => {
+    setPending(true);
+    try { await onFeedback(item.id, rating === next ? null : next); } catch { /* The page-level error toast reports the failure. */ } finally { setPending(false); }
+  };
+  const fork = async () => {
+    setPending(true);
+    try { await onFork(item.id); } catch { /* The page-level error toast reports the failure. */ } finally { setPending(false); }
+  };
+  const copy = async () => {
+    setCopyFailed(false);
+    try {
+      await copyText(item.content);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1_500);
+    } catch {
+      setCopyFailed(true);
+      window.setTimeout(() => setCopyFailed(false), 2_000);
+    }
+  };
+  return <div className="message-actions">
+    <button aria-label={copyFailed ? "复制失败" : copied ? "已复制回答" : "复制回答"} title={copyFailed ? "复制失败" : copied ? "已复制" : "复制"} onClick={() => void copy()}><Icon name={copied ? "check" : copyFailed ? "close" : "copy"} size={15} /></button>
+    <button className={rating === "up" ? "active" : ""} aria-label={rating === "up" ? "取消赞" : "赞"} aria-pressed={rating === "up"} title="赞" disabled={pending} onClick={() => void rate("up")}><Icon name="thumbUp" size={15} /></button>
+    <button className={rating === "down" ? "active" : ""} aria-label={rating === "down" ? "取消踩" : "踩"} aria-pressed={rating === "down"} title="踩" disabled={pending} onClick={() => void rate("down")}><Icon name="thumbDown" size={15} /></button>
+    <button aria-label="从此回答分叉会话" title="分叉会话" disabled={pending} onClick={() => void fork()}><Icon name="branch" size={15} /></button>
+  </div>;
+}
+
+function AssistantMessage({ item, actions, sessionId, workspace }: {
+  readonly item: TimelineAssistantItem;
+  readonly actions?: ReactNode;
+  readonly sessionId: string;
+  readonly workspace: string;
+}) {
+  return <div className="assistant-message">
+    {item.reasoning && <details className="reasoning" open={item.streaming}><summary><Icon name="brain" size={15} />思考过程{item.streaming && <i />}</summary><div>{item.reasoning}</div></details>}
+    {item.content
+      ? <Markdown sessionId={sessionId} workspace={workspace}>{item.content}</Markdown>
+      : item.streaming && <div className="assistant-pulse"><CatLogo size={20} /><span>正在组织回答</span></div>}
+    {actions}
+  </div>;
+}
+
+function reasoningOnly(item: TimelineAssistantItem): TimelineAssistantItem {
+  const { actionable: _actionable, ...rest } = item;
+  return { ...rest, id: `${item.id}:reasoning`, content: "" };
+}
+
+function PastedTextBlock({ content, index, onChange, onRemove }: {
+  readonly content: string;
+  readonly index: number;
+  readonly onChange?: (content: string) => void;
+  readonly onRemove?: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const { characterCount, lineCount } = pastedTextMetrics(content);
+  const editable = onChange !== undefined;
+  useEffect(() => {
+    if (!copied) return;
+    const timeout = window.setTimeout(() => setCopied(false), 1_600);
+    return () => window.clearTimeout(timeout);
+  }, [copied]);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
+  return <div className={`pasted-text-block ${editable ? "draft" : "readonly"}`}>
+    <details><summary aria-label={`展开粘贴的文本 ${index + 1}`}><Icon className="pasted-text-icon" name="document" size={18} /><span><strong>粘贴的文本{index > 0 ? ` ${index + 1}` : ""}</strong><small>{characterCount.toLocaleString("zh-CN")} 字符 · {lineCount.toLocaleString("zh-CN")} 行</small></span><Icon className="pasted-text-chevron" name="chevronDown" size={14} /></summary>{editable
+      ? <textarea className="pasted-text-editor" aria-label={`编辑粘贴的文本 ${index + 1}`} value={content} onChange={(event) => onChange(event.target.value)} rows={8} />
+      : <div className="pasted-text-expanded">{content}</div>}</details>
+    {editable
+      ? onRemove && <button type="button" className="pasted-text-action pasted-text-remove" aria-label={`移除粘贴的文本 ${index + 1}`} title="移除" onClick={onRemove}><Icon name="close" size={12} /></button>
+      : <button type="button" className={`pasted-text-action pasted-text-copy ${copied ? "copied" : ""}`} aria-label={`${copied ? "已复制" : "复制"}粘贴的文本 ${index + 1}`} title={copied ? "已复制" : "复制"} onClick={() => void copy()}><Icon name={copied ? "check" : "copy"} size={13} /></button>}
+  </div>;
+}
+
+export function UserMessage({ item, onRetry }: { readonly item: Extract<TimelineItem, { readonly kind: "user" }>; readonly onRetry: (item: Extract<TimelineItem, { readonly kind: "user" }>) => void }) {
+  const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const message = parseAttachmentMessage(item.content);
+  const deliveryLabel = item.delivery === "cancelled" ? "未执行" : undefined;
+  const compactCommand = message.text.trim() === "/compact" && message.attachments.length === 0 && message.pastedTexts.length === 0;
+  const { characterCount, lineCount } = pastedTextMetrics(message.text);
+  const collapseText = !compactCommand && shouldFoldPastedText(message.text);
+  const timeLabel = formatDateTime(item.createdAt);
+  const timeTitle = formatFullDateTime(item.createdAt);
+  const copy = async () => {
+    setCopyFailed(false);
+    try {
+      await copyText(message.text || item.content);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1_500);
+    } catch {
+      setCopyFailed(true);
+      window.setTimeout(() => setCopyFailed(false), 2_000);
+    }
+  };
+  return <div className="user-turn">
+    {message.pastedTexts.length > 0 && <div className="message-pasted-texts" aria-label="粘贴的文本">{message.pastedTexts.map((pastedText, index) => <PastedTextBlock key={index} content={pastedText.content} index={index} />)}</div>}
+    {message.attachments.length > 0 && <div className="message-attachments" aria-label="附件">{message.attachments.map((attachment, index) => <AttachmentCard key={`${attachment.kind}-${attachment.path ?? attachment.name}-${index}`} attachment={attachment} />)}</div>}
+    {(message.text || item.delivery) && <div className="user-message-row">
+      {item.delivery === "failed" && <button className="user-delivery-retry" aria-label="发送失败，重试消息" title="重试" onClick={() => onRetry(item)}>!</button>}
+      {compactCommand
+        ? <div className="user-message-stack">
+          <div className={`user-message compact-command ${item.delivery ?? ""}`}><span className="compact-command-mark"><Icon name="brain" size={18} /></span><span className="compact-command-copy"><strong>压缩上下文</strong><small>{item.delivery === "submitting" ? "正在整理当前会话上下文" : item.delivery === "failed" ? "压缩请求发送失败" : "整理并压缩当前会话上下文"}</small></span><code>/compact</code></div>
+          <div className="user-message-meta">
+            {timeLabel && <time dateTime={item.createdAt} title={timeTitle}>{timeLabel}</time>}
+          </div>
+        </div>
+        : collapseText
+          ? <details className={`user-message user-message-text ${item.delivery ?? ""}`}><summary aria-label="展开长文本"><Icon className="user-message-text-icon" name="document" size={18} /><span><strong>长文本</strong><small>{characterCount.toLocaleString("zh-CN")} 字符 · {lineCount.toLocaleString("zh-CN")} 行</small></span><Icon className="user-message-text-chevron" name="chevronDown" size={14} /></summary><div className="user-message-expanded">{message.text}</div>{deliveryLabel && <small>{deliveryLabel}</small>}</details>
+          : <div className="user-message-stack">
+            <div className={`user-message ${item.delivery ?? ""}`}><span>{message.text}</span>{deliveryLabel && <small className="user-delivery-label">{deliveryLabel}</small>}</div>
+            <div className="user-message-meta">
+              {timeLabel && <time dateTime={item.createdAt} title={timeTitle}>{timeLabel}</time>}
+              <button type="button" aria-label={copyFailed ? "复制失败" : copied ? "已复制消息" : "复制消息"} title={copyFailed ? "复制失败" : copied ? "已复制" : "复制"} onClick={() => void copy()}><Icon name={copied ? "check" : copyFailed ? "close" : "copy"} size={15} /></button>
+            </div>
+          </div>}
+    </div>}
+  </div>;
+}
+
+export function OptimisticUserTurn({ item, onRetry }: { readonly item: UserTimelineItem; readonly onRetry: (item: UserTimelineItem) => void }) {
+  const submitting = item.delivery === "submitting";
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!submitting) return;
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, [submitting]);
+  const duration = formatProcessingDuration(processingDurationMs(item.createdAt, now));
+  return <div className="timeline-group">
+    <UserMessage item={item} onRetry={onRetry} />
+    {submitting && <section className="turn-activity running" aria-live="polite">
+      <div className="turn-activity-summary"><span>已处理 {duration}</span></div>
+      <div className="turn-activity-body"><div className="active-label"><CatLogo size={18} /><span>正在准备任务</span></div></div>
+    </section>}
+  </div>;
+}
+
+function CompactCommandCard({ item }: { readonly item: Extract<TimelineItem, { readonly kind: "command" }> }) {
+  const running = item.status === "running";
+  const failed = item.status === "failed";
+  const title = running ? "正在压缩上下文" : failed ? "上下文压缩失败" : item.status === "no_progress" ? "无需压缩" : "上下文已压缩";
+  const tokenDetail = !item.replacedTokenCount
+    ? ""
+    : item.replacementTokenCount === undefined || item.releasedTokenCount === undefined
+      ? `，已压缩约 ${item.replacedTokenCount.toLocaleString()} 个原始令牌`
+      : `，原文约 ${item.replacedTokenCount.toLocaleString()} → 摘要约 ${item.replacementTokenCount.toLocaleString()} 个令牌，净减少约 ${item.releasedTokenCount.toLocaleString()} 个令牌`;
+  const detail = running
+    ? "正在整理较早消息，完成前不会启动新的 Agent 回合"
+    : failed
+      ? item.message ?? "原始消息保持不变"
+      : item.status === "no_progress"
+        ? "当前没有可安全压缩的较早消息"
+        : `已将 ${item.replacedMessageCount ?? 0} 条历史消息整理为摘要${tokenDetail}`;
+  return <div className={`compact-command-card ${item.status}`} role="status">
+    <span className="compact-command-card-mark"><Icon name={running ? "activity" : failed ? "close" : "check"} size={17} /></span>
+    <span className="compact-command-card-copy"><strong>{title}</strong><small>{detail}</small></span>
+    <code>/compact</code>
+  </div>;
+}
+
+export function Timeline({ items, subagents, activeLabel, running, actionsEnabled, selectedToolId, feedback, sessionId, workspace, onSelectTool, onSelectSubagent, onFeedback, onFork, onRetryInput }: {
+  readonly items: readonly TimelineItem[];
+  readonly subagents: readonly ProjectedSubagent[];
+  readonly activeLabel?: string;
+  readonly running: boolean;
+  readonly actionsEnabled: boolean;
+  readonly selectedToolId?: string;
+  readonly feedback: Readonly<Record<string, WebMessageFeedback>>;
+  readonly sessionId: string;
+  readonly workspace: string;
+  readonly onSelectTool: (tool: ToolItem) => void;
+  readonly onSelectSubagent: (subagent: ProjectedSubagent) => void;
+  readonly onFeedback: (messageId: string, rating: WebMessageFeedback | null) => Promise<void>;
+  readonly onFork: (messageId: string) => Promise<void>;
+  readonly onRetryInput: (item: Extract<TimelineItem, { readonly kind: "user" }>) => void;
+}) {
+  const conversation = useRef<HTMLDivElement>(null);
+  const liveBody = useRef<HTMLDivElement>(null);
+  const followConversation = useRef(true);
+  const followLiveBody = useRef(true);
+  const liveBodyOverflowing = useRef(false);
+  const previousSessionId = useRef(sessionId);
+  const previousUserId = useRef<string>();
+  const previousLiveGroupId = useRef<string>();
+  const subagentsById = useMemo(() => new Map(subagents.map((subagent) => [subagent.subagentId, subagent])), [subagents]);
+  const groups = useMemo(() => groupTimelineItems(items), [items]);
+  const submitting = groups.at(-1)?.user?.delivery === "submitting";
+  const visiblyRunning = running || submitting;
+  const visibleActiveLabel = activeLabel ?? (submitting ? "正在准备任务" : undefined);
+  const latestUserId = items.findLast((item) => item.kind === "user")?.id;
+  const latestFinalId = groups.findLast((group) => group.final !== undefined)?.final?.id;
+  const durableLiveGroupIndex = running
+    ? groups.findLastIndex((group) => group.user === undefined || group.user.delivery === undefined)
+    : -1;
+  const liveGroupIndex = durableLiveGroupIndex >= 0
+    ? durableLiveGroupIndex
+    : submitting ? groups.length - 1 : -1;
+  const liveGroupId = liveGroupIndex < 0 ? undefined : groups[liveGroupIndex]?.id;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!visiblyRunning) return;
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, [visiblyRunning]);
+  useBrowserLayoutEffect(() => {
+    const viewport = conversation.current;
+    if (!viewport) return;
+    const sessionChanged = previousSessionId.current !== sessionId;
+    const userAdded = previousUserId.current !== undefined && previousUserId.current !== latestUserId;
+    previousSessionId.current = sessionId;
+    previousUserId.current = latestUserId;
+    if (sessionChanged) {
+      followConversation.current = true;
+      followLiveBody.current = true;
+      liveBodyOverflowing.current = false;
+    }
+    if (sessionChanged || userAdded || followConversation.current) viewport.scrollTop = viewport.scrollHeight;
+  }, [sessionId, latestUserId, latestFinalId]);
+  useBrowserLayoutEffect(() => {
+    const viewport = conversation.current;
+    const body = liveBody.current;
+    if (!visiblyRunning || !body) {
+      followLiveBody.current = true;
+      liveBodyOverflowing.current = false;
+      previousLiveGroupId.current = liveGroupId;
+      return;
+    }
+    if (previousLiveGroupId.current !== liveGroupId) {
+      previousLiveGroupId.current = liveGroupId;
+      followLiveBody.current = true;
+      liveBodyOverflowing.current = false;
+    }
+    const overflowing = body.scrollHeight > body.clientHeight + 1;
+    if (overflowing) {
+      if (followLiveBody.current) body.scrollTop = body.scrollHeight;
+      if (!liveBodyOverflowing.current && followConversation.current && viewport) viewport.scrollTop = viewport.scrollHeight;
+    } else if (followConversation.current && viewport) {
+      viewport.scrollTop = viewport.scrollHeight;
+    }
+    liveBodyOverflowing.current = overflowing;
+  }, [items, liveGroupId, visiblyRunning, visibleActiveLabel]);
+  const renderActivityItem = (item: TimelineItem, live: boolean) => {
+    if (item.kind === "tool") return <ToolCard key={item.id} tool={item} selected={item.id === selectedToolId} onSelect={() => onSelectTool(item)} />;
+    if (item.kind === "subagent") {
+      const subagent = subagentsById.get(item.subagentId);
+      return subagent ? <SubagentMarker key={item.id} marker={item} subagent={subagent} selected={subagent.id === selectedToolId} onSelect={() => onSelectSubagent(subagent)} /> : null;
+    }
+    if (item.kind === "command") return <CompactCommandCard key={item.id} item={item} />;
+    if (item.kind === "model-error") return <div className="notice-row error model-call-error" key={item.id} data-plan-id={item.planId}>
+      <strong>模型调用失败{item.attempt === undefined ? "" : `（第 ${item.attempt + 1} 次尝试）`}</strong>
+      <div>{item.content}</div>
+    </div>;
+    if (item.kind === "notice") return <div className={`notice-row ${item.tone}`} key={item.id}>{item.content}</div>;
+    if (item.kind === "question") return <QuestionHistoryCard key={item.id} request={item.request} />;
+    if (item.kind === "human-input") return <HumanInputCard key={item.id} item={item} sessionId={sessionId} workspace={workspace} />;
+    if (item.kind === "assistant") return <AssistantMessage key={item.id} item={live ? { ...item, reasoning: "" } : item} sessionId={sessionId} workspace={workspace} />;
+    return null;
+  };
+  return <div className="conversation-scroll" ref={conversation} onScroll={(event) => { followConversation.current = isNearScrollEnd(event.currentTarget); }}><div className="message-column">{groups.map((group, index) => {
+    const live = visiblyRunning && index === liveGroupIndex;
+    const notices = group.activity.filter((item) => item.kind === "notice" || item.kind === "question" || item.kind === "human-input");
+    const progress = group.activity.filter((item) => item.kind !== "notice" && item.kind !== "question" && item.kind !== "human-input");
+    const activity = group.final?.reasoning ? [...progress, reasoningOnly(group.final)] : progress;
+    const endedAt = live ? now : group.endedAt ?? group.activity.at(-1)?.createdAt ?? group.startedAt;
+    const duration = formatProcessingDuration(processingDurationMs(group.startedAt, endedAt));
+    const activityBody = <div className="turn-activity-body" ref={live ? liveBody : undefined} onScroll={live ? (event) => { followLiveBody.current = isNearScrollEnd(event.currentTarget, 24); } : undefined}>
+      {activity.map((item) => renderActivityItem(item, live))}
+      {live && visibleActiveLabel && <div className="active-label"><CatLogo size={18} /><span>{visibleActiveLabel}</span></div>}
+    </div>;
+    const showProcessing = live || group.final !== undefined || activity.length > 0;
+    return <div className="timeline-group" key={group.id}>
+      {group.user && <UserMessage item={group.user} onRetry={onRetryInput} />}
+      {showProcessing && (live
+        ? <section className="turn-activity running" aria-live="polite"><div className="turn-activity-summary"><span>已处理 {duration}</span></div>{activityBody}</section>
+        : <details className="turn-activity completed"><summary><span>用时 {duration}</span><Icon name="chevronDown" size={15} /></summary>{activityBody}</details>)}
+      {notices.map((item) => renderActivityItem(item, false))}
+      {group.final && <AssistantMessage item={{ ...group.final, reasoning: "" }} sessionId={sessionId} workspace={workspace} actions={actionsEnabled && group.final.actionable ? <AssistantActions item={group.final} rating={feedback[group.final.id]} onFeedback={onFeedback} onFork={onFork} /> : undefined} />}
+    </div>;
+  })}{visiblyRunning && groups.length === 0 && <section className="turn-activity running" aria-live="polite"><div className="turn-activity-summary"><span>已处理不到 1 秒</span></div>{visibleActiveLabel && <div className="turn-activity-body"><div className="active-label"><CatLogo size={18} /><span>{visibleActiveLabel}</span></div></div>}</section>}</div></div>;
+}
+
+function flowStepIcon(step: ProjectedSubagentFlowStep) {
+  if (step.status === "running") return <Icon name="activity" size={12} />;
+  if (step.status === "failed") return <Icon name="close" size={12} />;
+  return <Icon name="check" size={12} />;
+}
+
+function FlowStepDetails({ step, finalOutput }: { readonly step: ProjectedSubagentFlowStep; readonly finalOutput?: string }) {
+  const showContent = Boolean(step.content && step.content !== finalOutput);
+  return <div className="subagent-step-detail" aria-live="polite">
+    <div className="subagent-step-detail-head"><span>第 {step.ordinal} 步</span><strong>{step.title}</strong></div>
+    {step.reasoning && <details className="subagent-reasoning"><summary>思考过程<Icon name="chevronDown" size={13} /></summary><pre>{step.reasoning}</pre></details>}
+    {showContent && <div className="subagent-step-content">{step.content}</div>}
+    {step.tools.map((tool) => <details className="subagent-flow-tool" key={tool.id}>
+      <summary><span><Icon name="tool" size={13} /><strong>{toolLabel(tool.name)}</strong></span><small>{tool.status === "running" ? "运行中" : tool.status === "succeeded" ? "已完成" : "未完成"}</small><Icon name="chevronDown" size={12} /></summary>
+      <div><h4>调用参数</h4><pre>{JSON.stringify(tool.arguments, null, 2)}</pre><h4>执行结果</h4><pre>{tool.result === undefined ? "等待工具返回…" : toolResultText(tool.result)}</pre></div>
+    </details>)}
+    {!step.reasoning && !showContent && step.tools.length === 0 && <p>这一步没有额外的可展示内容。</p>}
+  </div>;
+}
+
+function ToolDetails({ item }: { readonly item: ToolItem }) {
+  return <aside className="details-panel"><div className="details-head"><div><Icon name="tool" size={16} /><span>{toolLabel(item.name)}</span></div></div><div className="details-body"><section><h3>调用参数</h3><pre>{JSON.stringify(item.arguments, null, 2)}</pre></section><section><h3>执行结果</h3><pre>{item.result === undefined ? "等待工具返回…" : toolResultText(item.result)}</pre></section></div></aside>;
+}
+
+function SubagentDetails({ item, events, sessionId, workspace }: {
+  readonly item: ProjectedSubagent;
+  readonly events: readonly WebEvent[];
+  readonly sessionId: string;
+  readonly workspace: string;
+}) {
+  const flow = useMemo(() => projectSubagentFlow(events, item), [events, item]);
+  const [selectedStepId, setSelectedStepId] = useState<string>();
+  const stepDetail = useRef<HTMLElement>(null);
+  const detailsBody = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    setSelectedStepId((current) => current && flow.some((step) => step.id === current) ? current : flow[0]?.id);
+  }, [flow]);
+  const selectedStep = flow.find((step) => step.id === selectedStepId) ?? flow[0];
+  const selectStep = (stepId: string) => {
+    setSelectedStepId(stepId);
+    window.requestAnimationFrame(() => {
+      const body = detailsBody.current;
+      const detail = stepDetail.current;
+      if (!body || !detail) return;
+      body.scrollTop += detail.getBoundingClientRect().top - body.getBoundingClientRect().top - 8;
+    });
+  };
+  return <aside className="details-panel subagent-details">
+    <div className="details-head"><div><Icon name="branch" size={16} /><span>{item.label}</span></div></div>
+    <div className="details-body" ref={detailsBody}>
+      <details className="subagent-overview">
+        <summary><span className={`subagent-overview-state ${item.status}`}>{item.status === "running" ? <Icon name="activity" size={13} /> : <Icon name={item.status === "completed" ? "check" : item.status === "stopped" ? "stop" : "close"} size={13} />}</span><span><strong>{subagentStatusLabel(item.status)}</strong><small>{item.mode === "fork" ? "Fork（继承上下文）" : "Spawn（全新上下文）"} · {item.modelCalls} 次模型 · {item.toolCalls} 次工具</small></span><Icon name="chevronDown" size={14} /></summary>
+        <dl><div><dt>层级</dt><dd>{item.depth}</dd></div><div><dt>模型调用</dt><dd>{item.modelCalls}</dd></div><div><dt>工具调用</dt><dd>{item.toolCalls}</dd></div></dl>
+        <code title={item.subagentId}>{item.subagentId}</code>
+      </details>
+      <section className="subagent-flow-section">
+        <h3>执行流程</h3>
+        {flow.length === 0 ? <p className="subagent-empty">还没有可展示的执行步骤。</p> : <ol className="subagent-flow">{flow.map((step) => <li className={step.status} key={step.id}><button className={step.id === selectedStep?.id ? "selected" : ""} aria-current={step.id === selectedStep?.id ? "step" : undefined} onClick={() => selectStep(step.id)}><span className="subagent-flow-node">{flowStepIcon(step)}</span><span><strong>{step.title}</strong><small>{step.summary}</small></span></button></li>)}</ol>}
+      </section>
+      {selectedStep && <section className="subagent-step-section" ref={stepDetail}><h3>步骤详情</h3><FlowStepDetails step={selectedStep} finalOutput={item.output} /></section>}
+      {item.output && <section className="subagent-final-section"><h3>最终报告</h3><div className="subagent-final"><Markdown sessionId={sessionId} workspace={workspace}>{item.output}</Markdown></div></section>}
+      {item.error !== undefined && <section><h3>错误</h3><pre>{typeof item.error === "string" ? item.error : JSON.stringify(item.error, null, 2)}</pre></section>}
+    </div>
+  </aside>;
+}
+
+function DetailsPanel({ item, events, sessionId, workspace, onClose }: {
+  readonly item: DetailItem;
+  readonly events: readonly WebEvent[];
+  readonly sessionId: string;
+  readonly workspace: string;
+  readonly onClose: () => void;
+}) {
+  return <div className="details-shell"><button className="details-close icon-button" aria-label={"kind" in item ? "关闭详情" : "关闭子 Agent 详情"} onClick={onClose}><Icon name="close" size={18} /></button>{"kind" in item ? <ToolDetails item={item} /> : <SubagentDetails item={item} events={events} sessionId={sessionId} workspace={workspace} />}</div>;
+}
+
+export function SessionLoadingSurface({ error, onRetry }: {
+  readonly error?: string;
+  readonly onRetry: () => void;
+}) {
+  return <section className={`session-loading-surface${error ? " failed" : ""}`} aria-live="polite" aria-busy={!error}>
+    <div className="session-loading-brand"><CatLogo size={42} /><strong>Optimize for Optimization.</strong></div>
+    {error
+      ? <div className="session-loading-error"><span>会话加载失败</span><small>{error}</small><button type="button" className="secondary-button" onClick={onRetry}>重新加载</button></div>
+      : <div className="session-loading-progress"><span>正在加载会话</span><i aria-hidden="true"><b /></i></div>}
+  </section>;
+}
+
+export function App() {
+  const [config, setConfig] = useState<WebServerConfig>();
+  const [sessions, setSessions] = useState<readonly WebSessionSummary[]>([]);
+  const [activeId, setActiveId] = useState<string>();
+  const [detail, setDetail] = useState<WebSessionDetail>();
+  const [optimisticInputs, setOptimisticInputs] = useState<readonly OptimisticInput[]>([]);
+  const [collapsed, setCollapsed] = useState(false);
+  const [search, setSearch] = useState("");
+  const [sessionFilter, setSessionFilter] = useState<SessionFilter>("all");
+  const [newPermissionMode, setNewPermissionMode] = useState<WebPermissionMode>("danger-full-access");
+  const [newMode, setNewMode] = useState("standard");
+  const [newModel, setNewModel] = useState<WebModel>(WEB_MODELS[0]);
+  const [tab, setTab] = useState<"chat" | "trajectory">("chat");
+  const [selectedToolId, setSelectedToolId] = useState<string>();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [workspaceOpen, setWorkspaceOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [renamingSession, setRenamingSession] = useState<WebSessionSummary>();
+  const [renamingWorkspace, setRenamingWorkspace] = useState<WebWorkspaceSummary>();
+  const [deletingWorkspace, setDeletingWorkspace] = useState<WebWorkspaceSummary>();
+  const [error, setError] = useState<string>();
+  const [sessionLoadError, setSessionLoadError] = useState<{ readonly sessionId: string; readonly message: string }>();
+  const [sessionLoadAttempt, setSessionLoadAttempt] = useState(0);
+  const [theme, setTheme] = useTheme();
+  const backgroundSessionSources = useRef(new Map<string, EventSource>());
+
+  useEffect(() => {
+    void Promise.all([api.config(), api.sessions()]).then(([nextConfig, nextSessions]) => {
+      setConfig(nextConfig);
+      setSessions(nextSessions);
+      setNewPermissionMode(nextConfig.defaultPermissionMode);
+      setNewMode(nextConfig.defaultMode);
+      setNewModel(nextConfig.model);
+    }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : String(reason)));
+  }, []);
+
+  useEffect(() => {
+    if (!activeId) { setDetail(undefined); setSessionLoadError(undefined); return; }
+    let disposed = false;
+    let source: EventSource | undefined;
+    const controller = new AbortController();
+    setDetail((current) => current?.id === activeId ? current : undefined);
+    setSessionLoadError(undefined);
+    void api.session(activeId, controller.signal).then((loaded) => {
+      if (disposed) return;
+      setDetail(loaded);
+      setSessions((current) => upsertSummary(current, loaded));
+      source = new EventSource(api.eventsUrl(activeId, loaded.lastCursor));
+      source.onopen = () => setError((current) => current === EVENT_CONNECTION_ERROR ? undefined : current);
+      source.onmessage = (message) => {
+        const event = JSON.parse(message.data) as WebEvent;
+        if (event.type === "turn.created") {
+          clientPerformanceTrace("event.received", { sessionId: event.sessionId, eventType: event.type });
+        }
+        setDetail((current) => {
+          if (!current || current.id !== event.sessionId) return current;
+          if ((event.type === "policy.state.published" || event.type === "policy.state.projected") && event.sourceSessionId === current.id) {
+            const payload = event.payload as { componentId?: string; value?: WebJson };
+            if (typeof payload.componentId === "string" && payload.value !== undefined) {
+              const publicStates = { ...current.publicStates };
+              if (payload.value === null) delete publicStates[payload.componentId];
+              else publicStates[payload.componentId] = payload.value;
+              current = { ...current, publicStates };
+            }
+          }
+          const updatedUsage = sessionUsageAfterEvent(current, event);
+          if (event.transient) {
+            const retained = current.events.filter((candidate) => candidate.eventId !== event.eventId);
+            return { ...updatedUsage, events: [...retained, event] };
+          }
+          if (current.events.some((candidate) => !candidate.transient && candidate.cursor === event.cursor)) return current;
+          const retained = event.type === "model.completed" || event.type === "model.failed" || event.type === "model.interrupted" || event.type === "turn.interrupted"
+            ? current.events.filter((candidate) => !(candidate.type === "model.stream.snapshot" && candidate.transient && candidate.turnId === event.turnId))
+            : current.events;
+          const summary = sessionSummaryAfterEvent(updatedUsage, event);
+          return { ...summary, events: [...retained, event].sort((left, right) => left.cursor - right.cursor) };
+        });
+        if (event.transient) return;
+        setSessions((current) => current.map((session) => sessionSummaryAfterEvent(session, event)));
+      };
+      source.onerror = () => { if (!disposed) setError(EVENT_CONNECTION_ERROR); };
+    }).catch((reason: unknown) => {
+      if (disposed || (reason instanceof DOMException && reason.name === "AbortError")) return;
+      setSessionLoadError({ sessionId: activeId, message: reason instanceof Error ? reason.message : String(reason) });
+    });
+    return () => { disposed = true; controller.abort(); source?.close(); };
+  }, [activeId, sessionLoadAttempt]);
+
+  useEffect(() => {
+    const backgroundSessions = sessions.filter((session) => session.status === "running" && session.id !== activeId);
+    const wantedIds = new Set(backgroundSessions.map((session) => session.id));
+    for (const [sessionId, source] of backgroundSessionSources.current) {
+      if (wantedIds.has(sessionId)) continue;
+      source.close();
+      backgroundSessionSources.current.delete(sessionId);
+    }
+    for (const session of backgroundSessions) {
+      if (backgroundSessionSources.current.has(session.id)) continue;
+      const source = new EventSource(api.eventsUrl(session.id, session.lastCursor));
+      source.onmessage = (message) => {
+        const event = JSON.parse(message.data) as WebEvent;
+        setSessions((current) => current.map((candidate) => sessionSummaryAfterEvent(candidate, event)));
+      };
+      backgroundSessionSources.current.set(session.id, source);
+    }
+  }, [activeId, sessions]);
+
+  useEffect(() => () => {
+    for (const source of backgroundSessionSources.current.values()) source.close();
+    backgroundSessionSources.current.clear();
+  }, []);
+
+  const projected = useMemo(
+    () => projectSession(detail?.events ?? [], detail?.status),
+    [detail?.events, detail?.status],
+  );
+  const pendingQuestions = useMemo(() => pendingUserQuestions(detail?.events ?? []), [detail?.events]);
+  const pendingQuestionRequestId = pendingQuestions.at(-1)?.requestId;
+  const confirmedInputIds = useMemo(() => new Set(projected.items.flatMap((item) => item.kind === "user" ? [item.id] : [])), [projected.items]);
+  const rejectedInputIds = useMemo(() => new Set((detail?.events ?? []).flatMap((event) => {
+    if (event.type !== "turn.failed" || event.payload === null || typeof event.payload !== "object" || Array.isArray(event.payload)) return [];
+    const inputId = (event.payload as Readonly<Record<string, WebJson>>)["inputId"];
+    return typeof inputId === "string" ? [inputId] : [];
+  })), [detail?.events]);
+  const optimisticTimelineItems = useMemo(() => optimisticInputs
+    .filter((input) => input.sessionId === activeId && !confirmedInputIds.has(`input:${input.inputId}`))
+    .map((input) => optimisticUserItem(input, rejectedInputIds.has(input.inputId))), [activeId, confirmedInputIds, optimisticInputs, rejectedInputIds]);
+  const timelineItems = useMemo(() => [...projected.items, ...optimisticTimelineItems], [optimisticTimelineItems, projected.items]);
+  const draftOptimisticInput = optimisticInputs.find((input) => input.sessionId === undefined);
+  useEffect(() => {
+    if (confirmedInputIds.size === 0) return;
+    setOptimisticInputs((current) => {
+      const next = current.filter((input) => !confirmedInputIds.has(`input:${input.inputId}`));
+      return next.length === current.length ? current : next;
+    });
+  }, [confirmedInputIds]);
+  const selectedDetail: DetailItem | undefined = projected.items.find((item): item is ToolItem => item.kind === "tool" && item.id === selectedToolId)
+    ?? projected.subagents.find((item) => item.id === selectedToolId);
+  const activeSummary = sessions.find((session) => session.id === activeId);
+  const activeDetail = detail?.id === activeId ? detail : undefined;
+  const loadingOptimisticInput = activeDetail === undefined && activeId !== undefined
+    ? optimisticInputs.findLast((input) => input.sessionId === activeId && input.delivery === "submitting")
+    : undefined;
+  const activeSessionLoadError = sessionLoadError !== undefined && sessionLoadError.sessionId === activeId ? sessionLoadError.message : undefined;
+  const activeWorkspaceLabel = activeSummary === undefined
+    ? config?.workspaceLabel ?? "工作区"
+    : activeSummary.workspaceId === undefined
+      ? "无工作区"
+      : config?.workspaces.find((workspace) => workspace.id === activeSummary.workspaceId)?.label ?? "未分组";
+  const activePermissionMode = activeDetail?.permissionMode ?? activeSummary?.permissionMode ?? newPermissionMode;
+  const normalizedSearch = search.trim().toLocaleLowerCase();
+  const visibleSessions = sessions.filter((session) =>
+    Boolean(session.archived) === showArchived
+    && session.title.toLocaleLowerCase().includes(normalizedSearch)
+    && (sessionFilter === "all" || session.status === sessionFilter));
+  const running = (activeDetail !== undefined
+    ? activeDetail.status === "running"
+    : activeSummary?.status === "running")
+    || (activeDetail?.status === "waiting" && projected.subagents.some((subagent) => subagent.status === "running"));
+
+  const deliverInput = async (input: OptimisticInput) => {
+    clientPerformanceTrace("input.delivery.begin", { sessionId: input.sessionId, inputId: input.inputId });
+    setError(undefined);
+    setOptimisticInputs((current) => current.map((candidate) => candidate.inputId === input.inputId ? { ...candidate, delivery: "submitting" } : candidate));
+    try {
+      if (input.sessionId === undefined) {
+        const summary = await api.createSession({ content: input.content, inputId: input.inputId, permissionMode: newPermissionMode, model: newModel, mode: newMode });
+        clientPerformanceTrace("input.delivery.response", { sessionId: summary.id, inputId: input.inputId });
+        setOptimisticInputs((current) => current.map((candidate) => candidate.inputId === input.inputId ? { ...candidate, sessionId: summary.id } : candidate));
+        setSessions((current) => upsertSummary(current, summary));
+        setShowArchived(false);
+        setActiveId(summary.id);
+      } else {
+        const summary = await api.sendMessage(input.sessionId, {
+          content: input.content,
+          inputId: input.inputId,
+          ...(input.replyToRequestId === undefined ? {} : { replyToRequestId: input.replyToRequestId }),
+        });
+        clientPerformanceTrace("input.delivery.response", { sessionId: input.sessionId, inputId: input.inputId });
+        setSessions((current) => upsertSummary(current, summary));
+      }
+    } catch (reason) {
+      const message = reason instanceof Error ? reason.message : String(reason);
+      setOptimisticInputs((current) => current.map((candidate) => candidate.inputId === input.inputId ? { ...candidate, delivery: "failed" } : candidate));
+      setError(message);
+      throw reason;
+    }
+  };
+
+  const submit = async (content: string, replyToRequestId: string | null | undefined = pendingQuestionRequestId) => {
+    const input: OptimisticInput = {
+      inputId: newWebInputId(),
+      content,
+      createdAt: new Date().toISOString(),
+      ...(activeId === undefined ? {} : { sessionId: activeId }),
+      ...(activeId !== undefined && replyToRequestId != null
+        ? { replyToRequestId }
+        : {}),
+      delivery: "submitting",
+    };
+    setOptimisticInputs((current) => [...current, input]);
+    await deliverInput(input);
+  };
+
+  const retryInput = (item: Extract<TimelineItem, { readonly kind: "user" }>) => {
+    const pending = optimisticInputs.find((input) => `input:${input.inputId}` === item.id);
+    if (!pending) return;
+    const retry: OptimisticInput = { ...pending, inputId: newWebInputId(), createdAt: new Date().toISOString(), delivery: "submitting" };
+    setOptimisticInputs((current) => current.map((input) => input.inputId === pending.inputId ? retry : input));
+    void deliverInput(retry).catch(() => undefined);
+  };
+
+  const changeWorkspace = async (path: string | null, create: boolean) => {
+    if (path === null && config?.workspaceId === undefined) return;
+    if (!create && path !== null && config?.workspaces.find((workspace) => workspace.path === path)?.id === config?.workspaceId) return;
+    const nextConfig = await api.selectWorkspace({ path, create });
+    setConfig((current) => current ? { ...nextConfig, workspaces: preserveWorkspaceOrder(current.workspaces, nextConfig.workspaces) } : nextConfig);
+    setActiveId(undefined);
+    setShowArchived(false);
+    setSelectedToolId(undefined);
+    setTab("chat");
+  };
+
+  const pickWorkspace = async (): Promise<boolean> => {
+    const picked = await api.pickWorkspace();
+    if (!picked.path) return false;
+    await changeWorkspace(picked.path, true);
+    return true;
+  };
+
+  const changePermission = async (mode: WebPermissionMode) => {
+    setError(undefined);
+    try {
+      if (!activeId) {
+        setNewPermissionMode(mode);
+        return;
+      }
+      const summary = await api.setPermission(activeId, { permissionMode: mode });
+      setSessions((current) => upsertSummary(current, summary));
+      setDetail((current) => current?.id === activeId ? { ...current, permissionMode: mode, updatedAt: summary.updatedAt } : current);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+    }
+  };
+
+  const updateSessionMetadata = async (sessionId: string, change: { readonly title?: string; readonly pinned?: boolean; readonly archived?: boolean }) => {
+    setError(undefined);
+    try {
+      const summary = await api.updateSession(sessionId, change);
+      setSessions((current) => upsertSummary(current, summary));
+      setDetail((current) => current?.id === sessionId ? { ...current, ...summary } : current);
+      return summary;
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+      throw reason;
+    }
+  };
+
+  const toggleArchive = async (session: WebSessionSummary) => {
+    const summary = await updateSessionMetadata(session.id, { archived: !session.archived });
+    if (session.id === activeId) {
+      if (summary.archived) {
+        setActiveId(undefined);
+        setSelectedToolId(undefined);
+      } else {
+        setShowArchived(false);
+      }
+    }
+  };
+
+  const setMessageFeedback = async (messageId: string, rating: WebMessageFeedback | null) => {
+    if (!activeId) return;
+    const sessionId = activeId;
+    setError(undefined);
+    try {
+      const updated = await api.setFeedback(sessionId, { messageId, rating });
+      setDetail((current) => current?.id === sessionId && updated.lastCursor >= current.lastCursor ? updated : current);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+      throw reason;
+    }
+  };
+
+  const forkFromMessage = async (messageId: string) => {
+    if (!activeId) return;
+    setError(undefined);
+    try {
+      const forked = await api.forkSession(activeId, { messageId });
+      setSessions((current) => upsertSummary(current, forked));
+      setShowArchived(false);
+      setActiveId(forked.id);
+      setSelectedToolId(undefined);
+      setTab("chat");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+      throw reason;
+    }
+  };
+
+  const forkSession = async (session: WebSessionSummary) => {
+    setError(undefined);
+    try {
+      const forked = await api.forkSession(session.id, {});
+      setSessions((current) => upsertSummary(current, forked));
+      setShowArchived(false);
+      setActiveId(forked.id);
+      setSelectedToolId(undefined);
+      setTab("chat");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+      throw reason;
+    }
+  };
+
+  const interrupt = async () => {
+    if (!activeId) return;
+    setError(undefined);
+    try {
+      await api.interrupt(activeId);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+      throw reason;
+    }
+  };
+
+  const compactSession = async () => {
+    if (!activeId) return;
+    const sessionId = activeId;
+    setError(undefined);
+    try {
+      await api.compactSession(sessionId);
+      const updated = await api.session(sessionId);
+      setDetail((current) => current?.id === sessionId ? updated : current);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : String(reason));
+      throw reason;
+    }
+  };
+
+  if (!config) return <div className="boot"><CatLogo size={36} /><strong>LONGCAT HARNESS</strong><span>正在连接本地服务…</span></div>;
+  const contextWindowTokens = config.contextWindowTokens;
+  const resetSession = () => {
+    setActiveId(undefined);
+    setShowArchived(false);
+    setNewPermissionMode(config.defaultPermissionMode);
+    setNewMode(config.defaultMode);
+    setNewModel(config.model);
+    setSelectedToolId(undefined);
+    setTab("chat");
+  };
+  const workspacePicker = <WorkspaceDialog
+    workspaces={config.workspaces}
+    activeWorkspaceId={config.workspaceId}
+    onSelect={(path) => changeWorkspace(path, false)}
+    onClear={() => changeWorkspace(null, false)}
+    onPick={pickWorkspace}
+    onClose={() => setWorkspaceOpen(false)}
+  />;
+  return <div className="app-shell">
+    <Sidebar
+      collapsed={collapsed}
+      sessions={visibleSessions}
+      workspaces={config.workspaces}
+      activeWorkspaceId={config.workspaceId}
+      activeId={activeId}
+      search={search}
+      sessionFilter={sessionFilter}
+      showArchived={showArchived}
+      archivedCount={sessions.filter((session) => session.archived === true).length}
+      onSearch={setSearch}
+      onSessionFilter={setSessionFilter}
+      onShowArchived={(value) => { setShowArchived(value); setActiveId(undefined); setSelectedToolId(undefined); }}
+      onCollapse={() => setCollapsed((value) => !value)}
+      onNew={resetSession}
+      onNewInWorkspace={(workspace) => {
+        if (workspace.id === config.workspaceId) { resetSession(); return; }
+        setError(undefined);
+        void changeWorkspace(workspace.path, false).catch((reason) => setError(reason instanceof Error ? reason.message : String(reason)));
+      }}
+      onSelect={(id) => { setActiveId(id); setSelectedToolId(undefined); setTab("chat"); }}
+      onWorkspaceAdd={() => { setError(undefined); void pickWorkspace().catch((reason) => setError(reason instanceof Error ? reason.message : String(reason))); }}
+      onWorkspaceRename={setRenamingWorkspace}
+      onWorkspaceDelete={setDeletingWorkspace}
+      onSessionRename={setRenamingSession}
+      onSessionFork={forkSession}
+      onToggleArchive={toggleArchive}
+      onSettings={() => setSettingsOpen(true)}
+    />
+    <main className="main-column">
+      {activeId && activeDetail ? <>
+        <header className="conversation-head"><div className="conversation-heading"><div className="conversation-title"><span>{activeSummary?.title ?? "会话"}</span>{activeSummary?.archived && <small>已归档</small>}{running && <i className="live-dot" />}</div><SessionIdentity sessionId={activeId} /></div><div className="tabs"><button data-testid="chat-tab" className={tab === "chat" ? "active" : ""} onClick={() => setTab("chat")}><Icon name="message" size={15} />对话</button><button data-testid="trajectory-tab" className={tab === "trajectory" ? "active" : ""} onClick={() => setTab("trajectory")}><Icon name="activity" size={15} />轨迹</button></div></header>
+        <PublishedPanels events={activeDetail?.events ?? []} sessionId={activeDetail?.id ?? ""} workspace={activeDetail?.workspace} disabled={activeSummary?.archived} />
+        <div className="view-area">
+          {tab === "chat" ? <Timeline items={timelineItems} subagents={projected.subagents} activeLabel={projected.activeLabel} running={Boolean(running)} actionsEnabled={!running} selectedToolId={selectedToolId} feedback={activeDetail.feedback} sessionId={activeId} workspace={activeSummary?.workspace ?? config.workspace} onSelectTool={(tool) => setSelectedToolId(tool.id)} onSelectSubagent={(subagent) => setSelectedToolId(subagent.id)} onFeedback={setMessageFeedback} onFork={forkFromMessage} onRetryInput={retryInput} /> : <Trajectory sessionId={activeId} />}
+
+          <UserQuestionDock key={activeId} requests={pendingQuestions} visible={tab === "chat"} disabled={activeSummary?.archived} onSubmit={submit}>{(requestId) => <Composer hero={false} running={Boolean(running)} stoppable={sessionCanStop(activeDetail.status, Boolean(running), pendingQuestions.length > 0)} configured={config.modelConfigured} disabledReason={activeSummary?.archived ? "该会话已归档，恢复后可继续输入" : undefined} mode={activeDetail.mode ?? activeSummary?.mode ?? config.defaultMode} modes={config.modes} model={activeDetail.model ?? activeSummary?.model ?? config.model} models={config.models} workspacePath={activeSummary?.workspace ?? config.workspace} workspaceLabel={activeWorkspaceLabel} workspaceSelected={activeSummary?.workspaceId !== undefined} permissionMode={activePermissionMode} tokenUsage={activeDetail.latestModelUsage} contextUsage={activeDetail.contextUsage} contextWindowTokens={contextWindowTokens} activeTab={tab} onPermissionChange={changePermission} onManageWorkspace={() => setWorkspaceOpen(true)} onClearWorkspace={() => undefined} onSubmit={(content) => submit(content, requestId)} onCompact={compactSession} onInterrupt={interrupt} onNewSession={resetSession} onOpenSettings={() => setSettingsOpen(true)} onOpenChat={() => setTab("chat")} onOpenTrajectory={() => setTab("trajectory")} onArchive={async () => { if (activeSummary) await toggleArchive(activeSummary); }} />}</UserQuestionDock>
+        </div>
+      </> : activeId && loadingOptimisticInput && activeSessionLoadError === undefined
+        ? <><header className="conversation-head"><div className="conversation-heading"><div className="conversation-title"><span>{activeSummary?.title ?? "会话"}</span></div><SessionIdentity sessionId={activeId} /></div></header><div className="view-area"><div className="conversation-scroll"><div className="message-column"><OptimisticUserTurn item={optimisticUserItem(loadingOptimisticInput)} onRetry={retryInput} /></div></div></div></>
+        : activeId
+        ? <SessionLoadingSurface error={activeSessionLoadError} onRetry={() => { setSessionLoadError(undefined); setSessionLoadAttempt((value) => value + 1); }} />
+        : <div className="hero"><PixelBlastBackground /><div className="hero-stack"><div className="hero-title"><p className="hero-slogan"><CatLogo size={38} className="hero-slogan-logo" /><span>Optimize for Optimization.</span></p></div>{draftOptimisticInput && <div className="hero-optimistic-message"><OptimisticUserTurn item={optimisticUserItem(draftOptimisticInput)} onRetry={retryInput} /></div>}<Composer hero running={false} configured={config.modelConfigured} mode={newMode} modes={config.modes} model={newModel} models={config.models} workspacePath={config.workspace} workspaceLabel={config.workspaceLabel} workspaceSelected={config.workspaceId !== undefined} permissionMode={newPermissionMode} contextWindowTokens={contextWindowTokens} onModeChange={setNewMode} onModelChange={setNewModel} onPermissionChange={changePermission} onManageWorkspace={() => setWorkspaceOpen(true)} onClearWorkspace={() => { setError(undefined); void changeWorkspace(null, false).catch((reason) => setError(reason instanceof Error ? reason.message : String(reason))); }} onSubmit={submit} onInterrupt={async () => undefined} onNewSession={resetSession} onOpenSettings={() => setSettingsOpen(true)} /></div></div>}
+      {error && <div className="error-toast"><Icon name="close" size={15} /><span>{error}</span><button onClick={() => setError(undefined)}>关闭</button></div>}
+    </main>
+    {selectedDetail && activeId && activeDetail && <DetailsPanel item={selectedDetail} events={activeDetail.events} sessionId={activeId} workspace={activeSummary?.workspace ?? config.workspace} onClose={() => setSelectedToolId(undefined)} />}
+    {settingsOpen && <SettingsDialog theme={theme} onTheme={setTheme} onSaved={() => { void api.config().then((next) => { setConfig(next); setNewModel(next.model); }); }} onClose={() => setSettingsOpen(false)} />}
+    {workspaceOpen && workspacePicker}
+    {renamingSession && <RenameSessionDialog session={renamingSession} onSave={async (title) => { await updateSessionMetadata(renamingSession.id, { title }); }} onClose={() => setRenamingSession(undefined)} />}
+    {renamingWorkspace && <RenameWorkspaceDialog workspace={renamingWorkspace} workspaces={config.workspaces} onSave={async (title) => { const next = await api.renameWorkspace(renamingWorkspace.id, { title }); setConfig(next); }} onClose={() => setRenamingWorkspace(undefined)} />}
+    {deletingWorkspace && <DeleteWorkspaceDialog workspace={deletingWorkspace} onDelete={async () => { const next = await api.deleteWorkspace(deletingWorkspace.id); setConfig(next); }} onClose={() => setDeletingWorkspace(undefined)} />}
+  </div>;
+}

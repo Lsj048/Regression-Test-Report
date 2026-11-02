@@ -1,0 +1,103 @@
+import type { ContentBlock } from "../../kernel/api/model/types.js";
+import type { ContextEffectForPoint, ContextPoint, ContextPolicy, ContextSnapshot, PolicyExecutionContext, PolicyInputEnvelope, PolicyResult } from "../../kernel/api/policy/types.js";
+import { createHash } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
+import { createDescriptor } from "../../kernel/api/policy/descriptor.js";
+
+function textLength(content: readonly ContentBlock[]): number {
+  return content.reduce((total, block) => total + (block.type === "text" ? block.text.length : 0), 0);
+}
+
+interface ToolResultSpillConfig {
+  readonly thresholdChars?: number;
+  readonly previewChars?: number;
+  readonly excludeTools?: readonly string[];
+  /** Exact Tool name -> spill threshold. The per-Tool value overrides thresholdChars. */
+  readonly toolThresholdChars?: Readonly<Record<string, number>>;
+}
+
+function configuredThreshold(config: ToolResultSpillConfig, toolName: string): number {
+  const perToolThreshold = config.toolThresholdChars?.[toolName];
+  return typeof perToolThreshold === "number" && Number.isInteger(perToolThreshold) && perToolThreshold > 0
+    ? perToolThreshold
+    : config.thresholdChars ?? 50_000;
+}
+
+export class ToolResultSpillPolicy implements ContextPolicy<"project_action_result"> {
+  readonly descriptor = createDescriptor({
+    apiVersion: "policy.longcat/v1",
+    id: "builtin.tool_result_spill",
+    version: "1.0.0",
+    configSchema: {
+      type: "object",
+      properties: {
+        thresholdChars: { type: "integer", minimum: 1 },
+        previewChars: { type: "integer", minimum: 1 },
+        excludeTools: { type: "array", items: { type: "string" } },
+        toolThresholdChars: {
+          type: "object",
+          additionalProperties: { type: "integer", minimum: 1 },
+        },
+      },
+      additionalProperties: false,
+    },
+    implementedInterfaces: ["context/v1"],
+    points: ["project_action_result"],
+    claims: [{ kind: "chain_member", chain: "context.action_result_projectors" }],
+    replayMode: "recorded_external_io",
+  });
+
+  constructor(private readonly artifactDirectory: string) {}
+
+  async #spill(input: { readonly sessionId: string; readonly callId: string; readonly content: readonly ContentBlock[]; readonly previewChars: number; readonly signal: AbortSignal }): Promise<readonly ContentBlock[]> {
+    input.signal.throwIfAborted();
+    const value = input.content.map((block) => block.type === "text" ? block.text : `[image: ${block.imageUrl}]`).join("\n");
+    const digest = createHash("sha256").update(value).digest("hex");
+    const safeSessionId = input.sessionId.replaceAll(/[^a-zA-Z0-9._-]/gu, "_") || "unknown-session";
+    const safeCallId = input.callId.replaceAll(/[^a-zA-Z0-9._-]/gu, "_") || "unknown-call";
+    const sessionRoot = resolve(this.artifactDirectory, "tool-results", safeSessionId);
+    await mkdir(sessionRoot, { recursive: true, mode: 0o700 });
+    const path = join(sessionRoot, `${safeCallId}-${digest}.txt`);
+    await writeFile(path, value, { encoding: "utf8", mode: 0o600 });
+    input.signal.throwIfAborted();
+    const points = [...value];
+    return [{
+      type: "text",
+      text: `${points.slice(0, input.previewChars).join("")}${points.length > input.previewChars ? "\n\n" : ""}[full tool result: ${path}; sha256=${digest}; bytes=${Buffer.byteLength(value, "utf8")}]`,
+    }];
+  }
+
+  async decideContext(input: PolicyInputEnvelope<ContextPoint, ContextSnapshot>, execution: PolicyExecutionContext): Promise<PolicyResult<ContextEffectForPoint<"project_action_result">>> {
+    const result = input.snapshot.actionResult;
+    if (input.point !== "project_action_result" || !result) return { decision: "abstain", proposals: [] };
+    const config = input.config as ToolResultSpillConfig;
+    if ((config.excludeTools ?? []).includes(result.name)) return { decision: "abstain", proposals: [] };
+    if (result.content.some((block) => block.type !== "text")) return { decision: "abstain", proposals: [] };
+    if (textLength(result.content) <= configuredThreshold(config, result.name)) return { decision: "abstain", proposals: [] };
+    try {
+      const content = await this.#spill({
+        sessionId: input.agent.sessionId,
+        callId: result.callId,
+        content: result.content,
+        previewChars: config.previewChars ?? 2_000,
+        signal: execution.signal,
+      });
+      return {
+        decision: "propose",
+        proposals: [{ kind: "project_action_result", callId: result.callId, content }],
+      };
+    } catch (error) {
+      execution.signal.throwIfAborted();
+      return {
+        decision: "abstain",
+        proposals: [],
+        diagnostics: [{
+          severity: "warning",
+          code: "TOOL_RESULT_SPILL_FAILED",
+          message: `完整工具结果落盘失败，继续向模型提供原始结果：${error instanceof Error ? error.message : String(error)}`,
+        }],
+      };
+    }
+  }
+}

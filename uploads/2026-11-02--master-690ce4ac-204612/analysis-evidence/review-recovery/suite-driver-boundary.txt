@@ -1,0 +1,44 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/cases/assistant-live-code-review-finding.ts
+    expect(renderedMarkers(renderedAnswerBeforeRefresh), "the page rendered the wrong finding summary")
+      .toEqual(scenario.finalMarkers);
+    const durationMs = Date.now() - startedAt;
+    expect(durationMs, "code-review Case exceeded its duration budget").toBeLessThan(durationBudgetMs);
+    await expect(page.getByTestId("stop-task")).toHaveCount(0);
+    await expect(page.getByTestId("permission-select")).toBeEnabled();
+    await expect(page.getByRole("button", { name: "复制回答" })).toBeVisible();
+    expect(await readFile(sourcePath, "utf8"), "the read-only review changed its source file").toBe(originalSource);
+
+    const expectedWorkspacePaths = [
+      ".longcat-harness",
+      ".longcat-harness/tools",
+      ".longcat-harness/tools/sessions",
+      `.longcat-harness/tools/sessions/${session.id}`,
+      `.longcat-harness/tools/sessions/${session.id}/interaction.json`,
+      "src",
+      scenario.sourcePath,
+    ];
+    expect(await workspacePaths(current.workspace), "the code-review Case changed an unexpected workspace path")
+      .toEqual(expectedWorkspacePaths);
+
+    const audit = auditAssistantLiveCodeReviewFinding(
+      join(current.stateDirectory, "event_log.sqlite"),
+      join(current.stateDirectory, "message.sqlite"),
+      session.id,
+      current.workspace,
+      originalSource,
+    );
+    expect(renderedMarkers(audit.finalAnswer), "the page answer disagrees with SQLite")
+      .toEqual(renderedMarkers(renderedAnswerBeforeRefresh));
+
+    const completedActivity = page.locator(".timeline-group .turn-activity.completed");
+    await expect(completedActivity, "the page omitted the completed code-review activity").toHaveCount(1);
+    await completedActivity.locator(":scope > summary").click();
+    const toolCards = completedActivity.locator(".tool-card");
+    await expect(toolCards, "the page omitted a code-review Tool card").toHaveCount(audit.toolDetails.length);
+    await expect(toolCards.locator(".tool-copy > strong")).toHaveText(audit.toolCallSequence);
+    expect(await toolCards.locator(".tool-status").allTextContents())
+      .toEqual(Array.from({ length: audit.toolDetails.length }, () => "已完成"));
+    const cardsBeforeRefresh = (await toolCards.allInnerTexts())
+      .map((text) => text.replace(/\s+/gu, " ").trim());
+    const detailsBeforeRefresh: string[] = [];

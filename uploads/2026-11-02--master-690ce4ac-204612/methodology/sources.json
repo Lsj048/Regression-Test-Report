@@ -1,0 +1,112 @@
+[
+  {
+    "file": "spec/README.md",
+    "revision": "690ce4ac3d8bd4f24b734173019b8c61340c0a83",
+    "snapshot": "spec--README.md.txt"
+  },
+  {
+    "file": "spec/conformance.md",
+    "revision": "690ce4ac3d8bd4f24b734173019b8c61340c0a83",
+    "snapshot": "spec--conformance.md.txt"
+  },
+  {
+    "file": "docs/testing/README.md",
+    "revision": "b706d45f9131a86caabf0553b74457bab5f4864d",
+    "snapshot": "docs--testing--README.md.txt"
+  },
+  {
+    "file": "docs/testing/case-design.md",
+    "revision": "b706d45f9131a86caabf0553b74457bab5f4864d",
+    "snapshot": "docs--testing--case-design.md.txt"
+  },
+  {
+    "file": "docs/testing/failure-attribution.md",
+    "revision": "b706d45f9131a86caabf0553b74457bab5f4864d",
+    "snapshot": "docs--testing--failure-attribution.md.txt"
+  },
+  {
+    "file": "docs/testing/harness-evaluation.md",
+    "revision": "b706d45f9131a86caabf0553b74457bab5f4864d",
+    "snapshot": "docs--testing--harness-evaluation.md.txt"
+  },
+  {
+    "file": "docs/testing/web-regression.md",
+    "revision": "b706d45f9131a86caabf0553b74457bab5f4864d",
+    "snapshot": "docs--testing--web-regression.md.txt"
+  },
+  {
+    "file": "docs/testing/test-selection.md",
+    "revision": "b706d45f9131a86caabf0553b74457bab5f4864d",
+    "snapshot": "docs--testing--test-selection.md.txt"
+  },
+  {
+    "file": "docs/testing/new-playwright-case-sop.md",
+    "revision": "b706d45f9131a86caabf0553b74457bab5f4864d",
+    "snapshot": "docs--testing--new-playwright-case-sop.md.txt"
+  },
+  {
+    "file": "scripts/evaluation/README.md",
+    "revision": "b706d45f9131a86caabf0553b74457bab5f4864d",
+    "snapshot": "scripts--evaluation--README.md.txt"
+  },
+  {
+    "file": "scripts/evaluation/g2/README.md",
+    "revision": "b706d45f9131a86caabf0553b74457bab5f4864d",
+    "snapshot": "scripts--evaluation--g2--README.md.txt"
+  },
+  {
+    "file": "scripts/evaluation/g2/rules.md",
+    "revision": "b706d45f9131a86caabf0553b74457bab5f4864d",
+    "snapshot": "scripts--evaluation--g2--rules.md.txt"
+  },
+  {
+    "file": "test/e2e/suite-companions.json",
+    "revision": "b706d45f9131a86caabf0553b74457bab5f4864d",
+    "snapshot": "test--e2e--suite-companions.json.txt"
+  },
+  {
+    "file": "spec/acceptance.md",
+    "revision": "690ce4ac3d8bd4f24b734173019b8c61340c0a83",
+    "snapshot": "spec--acceptance.md.txt"
+  },
+  {
+    "file": "spec/boundaries.md",
+    "revision": "690ce4ac3d8bd4f24b734173019b8c61340c0a83",
+    "snapshot": "spec--boundaries.md.txt"
+  },
+  {
+    "file": "spec/compatibility.md",
+    "revision": "690ce4ac3d8bd4f24b734173019b8c61340c0a83",
+    "snapshot": "spec--compatibility.md.txt"
+  },
+  {
+    "file": "spec/context.md",
+    "revision": "690ce4ac3d8bd4f24b734173019b8c61340c0a83",
+    "snapshot": "spec--context.md.txt"
+  },
+  {
+    "file": "spec/execution.md",
+    "revision": "690ce4ac3d8bd4f24b734173019b8c61340c0a83",
+    "snapshot": "spec--execution.md.txt"
+  },
+  {
+    "file": "spec/interfaces.md",
+    "revision": "690ce4ac3d8bd4f24b734173019b8c61340c0a83",
+    "snapshot": "spec--interfaces.md.txt"
+  },
+  {
+    "file": "spec/lifecycle.md",
+    "revision": "690ce4ac3d8bd4f24b734173019b8c61340c0a83",
+    "snapshot": "spec--lifecycle.md.txt"
+  },
+  {
+    "file": "spec/persistence.md",
+    "revision": "690ce4ac3d8bd4f24b734173019b8c61340c0a83",
+    "snapshot": "spec--persistence.md.txt"
+  },
+  {
+    "file": "spec/policies.md",
+    "revision": "690ce4ac3d8bd4f24b734173019b8c61340c0a83",
+    "snapshot": "spec--policies.md.txt"
+  }
+]

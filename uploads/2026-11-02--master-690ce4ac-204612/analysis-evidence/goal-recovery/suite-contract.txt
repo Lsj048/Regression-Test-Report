@@ -1,0 +1,16 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/live-goal-scenarios.ts
+export const GOAL_TASK = Object.freeze({
+  file: "release-note.txt", body: "灰度发布已安排",
+  prompt: "请完成一项文本交付：在当前工作区新建 release-note.txt，正文为“灰度发布已安排”（不含引号和标点，文字逐字保留，行末换行有无均可）。验收标准只有文件存在、读取到的正文正确。请按简短计划交付并核对后告诉我结果。只创建这一份文件；如需确认当前目录或目录内容，可以用 pwd、ls 做只读查询，不执行其他命令、不联网、不委派。",
+});
+export const LIVE_GOAL_COMPLETE_CASE: EvaluationCaseContract = {
+  contractVersion: 4, id: "goal.live-complete", mode: "goal", modelExecution: "live",
+  prompt: GOAL_TASK.prompt, finalMarker: GOAL_TASK.file,
+  artifactFiles: { sqliteAudit: "goal-live-complete-sqlite-audit.json", timings: "goal-live-complete-timings.json", serviceLog: "isolated-service.log" },
+  timingBudgetsMs: { durationMs: 600_000, refreshRecoveryMs: 10_000 },
+  requiredTools: ["Write", "update_goal_plan", "record_goal_evidence", "update_goal", "Read"],
+  allowedOptionalTools: ["get_goal", "create_goal", "Glob", "Grep", "Bash"],
+  requiredPolicyEvidence: ["goal.execution", "builtin.model_tool_calls", "builtin.tool_scheduler"], toolSurface: "configured_plus_subagents",
+};
+

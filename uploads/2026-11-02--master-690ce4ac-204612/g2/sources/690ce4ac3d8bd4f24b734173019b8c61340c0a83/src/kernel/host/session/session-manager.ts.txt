@@ -1,0 +1,2594 @@
+import { cancelPausedTurn, reconcileCancelledTurn } from "./cancel-paused-turn.js";
+import { firstPartyPresentationHistoryAdapters, firstPartyPolicyStateViews } from "../../../extensions/catalog.js";
+import { publishedPresentations } from "./queries/presentations.js";
+import { pendingUserQuestions } from "./queries/user-questions.js";
+import { DEFAULT_SESSION_MODELS } from "../settings/session-options.js";
+import { recoverableTurnAdvances } from "../runtime/turn-advancement.js";
+import { sessionPublicStates } from "../runtime/policy-public-state.js";
+import { readSessionPolicyStateViews } from "../runtime/policy-state-views.js";
+import type { PolicyStateView } from "../../api/policy/state-view.js";
+import { mkdir, readFile, realpath, stat } from "node:fs/promises";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import type { ToolQuestion, ToolQuestionAnswer } from "../../api/tool/package.js";
+import { validateJsonSchema } from "../../api/foundation/schema.js";
+import type { ToolApprovalRequest, ToolApprovalResponse } from "../../api/tool/permission.js";
+import { systemClock } from "../../api/foundation/clock.js";
+import { ContractError, StateConflictError, errorMessage } from "../../api/foundation/errors.js";
+import { newId } from "../../api/foundation/id.js";
+import { hashJson, type JsonObject, type JsonValue } from "../../api/foundation/json.js";
+import { defaultHarnessSettingsPath } from "../../api/foundation/storage-path.js";
+import type { ModelStreamFrame } from "../../runtime/agent/types.js";
+import type { ModelTokenCounter } from "../../api/model/types.js";
+import type { HarnessInstance } from "../runtime/harness.js";
+import { createModeRuntime, type ModeRuntime } from "../runtime/mode-runtime.js";
+import { createNotificationServiceProvider, createUserQuestionServiceProvider } from "../runtime/core-service-providers.js";
+import { createHumanInputServiceProvider } from "./human-input-service.js";
+import { createSchedulerServiceProvider } from "../runtime/scheduler-service-provider.js";
+import { SessionCatalog, type SessionRecord } from "./session-catalog.js";
+import { recoverOrphanedTurns } from "./orphaned-turn-recovery.js";
+import { SessionExecutionOwnership } from "./execution-ownership.js";
+import { HumanInputCoordinator } from "./human-input.js";
+import { WorkspaceCatalog, isLegacyWorkspaceId, type WorkspaceRegistrySnapshot } from "./workspace-catalog.js";
+import { SqliteMessageStore } from "../storage/sqlite/message-store.js";
+import { EventLogTraceSink } from "../../runtime/events/trace.js";
+import { OpenAIChatProvider } from "../providers/openai-chat-provider.js";
+import { kernelModelConfig, modelTokenCounter, parseModelSettings, saveHarnessModelSettings, type ModelSettings } from "../settings/settings.js";
+import { listRunnableModeConfigs } from "../settings/mode-config.js";
+import type { ModeConfig } from "../../api/mode.js";
+import { SqliteTurnRepository } from "../storage/sqlite/turn-repository.js";
+import { MessageCommitter } from "../../runtime/agent/message-committer.js";
+import { isTerminalState } from "../../runtime/state/machine.js";
+import type { AgentState, DurableEvent } from "../../runtime/state/types.js";
+import { SESSION_PERMISSION_MODES, isSessionPermissionMode, type CompactSessionResponse, type ForkSessionRequest, type SetMessageFeedbackRequest, type UpdateModelSettingsRequest, type UpdateSessionRequest, type SessionEvent, type SessionJson, type MessageFeedback, type ModelName, type ModelSettingsView, type SessionPermissionMode, type SessionConfig, type SessionDetail, type SessionSummary, type SubagentDetail, type SubagentStatus, type SubagentSummary, type TurnDetail, type TurnSummary } from "../../api/session/protocol.js";
+import { latestContextUsage, tokenUsageFromEvent } from "./queries/context-usage.js";
+import { projectTrajectory } from "./queries/trajectory.js";
+import { NotifyingTurnRepository } from "./notifying-repository.js";
+import { runtimePerformanceNow, runtimePerformanceTrace } from "../runtime/performance-trace.js";
+
+const MAX_PREVIEW_BYTES = 25 * 1024 * 1024;
+
+export interface HostSessionManagerOptions {
+  /** Available pure views; only matching, active stored component bindings can supply data. */
+  readonly policyStateViews?: readonly PolicyStateView[];
+  readonly supportedModels?: readonly string[];
+  readonly interactive?: boolean;
+  readonly mode?: string;
+  readonly modeConfigRoot?: string;
+  /** Only for an explicit legacy migration after the operator has stopped all old executors. */
+  readonly legacyRecovery?: "confirmed-stopped";
+  readonly workspace: string;
+  readonly model: ModelSettings;
+  readonly apiKey?: string;
+  readonly settingsPath?: string;
+  readonly defaultPermissionMode: SessionPermissionMode;
+  /** Canonical main-flow, tool, model and Policy event database. */
+  readonly eventLogSqlitePath: string;
+  /** Canonical append-only model-visible message database. */
+  readonly messageSqlitePath?: string;
+}
+
+export interface SessionFile {
+  readonly path: string;
+  readonly name: string;
+  readonly body: Buffer;
+}
+
+export interface SessionFileInfo {
+  readonly path: string;
+  readonly name: string;
+  readonly byteLength: number;
+}
+
+interface PendingSessionInput {
+  readonly advanceFromTurnId?: string;
+  readonly inputId: string;
+  readonly content: string;
+  readonly runtimeSessionId?: string;
+  readonly rootTurnId?: string;
+  readonly parentTurnId?: string;
+  readonly causedByCallId?: string;
+}
+
+interface PendingUserQuestion {
+  readonly kind: "user_input" | "approval";
+  readonly requestId: string;
+  readonly rootSessionId: string;
+  readonly sessionId: string;
+  readonly turnId: string;
+  readonly rootTurnId: string;
+  readonly callId: string;
+  readonly questions: readonly ToolQuestion[];
+}
+
+interface ActiveTurn {
+  turnId: string;
+  /** Latest committed root version observed before presentation reads can fail. */
+  sessionTurnVersion?: { readonly turnId: string; readonly revision: number };
+  currentInputId?: string;
+  completion: Promise<void>;
+  accepting: boolean;
+  pendingInputs: PendingSessionInput[];
+  sideEffects: Set<Promise<void>>;
+  waitingForInput?: boolean;
+  harness?: HarnessInstance;
+  wakeInput?: () => void;
+  continueChildInput?: (input: PendingSessionInput) => Promise<void>;
+  interrupt?: (reason: string, cause?: "user" | "host_shutdown", turnIds?: readonly string[]) => Promise<AgentState>;
+  pendingApproval?: {
+    readonly turnId: string;
+    readonly requestId: string;
+    readonly resolve: (answer: ToolQuestionAnswer) => void;
+    readonly reject: (error: Error) => void;
+  };
+}
+
+interface LiveModelSnapshot {
+  readonly rootSessionId: string;
+  readonly sourceSessionId: string;
+  readonly turnId: string;
+  readonly planId: string;
+  content: string;
+  reasoningContent: string;
+  usage?: JsonValue;
+  updatedAt: string;
+}
+
+type Subscriber = (event: SessionEvent) => void;
+
+function titleFrom(content: string): string {
+  const line = content.trim().split(/\r?\n/u, 1)[0]!.replace(/\s+/gu, " ");
+  const points = [...line];
+  return points.length <= 28 ? line : `${points.slice(0, 28).join("")}…`;
+}
+
+function declaresWorkspaceSelection(event: DurableEvent): boolean {
+  if (event.type !== "session.created" && event.type !== "session.metadata.snapshot" && event.type !== "ui.session.created"
+    && event.type !== "session.updated" && event.type !== "ui.session.updated") return false;
+  if (event.payload === null || typeof event.payload !== "object" || Array.isArray(event.payload)) return false;
+  const payload = event.payload as Readonly<Record<string, JsonValue>>;
+  const metadata = (event.type === "session.updated" || event.type === "ui.session.updated")
+    && payload["to"] !== null && typeof payload["to"] === "object" && !Array.isArray(payload["to"])
+    ? payload["to"] as Readonly<Record<string, JsonValue>>
+    : payload;
+  return Object.prototype.hasOwnProperty.call(metadata, "workspaceId");
+}
+
+function webEvent(rootSessionId: string, event: DurableEvent, sessionUpdatedAt?: string): SessionEvent {
+  return {
+    cursor: event.seq,
+    eventId: event.eventId,
+    sessionId: rootSessionId,
+    sourceSessionId: event.sessionId,
+    ...(event.turnId === undefined ? {} : { turnId: event.turnId }),
+    type: event.type,
+    payload: event.payload as SessionJson,
+    payloadHash: event.payloadHash,
+    traceId: event.traceId ?? null,
+    createdAt: event.createdAt,
+    ...(sessionUpdatedAt === undefined ? {} : { sessionUpdatedAt }),
+  };
+}
+
+function webStatus(session: SessionRecord, activelyRunning = false): SessionSummary["status"] {
+  if (session.sessionStatus.kind === "system_error") return "failed";
+  if (activelyRunning || session.sessionStatus.kind === "active") return "running";
+  if (session.sessionStatus.kind === "waiting" || session.latestTurnOutcome?.kind === "waiting") return "waiting";
+  if (session.latestTurnOutcome?.kind === "blocked") return "blocked";
+  if (session.latestTurnOutcome?.kind === "completed") return "completed";
+  if (session.latestTurnOutcome?.kind === "failed") return "failed";
+  if (session.latestTurnOutcome?.kind === "aborted" || session.latestTurnOutcome?.kind === "interrupted") return "interrupted";
+  if (session.forkedFromSessionId !== undefined) return "completed";
+  return "idle";
+}
+
+function driverErrorMessage(error: unknown): string {
+  return error instanceof AggregateError
+    ? `${error.message}: ${error.errors.map(driverErrorMessage).join("; ")}`
+    : errorMessage(error);
+}
+
+function feedbackFrom(events: readonly SessionEvent[]): Record<string, MessageFeedback> {
+  const feedback: Record<string, MessageFeedback> = {};
+  for (const event of events) {
+    if (event.type !== "ui.message.feedback" || event.payload === null || typeof event.payload !== "object" || Array.isArray(event.payload)) continue;
+    const payload = event.payload as Readonly<Record<string, SessionJson>>;
+    const messageId = payload["messageId"];
+    const rating = payload["rating"];
+    if (typeof messageId !== "string") continue;
+    if (rating === "up" || rating === "down") feedback[messageId] = rating;
+    else if (rating === null) delete feedback[messageId];
+  }
+  return feedback;
+}
+
+function summaryOf(session: SessionRecord, activelyRunning = false): SessionSummary {
+  const turnCount = session.turnCount;
+  return {
+    id: session.id,
+    title: session.title,
+    workspace: session.workspace,
+    ...(session.workspaceId === undefined ? {} : { workspaceId: session.workspaceId }),
+    model: session.model,
+    mode: session.mode,
+    createdAt: session.createdAt,
+    updatedAt: session.updatedAt,
+    status: webStatus(session, activelyRunning),
+    lastCursor: session.lastEventSeq,
+    sessionStatus: session.sessionStatus,
+    ...(session.latestTurnOutcome === undefined ? {} : { latestTurnOutcome: session.latestTurnOutcome }),
+    turnCount,
+    permissionMode: session.permissionMode,
+    pinned: session.pinned,
+    archived: session.archived,
+    blank: turnCount === 0,
+  };
+}
+
+/** SessionEvent kinds required by the conversation projection; trajectory-only audit bodies stay unopened. */
+const HISTORY_ADAPTERS = firstPartyPresentationHistoryAdapters();
+const PRESENTATION_EVENT_TYPES = [
+  ...HISTORY_ADAPTERS.flatMap(adapter => adapter.eventTypes),
+  "turn.created",
+  "input.queued",
+  "input.promoted",
+  "input.queue.cancelled",
+  "model.request.started",
+  "model.failed",
+  "model.interrupted",
+  "message.appended",
+  "tool.call",
+  "action.settled",
+  "host.activity",
+  "host.resume.failed",
+  "host.execution.failed",
+  "host.recovery.blocked",
+  "host.question",
+  "host.question.answered",
+  "host.presentation.action.requested",
+  "host.human_input.requested",
+  "host.human_input.answered",
+  "state.transition.requested",
+  "state.completed",
+  "state.failed",
+  "state.interrupted",
+  "turn.completed",
+  "turn.waiting",
+  "turn.blocked",
+  "turn.failed",
+  "turn.interrupted",
+  "ui.session.status.changed",
+  "policy.state.published",
+  "ui.message.feedback",
+  "ui.command.started",
+  "ui.command.completed",
+  "ui.command.failed",
+  "session.forked",
+  "session.permission.changed",
+  "host.recovery.detected",
+  "subagent.created",
+  "subagent.settled",
+  "subagent.start_failed",
+] as const;
+
+/** Live notifications are already in memory; cold conversation reads replace model bodies from message.sqlite. */
+const LIVE_PRESENTATION_EVENT_TYPES = [...PRESENTATION_EVENT_TYPES, "model.completed", "tool.result"] as const;
+
+const TURN_SUMMARY_EVENT_TYPES = [
+  "turn.created",
+  "input.promoted",
+  "state.transition.requested",
+  "state.completed",
+  "state.failed",
+  "state.interrupted",
+  "turn.completed",
+  "turn.waiting",
+  "turn.blocked",
+  "turn.failed",
+  "turn.interrupted",
+  "ui.session.status.changed",
+  "subagent.created",
+  "subagent.settled",
+  "subagent.start_failed",
+] as const;
+
+function subagentIdFrom(event: DurableEvent): string | undefined {
+  if (event.type !== "subagent.created" || event.payload === null || typeof event.payload !== "object" || Array.isArray(event.payload)) return undefined;
+  const value = (event.payload as Readonly<Record<string, JsonValue>>)["subagentId"];
+  return typeof value === "string" ? value : undefined;
+}
+
+function webEventPayload(event: SessionEvent): Readonly<Record<string, SessionJson>> | undefined {
+  return event.payload !== null && typeof event.payload === "object" && !Array.isArray(event.payload)
+    ? event.payload as Readonly<Record<string, SessionJson>>
+    : undefined;
+}
+
+function webEventString(event: SessionEvent, key: string): string | undefined {
+  const value = webEventPayload(event)?.[key];
+  return typeof value === "string" ? value : undefined;
+}
+
+function pendingQuestionKey(rootSessionId: string, requestId: string): string {
+  return `${rootSessionId}\u0000${requestId}`;
+}
+
+function approvalResponse(content: string): ToolApprovalResponse {
+  return { allowed: ["允许", "yes", "approve"].includes(content.trim().toLowerCase()) };
+}
+
+function subagentStatus(event: SessionEvent): SubagentStatus {
+  if (event.type === "subagent.start_failed") return "failed";
+  const state = webEventString(event, "state");
+  if (state === "completed") return "completed";
+  if (state === "interrupted" || state === "aborted" || state === "killed") return "stopped";
+  return "failed";
+}
+
+/** Shared session operations: own execution coordination and expose only stable views, never Kernel or database objects. */
+export class HostSessionManager {
+  readonly #repository: NotifyingTurnRepository;
+  readonly #catalog: SessionCatalog;
+  readonly #workspaceCatalog: WorkspaceCatalog;
+  readonly #messages: SqliteMessageStore;
+  readonly #trace: EventLogTraceSink;
+  #tokenCounter: ModelTokenCounter;
+  /** Exact tokenizers are model-specific while sessions may override the settings default; counters are cached per model name. */
+  readonly #tokenCounters = new Map<string, ModelTokenCounter>();
+  readonly #active = new Map<string, ActiveTurn>();
+  /** Audit-write failures remain queryable until the associated Turn advances or a new Turn starts. */
+  readonly #driverFailures = new Map<string, { readonly sessionTurnId: string | undefined; readonly sessionTurnRevision: number | undefined; readonly error: unknown; readonly occurredAt: string }>();
+  readonly #humanInputs: HumanInputCoordinator;
+  readonly #humanAnswers = new Map<string, Promise<SessionSummary>>();
+  readonly #presentationActions = new Map<string, Promise<SessionSummary>>();
+  readonly #inputOperations = new Map<string, Promise<unknown>>();
+  readonly #unownedLegacySessions = new Set<string>();
+  readonly #pendingUserQuestions = new Map<string, PendingUserQuestion>();
+  readonly #maintenance = new Set<string>();
+  readonly #subscribers = new Map<string, Set<Subscriber>>();
+  readonly #eventsBySession = new Map<string, SessionEvent[]>();
+  readonly #rootByRuntimeSession = new Map<string, string>();
+  readonly #modeRuntimes = new Map<string, ModeRuntime>();
+  readonly #modeRuntimeKeys = new Map<string, string>();
+  readonly #liveModelSnapshots = new Map<string, LiveModelSnapshot>();
+  readonly #sessions = new Map<string, SessionRecord>();
+  #workspaceRegistry: WorkspaceRegistrySnapshot = { items: [], initialized: false };
+  #workspace: string;
+  readonly #unscopedWorkspace: string;
+  #workspaceId: string | undefined;
+  #modelSettings: ModelSettings;
+  #apiKey: string | undefined;
+  #apiKeyPersisted: boolean;
+  readonly #modeConfigs: readonly ModeConfig[];
+  readonly #defaultMode: string;
+
+  private constructor(
+    private readonly options: HostSessionManagerOptions,
+    repository: SqliteTurnRepository,
+    messages: SqliteMessageStore,
+    modeConfigs: readonly ModeConfig[],
+    private readonly executionOwnership: SessionExecutionOwnership,
+  ) {
+    this.#messages = messages;
+    this.#workspace = options.workspace;
+    this.#unscopedWorkspace = join(dirname(options.eventLogSqlitePath), "unscoped-workspace");
+    this.#modelSettings = options.model;
+    this.#apiKey = options.apiKey ?? options.model.apiKey;
+    this.#apiKeyPersisted = options.model.apiKey !== undefined;
+    this.#modeConfigs = modeConfigs;
+    this.#defaultMode = options.mode ?? "standard";
+    this.#repository = new NotifyingTurnRepository(repository, {
+      onEvents: (events) => this.#onDurableEvents(events),
+      onState: (state) => this.#onState(state),
+    });
+    this.#humanInputs = new HumanInputCoordinator(this.#repository, this.#messages);
+    this.#catalog = new SessionCatalog(this.#repository, this.#messages, {
+      workspace: options.workspace,
+      model: this.#modelSettings.name,
+      mode: this.#defaultMode,
+      permissionMode: options.defaultPermissionMode,
+    });
+    this.#workspaceCatalog = new WorkspaceCatalog(this.#repository);
+    this.#trace = new EventLogTraceSink(this.#repository, systemClock);
+    this.#tokenCounter = modelTokenCounter(this.#modelSettings);
+  }
+
+  /** Token counting follows the session's model, not the settings default; unknown models stay on the explicit heuristic. */
+  #tokenCounterFor(model: string): ModelTokenCounter {
+    if (model === this.#modelSettings.name) return this.#tokenCounter;
+    let counter = this.#tokenCounters.get(model);
+    if (counter === undefined) {
+      counter = modelTokenCounter({ ...this.#modelSettings, name: model });
+      this.#tokenCounters.set(model, counter);
+    }
+    return counter;
+  }
+
+  /** Fork re-counts copied history with the source session's tokenizer so message_token_count stays model-consistent. */
+  #messageCommitterFor(model: string): MessageCommitter {
+    return new MessageCommitter(this.#repository, this.#messages, this.#tokenCounterFor(model), kernelModelConfig(this.#modelSettings, model));
+  }
+
+  static async create(options: HostSessionManagerOptions): Promise<HostSessionManager> {
+    if (!(options.supportedModels ?? DEFAULT_SESSION_MODELS).includes(options.model.name)) throw new ContractError(`Web UI 不支持模型：${options.model.name}`, "WEB_MODEL_UNSUPPORTED");
+    const modeConfigs = await listRunnableModeConfigs(options.modeConfigRoot);
+    const defaultMode = options.mode ?? "standard";
+    if (!modeConfigs.some((mode) => mode.id === defaultMode)) throw new ContractError(`Web UI 不支持模式：${defaultMode}`, "WEB_MODE_UNSUPPORTED");
+    const eventLogPath = options.eventLogSqlitePath;
+    const messagePath = options.messageSqlitePath ?? join(dirname(eventLogPath), "message.sqlite");
+    await mkdir(dirname(eventLogPath), { recursive: true });
+    await mkdir(dirname(messagePath), { recursive: true });
+    await mkdir(join(dirname(eventLogPath), "unscoped-workspace"), { recursive: true });
+    const repository = new SqliteTurnRepository(eventLogPath, systemClock);
+    let messages: SqliteMessageStore | undefined;
+    let ownership: SessionExecutionOwnership | undefined;
+    try {
+      messages = new SqliteMessageStore(messagePath, systemClock);
+      const reconcileStartedAt = runtimePerformanceNow();
+      const repairedMessages = await new MessageCommitter(repository, messages, modelTokenCounter(options.model), kernelModelConfig(options.model)).reconcilePending();
+      runtimePerformanceTrace("storage.messages.reconciled", {
+        repairedMessages,
+        durationMs: Number((runtimePerformanceNow() - reconcileStartedAt).toFixed(3)),
+      });
+      ownership = new SessionExecutionOwnership(eventLogPath);
+      const manager = new HostSessionManager(options, repository, messages, modeConfigs, ownership);
+      await manager.#initialize();
+      return manager;
+    } catch (error) {
+      ownership?.close();
+      await messages?.close();
+      await repository.close();
+      throw error;
+    }
+  }
+
+  config(): SessionConfig {
+    return {
+      appName: "LongCat Harness",
+      version: "0.1.0",
+      model: this.#model(this.#modelSettings.name),
+      models: this.options.supportedModels ?? DEFAULT_SESSION_MODELS,
+      defaultMode: this.#defaultMode,
+      modes: this.#modeConfigs.map(({ id, label, description }) => ({ id, label, ...(description === undefined ? {} : { description }) })),
+      contextWindowTokens: this.#modelSettings.contextWindowTokens,
+      workspace: this.#workspace,
+      ...(this.#workspaceId === undefined ? {} : { workspaceId: this.#workspaceId }),
+      workspaceLabel: this.#workspaceId === undefined
+        ? "无工作区"
+        : this.#workspaceRegistry.items.find((workspace) => workspace.id === this.#workspaceId)?.title ?? "无工作区",
+      workspaces: this.#workspaceRegistry.items.map((workspace) => ({
+        id: workspace.id,
+        path: workspace.path,
+        label: workspace.title,
+        createdAt: workspace.createdAt,
+      })),
+      defaultPermissionMode: this.options.defaultPermissionMode,
+      permissionModes: SESSION_PERMISSION_MODES,
+      modelConfigured: Boolean(this.#apiKey),
+    };
+  }
+
+  modelSettings(): ModelSettingsView {
+    return {
+      name: this.#model(this.#modelSettings.name),
+      baseUrl: this.#modelSettings.baseUrl,
+      apiKeyConfigured: Boolean(this.#apiKey),
+      apiKeySource: this.#apiKeyPersisted ? "saved" : this.#apiKey ? "environment" : "none",
+      maxOutputTokens: this.#modelSettings.maxOutputTokens,
+      contextWindowTokens: this.#modelSettings.contextWindowTokens,
+      temperature: kernelModelConfig(this.#modelSettings).temperature ?? this.#modelSettings.temperature,
+      thinkingEnabled: this.#modelSettings.thinking.enabled,
+      thinkingBudgetTokens: this.#modelSettings.thinking.budgetTokens,
+      headersTimeoutMs: this.#modelSettings.timeouts.headersMs,
+      chunkStallTimeoutMs: this.#modelSettings.timeouts.chunkStallMs,
+      absoluteTimeoutMs: this.#modelSettings.timeouts.absoluteMs,
+    };
+  }
+
+  async updateModelSettings(request: UpdateModelSettingsRequest): Promise<ModelSettingsView> {
+    if (this.#active.size > 0 || this.#maintenance.size > 0) throw new ContractError("有会话正在运行或压缩，请等待结束后再修改模型设置", "WEB_MODEL_SETTINGS_BUSY");
+    if (request.apiKey !== undefined && typeof request.apiKey !== "string") throw new ContractError("API Key 必须是字符串", "WEB_MODEL_SETTINGS_INVALID");
+    const replacementApiKey = request.apiKey?.trim() || undefined;
+    const persistedApiKey = replacementApiKey ?? (this.#apiKeyPersisted ? this.#apiKey : undefined);
+    const selectedModel = kernelModelConfig(this.#modelSettings, this.#model(request.name));
+    const model = parseModelSettings({
+      name: this.#model(request.name),
+      baseUrl: request.baseUrl,
+      ...(persistedApiKey === undefined ? {} : { apiKey: persistedApiKey }),
+      maxOutputTokens: request.maxOutputTokens,
+      contextWindowTokens: request.contextWindowTokens,
+      temperature: request.temperature,
+      modalities: { input: selectedModel.inputModalities },
+      thinking: { enabled: request.thinkingEnabled, budgetTokens: request.thinkingBudgetTokens },
+      timeouts: {
+        headersMs: request.headersTimeoutMs,
+        chunkStallMs: request.chunkStallTimeoutMs,
+        absoluteMs: request.absoluteTimeoutMs,
+      },
+    });
+    await saveHarnessModelSettings(model, this.options.settingsPath ?? defaultHarnessSettingsPath());
+    this.#modelSettings = model;
+    this.#apiKey = replacementApiKey ?? this.#apiKey;
+    this.#apiKeyPersisted = persistedApiKey !== undefined;
+    this.#tokenCounter = modelTokenCounter(model);
+    return this.modelSettings();
+  }
+
+  async list(): Promise<readonly SessionSummary[]> {
+    await this.#refreshAllSessions();
+    return [...this.#sessions.values()]
+      .map((session) => summaryOf(session, this.#isActivelyRunning(session.id)))
+      .sort((left, right) => Number(right.pinned) - Number(left.pinned) || right.updatedAt.localeCompare(left.updatedAt));
+  }
+
+  /** Read committed audit facts, including child and session-scoped events, without hydrating conversations. */
+  async queryEvents(types: readonly string[], after = 0, limit = 256): Promise<readonly SessionEvent[]> {
+    if (!Number.isSafeInteger(after) || after < 0 || !Number.isSafeInteger(limit) || limit < 1 || limit > 1024
+      || types.length > 64 || types.some((type) => typeof type !== "string" || !type)) {
+      throw new ContractError("事件查询参数无效", "SESSION_EVENT_QUERY_INVALID");
+    }
+    if (types.length === 0) return [];
+    let through = after;
+    for (const id of await this.#repository.listSessionIds()) {
+      through = Math.max(through, await this.#repository.latestEventSeq(id));
+    }
+    let page: DurableEvent[] = [];
+    // Enumerate again after fixing the upper cursor: a newly created session may
+    // contain an earlier event than the last session inspected above.
+    for (const id of await this.#repository.listSessionIds()) {
+      const events = await this.#repository.eventsByTypes(id, types, after);
+      page = [...page, ...events.filter((event) => event.seq <= through)].sort((left, right) => left.seq - right.seq).slice(0, limit);
+    }
+    return page.map((event) => webEvent(event.sessionId, event));
+  }
+
+  async get(id: string): Promise<SessionDetail | undefined> {
+    const session = await this.#refreshSession(id);
+    if (!session) return undefined;
+    const events = this.#eventsBySession.get(id) ?? [];
+    const latestModelEvent = await this.#latestModelEvent(session);
+    const latestModelUsage = latestModelEvent === undefined
+      ? undefined
+      : tokenUsageFromEvent(webEvent(id, latestModelEvent, session.updatedAt));
+    const contextUsage = latestContextUsage([
+      ...(latestModelEvent === undefined ? [] : [webEvent(id, latestModelEvent, session.updatedAt)]),
+      ...events.filter((event) => event.sourceSessionId === id && event.type === "ui.command.completed"),
+    ]);
+    const publicStates = sessionPublicStates(events, id);
+    return {
+      ...summaryOf(session, this.#isActivelyRunning(id)),
+      events: structuredClone(events),
+      feedback: feedbackFrom(events),
+      publicStates,
+      ...(latestModelUsage === undefined ? {} : { latestModelUsage }),
+      ...(contextUsage === undefined ? {} : { contextUsage }),
+    };
+  }
+
+  async #latestModelEvent(session: SessionRecord): Promise<DurableEvent | undefined> {
+    try {
+      const own = await this.#repository.latestEventByTypes(session.id, ["model.completed"]);
+      if (own !== undefined || session.forkedFromSessionId === undefined || session.forkThroughSeq === undefined) return own;
+      return this.#repository.latestEventByTypes(session.forkedFromSessionId, ["model.completed"], session.forkThroughSeq);
+    } catch {
+      // Usage is an optional projection and must never make the conversation unreadable if one audit sidecar is unavailable.
+      return undefined;
+    }
+  }
+
+  async turns(id: string): Promise<readonly TurnSummary[] | undefined> {
+    return this.#turns(id, new Set());
+  }
+
+  async #turns(id: string, visiting: Set<string>): Promise<readonly TurnSummary[] | undefined> {
+    if (visiting.has(id)) throw new ContractError(`会话分支形成循环：${id}`, "WEB_SESSION_FORK_CYCLE");
+    visiting.add(id);
+    const session = await this.#refreshSessionRecord(id);
+    if (session === undefined) {
+      visiting.delete(id);
+      return undefined;
+    }
+    try {
+      const inherited = session.forkedFromSessionId === undefined || session.forkThroughSeq === undefined
+        ? []
+        : ((await this.#turns(session.forkedFromSessionId, visiting)) ?? [])
+          .filter((turn) => turn.endCursor <= session.forkThroughSeq!);
+      const events = await this.#repository.eventsByTypes(id, TURN_SUMMARY_EVENT_TYPES);
+      const projected = projectTrajectory(events.map((event) => webEvent(id, event, session.updatedAt)), id);
+      const own = await Promise.all(projected.map(async (turn, index): Promise<TurnSummary> => {
+        const subagents = await this.#subagentSummaries(turn.events, turn.turnId);
+        return {
+          id: turn.turnId,
+          number: inherited.length + index + 1,
+          title: turn.title,
+          turnId: turn.turnId,
+          status: turn.status,
+          startedAt: turn.startedAt,
+          endedAt: turn.endedAt,
+          startCursor: turn.events[0]?.cursor ?? 0,
+          endCursor: turn.events.at(-1)?.cursor ?? 0,
+          eventCount: await this.#repository.turnEventCount(turn.turnId),
+          subagents,
+        };
+      }));
+      return [...inherited.map((turn, index) => ({ ...turn, number: index + 1 })), ...own];
+    } finally {
+      visiting.delete(id);
+    }
+  }
+
+  async turn(id: string, turnId: string): Promise<TurnDetail | undefined> {
+    const turns = await this.turns(id);
+    const summary = turns?.find((candidate) => candidate.turnId === turnId);
+    if (summary === undefined) return undefined;
+    const session = this.#sessions.get(id)!;
+    const events = await this.#repository.turnEvents(turnId);
+    return {
+      ...summary,
+      eventCount: events.length,
+      events: events.map((event) => webEvent(id, event, session.updatedAt)),
+    };
+  }
+
+  async subagentTurn(id: string, parentTurnId: string, subagentId: string): Promise<SubagentDetail | undefined> {
+    const parent = (await this.turns(id))?.find((turn) => turn.turnId === parentTurnId);
+    const summary = parent?.subagents.find((subagent) => subagent.subagentId === subagentId);
+    if (summary === undefined) return undefined;
+    const session = this.#sessions.get(id)!;
+    const events = (await this.#repository.events(summary.subagentId))
+      .filter((event) => event.turnId !== undefined && summary.turnIds.includes(event.turnId));
+    return {
+      ...summary,
+      eventCount: events.length,
+      events: events.map((event) => webEvent(id, event, session.updatedAt)),
+    };
+  }
+
+  async #subagentSummaries(events: readonly SessionEvent[], parentTurnId: string): Promise<readonly SubagentSummary[]> {
+    const created = events.filter((event) => event.type === "subagent.created" && event.turnId === parentTurnId);
+    const summaries = await Promise.all(created.map(async (event): Promise<SubagentSummary | undefined> => {
+      const payload = webEventPayload(event);
+      const subagentId = webEventString(event, "subagentId");
+      const initialTurnId = webEventString(event, "initialTurnId");
+      const parentSessionId = webEventString(event, "parentSessionId");
+      const recordedParentTurnId = webEventString(event, "parentTurnId");
+      const mode = webEventString(event, "mode");
+      const depth = payload?.["depth"];
+      if (subagentId === undefined || initialTurnId === undefined || parentSessionId === undefined
+        || recordedParentTurnId !== parentTurnId || (mode !== "spawn" && mode !== "fork") || typeof depth !== "number") return undefined;
+      const parentLifecycleEvents = (await this.#repository.eventsByTypes(parentSessionId, ["subagent.settled", "subagent.start_failed"]))
+        .map((candidate) => webEvent(parentSessionId, candidate, this.#sessions.get(parentSessionId)?.updatedAt));
+      const childCreatedEvents = await this.#repository.eventsByTypes(subagentId, ["turn.created"]);
+      const turnIds = [...new Set(childCreatedEvents.flatMap((stateEvent) => stateEvent.turnId === undefined ? [] : [stateEvent.turnId]))];
+      const latestState = turnIds.at(-1) === undefined ? undefined : await this.#repository.loadState(turnIds.at(-1)!);
+      const terminal = [...parentLifecycleEvents].reverse().find((candidate) => (candidate.type === "subagent.settled" || candidate.type === "subagent.start_failed")
+        && webEventString(candidate, "subagentId") === subagentId
+        && (candidate.type === "subagent.start_failed" || webEventString(candidate, "turnId") === latestState?.turnId));
+      const turnId = turnIds.at(-1) ?? (terminal === undefined ? initialTurnId : webEventString(terminal, "turnId") ?? initialTurnId);
+      const eventCount = (await Promise.all(turnIds.map((id) => this.#repository.turnEventCount(id))))
+        .reduce((sum, count) => sum + count, 0);
+      return {
+        id: subagentId,
+        subagentId,
+        turnId,
+        turnIds,
+        parentTurnId,
+        parentSessionId,
+        label: webEventString(event, "label") ?? "子 Agent",
+        mode,
+        depth,
+        status: latestState?.turnOutcome?.kind === "waiting"
+          ? "waiting"
+          : latestState !== undefined && !isTerminalState(latestState.kind)
+            ? "running"
+            : terminal === undefined ? "running" : subagentStatus(terminal),
+        createdAt: event.createdAt,
+        ...(terminal === undefined ? {} : { settledAt: terminal.createdAt }),
+        eventCount,
+      } satisfies SubagentSummary;
+    }));
+    return summaries.filter((summary): summary is SubagentSummary => summary !== undefined);
+  }
+
+  async eventsAfter(id: string, after: number): Promise<readonly SessionEvent[] | undefined> {
+    const session = await this.#refreshSessionRecord(id);
+    if (session === undefined) return undefined;
+    const events = await this.#projectSessionEvents(session, undefined, new Set());
+    return events.filter((event) => event.transient || event.cursor > after);
+  }
+
+  async inspectSessionFile(sessionId: string, requestedPath: string): Promise<SessionFileInfo> {
+    const session = this.#sessions.get(sessionId) ?? await this.#refreshSessionRecord(sessionId);
+    if (session === undefined) throw new ContractError(`找不到会话：${sessionId}`, "WEB_SESSION_NOT_FOUND");
+    const inputPath = requestedPath.trim();
+    if (!inputPath || inputPath.length > 4_096 || inputPath.includes("\0")) throw new ContractError("文件路径无效", "WEB_FILE_PATH_INVALID");
+    try {
+      const workspace = await realpath(session.workspace);
+      const candidate = isAbsolute(inputPath) ? resolve(inputPath) : resolve(workspace, inputPath);
+      const path = await realpath(candidate);
+      const fromWorkspace = relative(workspace, path);
+      if (fromWorkspace === ".." || fromWorkspace.startsWith(`..${sep}`) || isAbsolute(fromWorkspace)) throw new ContractError("只能打开当前会话工作区内的文件", "WEB_FILE_FORBIDDEN");
+      const metadata = await stat(path);
+      if (!metadata.isFile()) throw new ContractError("目标不是文件", "WEB_FILE_NOT_FILE");
+      if (metadata.size > MAX_PREVIEW_BYTES) throw new ContractError("文件超过 25 MB，无法在浏览器中预览", "WEB_FILE_TOO_LARGE");
+      return { path, name: basename(path), byteLength: metadata.size };
+    } catch (error) {
+      if (error instanceof ContractError) throw error;
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code === "ENOENT" || code === "ENOTDIR") throw new ContractError("文件不存在", "WEB_FILE_NOT_FOUND");
+      throw new ContractError(`无法打开文件：${errorMessage(error)}`, "WEB_FILE_UNAVAILABLE");
+    }
+  }
+
+  async readSessionFile(sessionId: string, requestedPath: string): Promise<SessionFile> {
+    const file = await this.inspectSessionFile(sessionId, requestedPath);
+    try {
+      const body = await readFile(file.path);
+      await this.#repository.appendSessionEvents(sessionId, [{ type: "ui.file.read", payload: { path: file.path, byteLength: body.byteLength } }]);
+      return { path: file.path, name: file.name, body };
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code === "ENOENT" || code === "ENOTDIR") throw new ContractError("文件不存在", "WEB_FILE_NOT_FOUND");
+      throw new ContractError(`无法打开文件：${errorMessage(error)}`, "WEB_FILE_UNAVAILABLE");
+    }
+  }
+
+  async selectWorkspace(inputPath: unknown, create = false): Promise<SessionConfig> {
+    if (inputPath === null) {
+      if (this.#workspaceId === undefined && this.#workspace === this.#unscopedWorkspace) return this.config();
+      await this.#repository.appendSessionEvents("host:web", [{ type: "workspace.cleared", payload: {} }]);
+      await this.#refreshWorkspaceRegistry();
+      this.#workspace = this.#unscopedWorkspace;
+      this.#workspaceId = undefined;
+      return this.config();
+    }
+    if (typeof inputPath !== "string") throw new ContractError("请输入有效的绝对工作区路径", "WEB_WORKSPACE_PATH_INVALID");
+    const requested = inputPath.trim();
+    if (!requested || requested.length > 4_096 || !isAbsolute(requested)) throw new ContractError("请输入有效的绝对工作区路径", "WEB_WORKSPACE_PATH_INVALID");
+    try {
+      if (create) await mkdir(requested, { recursive: true });
+      const path = await realpath(requested);
+      if (!(await stat(path)).isDirectory()) throw new Error("路径不是目录");
+      const existing = this.#workspaceRegistry.items.find((workspace) => workspace.path === path);
+      const workspaceId = existing?.id ?? newId("workspace");
+      const events = [] as { readonly type: string; readonly payload: JsonValue }[];
+      if (existing === undefined) {
+        events.push({
+          type: "workspace.registered",
+          payload: { workspaceId, path, title: basename(path) || path, createdAt: systemClock.now().toISOString() },
+        });
+      }
+      events.push({ type: "workspace.selected", payload: { workspaceId } });
+      await this.#repository.appendSessionEvents("host:web", events);
+      await this.#refreshWorkspaceRegistry();
+      this.#workspace = path;
+      this.#workspaceId = workspaceId;
+      return this.config();
+    } catch (error) {
+      if (error instanceof ContractError) throw error;
+      throw new ContractError(`无法使用工作区：${errorMessage(error)}`, "WEB_WORKSPACE_UNAVAILABLE");
+    }
+  }
+
+  async renameWorkspace(workspaceId: string, titleValue: unknown): Promise<SessionConfig> {
+    const workspace = this.#workspaceRegistry.items.find((candidate) => candidate.id === workspaceId);
+    if (workspace === undefined) throw new ContractError("工作区不存在", "WEB_WORKSPACE_NOT_FOUND");
+    if (typeof titleValue !== "string" || !titleValue.trim()) throw new ContractError("工作区名称不能为空", "WEB_WORKSPACE_TITLE_INVALID");
+    const title = titleValue.trim();
+    if ([...title].length > 100) throw new ContractError("工作区名称不能超过 100 个字符", "WEB_WORKSPACE_TITLE_TOO_LARGE");
+    if (this.#workspaceRegistry.items.some((candidate) => candidate.id !== workspaceId && candidate.title === title)) {
+      throw new ContractError(`已存在名为“${title}”的工作区`, "WEB_WORKSPACE_TITLE_CONFLICT");
+    }
+    if (workspace.title !== title) {
+      await this.#repository.appendSessionEvents("host:web", [{ type: "workspace.renamed", payload: { workspaceId, title } }]);
+      await this.#refreshWorkspaceRegistry();
+    }
+    return this.config();
+  }
+
+  async deleteWorkspace(workspaceId: string): Promise<SessionConfig> {
+    const workspace = this.#workspaceRegistry.items.find((candidate) => candidate.id === workspaceId);
+    if (workspace === undefined) throw new ContractError("工作区不存在", "WEB_WORKSPACE_NOT_FOUND");
+    const deletingActiveWorkspace = this.#workspaceId === workspaceId;
+    await this.#repository.appendSessionEvents("host:web", [{
+      type: "workspace.deleted",
+      payload: { workspaceId, path: workspace.path },
+    }, ...(deletingActiveWorkspace ? [{ type: "workspace.cleared", payload: {} } as const] : [])]);
+    await this.#refreshWorkspaceRegistry();
+    if (deletingActiveWorkspace) {
+      this.#workspace = this.#unscopedWorkspace;
+      this.#workspaceId = undefined;
+    }
+    return this.config();
+  }
+
+  async createSession(content: string, requestedPermissionMode?: unknown, requestedModel?: unknown, requestedInputId?: unknown, requestedMode?: unknown, requestedWorkspace?: string): Promise<SessionSummary> {
+    this.#assertCanRun(content);
+    const permissionMode = requestedPermissionMode === undefined ? this.options.defaultPermissionMode : this.#permissionMode(requestedPermissionMode);
+    const model = requestedModel === undefined ? this.#model(this.#modelSettings.name) : this.#model(requestedModel);
+    const mode = requestedMode === undefined ? this.#defaultMode : this.#mode(requestedMode);
+    const inputId = this.#inputId(requestedInputId);
+    const workspace = requestedWorkspace === undefined ? this.#workspace : await realpath(resolve(requestedWorkspace));
+    if (!(await stat(workspace)).isDirectory()) throw new ContractError("会话工作区必须是目录", "WEB_WORKSPACE_INVALID");
+    const workspaceId = requestedWorkspace === undefined ? this.#workspaceId : this.#workspaceRegistry.items.find(item => item.path === workspace)?.id;
+    const id = newId("session");
+    this.#eventsBySession.set(id, []);
+    this.#rootByRuntimeSession.set(id, id);
+    await this.#repository.appendSessionEvents(id, [{
+      type: "session.created",
+      payload: {
+        title: titleFrom(content),
+        workspace,
+        workspaceId: workspaceId ?? null,
+        model,
+        mode,
+        permissionMode,
+        archived: false,
+        createdAt: systemClock.now().toISOString(),
+      },
+    }]);
+    const session = await this.#loadRequiredSession(id);
+    this.#launchTurn(id, inputId, content);
+    return summaryOf(session, true);
+  }
+
+  async sendMessage(sessionId: string, content: string, requestedInputId?: unknown, requestedReplyToRequestId?: unknown): Promise<SessionSummary> {
+    return this.#serializeInput(sessionId, () => this.#sendMessage(sessionId, content, requestedInputId, requestedReplyToRequestId));
+  }
+
+  async #serializeInput<T>(sessionId: string, execute: () => Promise<T>): Promise<T> {
+    const prior = this.#inputOperations.get(sessionId);
+    const operation = (async () => { await prior?.catch(() => undefined); this.#requireOwnership(sessionId); return execute(); })();
+    this.#inputOperations.set(sessionId, operation);
+    try { return await operation; }
+    finally {
+      if (this.#inputOperations.get(sessionId) === operation) this.#inputOperations.delete(sessionId);
+      this.#releaseIdleOwnership(sessionId);
+    }
+  }
+
+  #releaseIdleOwnership(sessionId: string): void {
+    if (!this.#active.has(sessionId) && !this.#inputOperations.has(sessionId) && !this.#humanAnswers.has(sessionId)
+      && !this.#presentationActions.has(sessionId) && !this.#maintenance.has(sessionId)) this.executionOwnership.release(sessionId);
+  }
+
+  #requireOwnership(sessionId: string): void {
+    if (this.#unownedLegacySessions.has(sessionId) && this.executionOwnership.hasRecord(sessionId)) this.#unownedLegacySessions.delete(sessionId);
+    if (this.#unownedLegacySessions.has(sessionId)) throw new ContractError("旧轮次没有执行归属记录，无法确认原进程是否已停止；须停止旧执行器后显式迁移，不能自动接管", "HOST_LEGACY_OWNERSHIP_UNKNOWN");
+    this.executionOwnership.require(sessionId);
+  }
+
+  async #sendMessage(sessionId: string, content: string, requestedInputId?: unknown, requestedReplyToRequestId?: unknown): Promise<SessionSummary> {
+    const startedAt = runtimePerformanceNow();
+    const session = await this.#loadRequiredSession(sessionId);
+    const sessionLoadDurationMs = runtimePerformanceNow() - startedAt;
+    if (session.archived) throw new ContractError("该会话已归档，请恢复后再继续", "WEB_SESSION_ARCHIVED");
+    if (this.#maintenance.has(sessionId)) throw new ContractError("当前会话正在压缩，请等待压缩完成", "WEB_SESSION_MAINTENANCE_BUSY");
+    this.#assertCanRun(content);
+    const inputId = this.#inputId(requestedInputId);
+    const active = this.#active.get(sessionId);
+    const replyToRequestId = requestedReplyToRequestId === undefined
+      ? undefined
+      : this.#questionRequestId(requestedReplyToRequestId);
+    const answered = (this.#eventsBySession.get(sessionId) ?? []).find(event => event.type === "host.question.answered"
+      && this.#rootByRuntimeSession.get(event.sourceSessionId) === sessionId
+      && (event.payload as JsonObject)["inputId"] === inputId);
+    if (answered) {
+      const prior = answered.payload as JsonObject;
+      if (prior["requestId"] !== replyToRequestId || prior["content"] !== content) throw new ContractError("输入标识已用于不同回答", "INPUT_IDEMPOTENCY_CONFLICT");
+      return summaryOf(session, this.#isActivelyRunning(sessionId));
+    }
+    const question = replyToRequestId === undefined ? undefined : await this.#pendingQuestion(sessionId, replyToRequestId);
+    if (replyToRequestId !== undefined && question === undefined) {
+      throw new ContractError(`找不到仍在等待回答的问题：${replyToRequestId}`, "WEB_QUESTION_NOT_PENDING");
+    }
+    if (question !== undefined) {
+      if (question.kind === "approval") {
+        if (active?.pendingApproval?.requestId !== question.requestId) {
+          if (!this.#apiKey) throw new ContractError("未配置模型密钥", "MODEL_API_KEY_MISSING");
+          if (active !== undefined) throw new ContractError("当前会话已有活动任务", "WEB_SESSION_BUSY");
+        }
+        await this.#repository.appendEvents(question.turnId, [{ type: "host.question.answered", payload: { requestId: question.requestId, inputId, content } }]);
+        this.#pendingUserQuestions.delete(pendingQuestionKey(sessionId, question.requestId));
+        if (active?.pendingApproval?.requestId === question.requestId) {
+          const pending = active.pendingApproval;
+          delete active.pendingApproval;
+          pending.resolve({ answers: { response: content }, response: content });
+          return summaryOf(await this.#loadRequiredSession(sessionId), true);
+        }
+        this.#launchApprovalResume(sessionId, question.turnId, question.requestId, approvalResponse(content));
+        return summaryOf(await this.#loadRequiredSession(sessionId), true);
+      }
+      const input: PendingSessionInput = {
+        inputId,
+        content,
+        runtimeSessionId: question.sessionId,
+        rootTurnId: question.rootTurnId,
+        parentTurnId: question.turnId,
+        causedByCallId: question.callId,
+      };
+      if (active) {
+        await this.#repository.admitInput({
+          ...input,
+          sessionId: question.sessionId,
+          role: "user",
+          admittedAt: systemClock.now().toISOString(),
+        });
+        await this.#repository.appendSessionEvents(sessionId, [{ type: "input.queued", payload: { inputId, content, replyToRequestId: question.requestId, runtimeSessionId: question.sessionId } }]);
+        await this.#repository.appendEvents(question.turnId, [{ type: "host.question.answered", payload: { requestId: question.requestId, inputId, content } }]);
+        this.#pendingUserQuestions.delete(pendingQuestionKey(sessionId, question.requestId));
+        if (question.sessionId !== sessionId && active.continueChildInput !== undefined) {
+          await active.continueChildInput(input);
+        } else {
+          active.pendingInputs.push(input);
+          active.wakeInput?.();
+        }
+        return summaryOf(await this.#loadRequiredSession(sessionId), true);
+      }
+      await this.#repository.admitInput({
+        ...input,
+        sessionId: question.sessionId,
+        role: "user",
+        admittedAt: systemClock.now().toISOString(),
+      });
+      await this.#repository.appendSessionEvents(sessionId, [{ type: "input.queued", payload: { inputId, content, replyToRequestId: question.requestId, runtimeSessionId: question.sessionId } }]);
+      await this.#repository.appendEvents(question.turnId, [{ type: "host.question.answered", payload: { requestId: question.requestId, inputId, content } }]);
+      this.#pendingUserQuestions.delete(pendingQuestionKey(sessionId, question.requestId));
+      this.#launchTurn(sessionId, inputId, content, input);
+      return summaryOf(session, true);
+    }
+    await this.#enqueueInput(sessionId, inputId, content);
+    runtimePerformanceTrace("send_message.accepted", {
+      sessionId,
+      inputId,
+      sessionLoadDurationMs: Number(sessionLoadDurationMs.toFixed(3)),
+      durationMs: Number((runtimePerformanceNow() - startedAt).toFixed(3)),
+    });
+    return summaryOf(await this.#loadRequiredSession(sessionId), this.#isActivelyRunning(sessionId));
+  }
+
+  /** Called under the session input lock. Durable admission precedes in-memory delivery. */
+  async #enqueueInput(sessionId: string, inputId: string, content: string): Promise<void> {
+    const admitted = await this.#repository.admitInput({ inputId, sessionId, role: "user", content, admittedAt: systemClock.now().toISOString() });
+    if (admitted.claimedByTurnId !== undefined) return;
+    while ((await this.#repository.pendingInputs(sessionId)).some(item => item.inputId === inputId)) {
+      const waiting = (await this.#repository.listStates(sessionId)).some(state => state.kind === "paused");
+      const active = this.#active.get(sessionId);
+      if (active?.currentInputId === inputId || active?.pendingInputs.some(item => item.inputId === inputId)) return;
+      if (active && !active.accepting) {
+        // The preceding task's failure is already reported; only wait for its cleanup here.
+        await active.completion.catch(() => undefined);
+        continue;
+      }
+      if (!active && !waiting) { this.#launchTurn(sessionId, inputId, content); return; }
+      const queued = (await this.#repository.eventsByTypes(sessionId, ["input.queued"])).some(event => (event.payload as JsonObject)["inputId"] === inputId);
+      if (!queued) await this.#repository.appendSessionEvents(sessionId, [{ type: "input.queued", payload: { inputId, content } }]);
+      // A driver can settle during the durable write; never enqueue into its abandoned array.
+      if (active !== this.#active.get(sessionId) || (active && !active.accepting)) continue;
+      if (active) { active.pendingInputs.push({ inputId, content }); active.wakeInput?.(); }
+      return;
+    }
+  }
+
+  /** Run the configured compaction Policy directly, without admitting a user message or starting an Agent turn. */
+  async compactSession(sessionId: string): Promise<CompactSessionResponse> {
+    const session = await this.#loadRequiredSession(sessionId);
+    if (session.archived) throw new ContractError("该会话已归档，请恢复后再压缩", "WEB_SESSION_ARCHIVED");
+    if (this.#active.has(sessionId) || this.#maintenance.has(sessionId)) {
+      throw new ContractError("当前会话仍在运行或压缩，请稍后再试", "WEB_SESSION_BUSY");
+    }
+    const apiKey = this.#apiKey;
+    if (!apiKey) throw new ContractError("未配置模型密钥", "MODEL_API_KEY_MISSING");
+    const commandId = newId("command");
+    this.#requireOwnership(sessionId);
+    this.#maintenance.add(sessionId);
+    let harness: HarnessInstance | undefined;
+    try {
+      await this.#repository.appendSessionEvents(sessionId, [{
+        type: "ui.command.started",
+        payload: { commandId, name: "compact" },
+      }]);
+      const runtime = await this.#runtimeForSession(session);
+      const provider = new OpenAIChatProvider({ baseUrl: this.#modelSettings.baseUrl, apiKey });
+      harness = await runtime.createHarness({
+        bindingSeed: `web-ui:${runtime.modeId}:${sessionId}`,
+        provider,
+        tokenCounter: this.#tokenCounterFor(session.model),
+        repository: this.#repository,
+        closeRepository: false,
+        messageStore: this.#messages,
+        closeMessageStore: false,
+        trace: this.#trace,
+        kernel: {
+          model: kernelModelConfig(this.#modelSettings, session.model),
+        },
+      });
+      const result = await harness.kernel.runContextMaintenance({
+        sessionId,
+        componentId: "builtin.compaction",
+        maintenance: { kind: "manual_compaction" },
+      });
+      const diagnosticError = result.diagnostics.find((diagnostic) => diagnostic.severity === "error");
+      if (diagnosticError !== undefined) throw new ContractError(diagnosticError.message, diagnosticError.code);
+      const status = result.replacedMessageCount > 0 ? "completed" as const : "no_progress" as const;
+      await this.#repository.appendSessionEvents(sessionId, [{
+        type: "ui.command.completed",
+        payload: {
+          commandId,
+          name: "compact",
+          status,
+          replacedMessageCount: result.replacedMessageCount,
+          replacedTokenCount: result.replacedTokenCount,
+          replacementTokenCount: result.replacementTokenCount,
+          releasedTokenCount: result.releasedTokenCount,
+          ...(result.contextTokenCount === undefined ? {} : { contextTokenCount: { ...result.contextTokenCount } }),
+        },
+      }]);
+      return {
+        commandId,
+        status,
+        replacedMessageCount: result.replacedMessageCount,
+        replacedTokenCount: result.replacedTokenCount,
+        replacementTokenCount: result.replacementTokenCount,
+        releasedTokenCount: result.releasedTokenCount,
+      };
+    } catch (error) {
+      try {
+        await this.#repository.appendSessionEvents(sessionId, [{
+          type: "ui.command.failed",
+          payload: { commandId, name: "compact", message: errorMessage(error) },
+        }]);
+      } catch {
+        // Preserve the original maintenance failure when its presentation event cannot be stored either.
+      }
+      throw error;
+    } finally {
+      this.#maintenance.delete(sessionId);
+      await harness?.close();
+      this.#releaseIdleOwnership(sessionId);
+    }
+  }
+
+  async setPermission(sessionId: string, requestedPermissionMode: unknown): Promise<SessionSummary> {
+    return this.#serializeInput(sessionId, () => this.#setPermission(sessionId, requestedPermissionMode));
+  }
+
+  async #setPermission(sessionId: string, requestedPermissionMode: unknown): Promise<SessionSummary> {
+    const session = await this.#loadRequiredSession(sessionId);
+    if (this.#active.has(sessionId) || this.#maintenance.has(sessionId)) throw new ContractError("当前会话仍在运行或压缩，结束后才能切换权限", "WEB_SESSION_BUSY");
+    const permissionMode = this.#permissionMode(requestedPermissionMode);
+    if (session.permissionMode !== permissionMode) {
+      const previous = session.permissionMode;
+      const runtime = this.#modeRuntimes.get(sessionId);
+      if (runtime) await runtime.close();
+      this.#modeRuntimes.delete(sessionId);
+      await this.#repository.appendSessionEvents(sessionId, [{ type: "session.permission.changed", payload: { from: previous, to: permissionMode } }]);
+    }
+    const updated = await this.#loadRequiredSession(sessionId);
+    return summaryOf(updated);
+  }
+
+  async updateSession(sessionId: string, request: UpdateSessionRequest): Promise<SessionSummary> {
+    return this.#serializeInput(sessionId, () => this.#updateSession(sessionId, request));
+  }
+
+  async #updateSession(sessionId: string, request: UpdateSessionRequest): Promise<SessionSummary> {
+    const session = await this.#loadRequiredSession(sessionId);
+    if (!request || typeof request !== "object" || (request.title === undefined && request.pinned === undefined && request.archived === undefined && request.model === undefined)) throw new ContractError("没有可更新的会话字段", "WEB_SESSION_UPDATE_INVALID");
+    if (request.title !== undefined) {
+      if (typeof request.title !== "string" || !request.title.trim()) throw new ContractError("会话名称不能为空", "WEB_SESSION_TITLE_INVALID");
+      if ([...request.title.trim()].length > 100) throw new ContractError("会话名称不能超过 100 个字符", "WEB_SESSION_TITLE_TOO_LARGE");
+    }
+    if (request.archived !== undefined) {
+      if (typeof request.archived !== "boolean") throw new ContractError("归档状态无效", "WEB_SESSION_UPDATE_INVALID");
+      if (request.archived && (this.#active.has(sessionId) || this.#maintenance.has(sessionId))) throw new ContractError("当前会话仍在运行或压缩，结束后才能归档", "WEB_SESSION_BUSY");
+    }
+    if (request.pinned !== undefined) {
+      if (typeof request.pinned !== "boolean") throw new ContractError("置顶状态无效", "WEB_SESSION_UPDATE_INVALID");
+      if (request.pinned && (request.archived ?? session.archived)) throw new ContractError("请先恢复会话再置顶", "WEB_SESSION_ARCHIVED");
+    }
+    const nextTitle = request.title?.trim() ?? session.title;
+    const nextArchived = request.archived ?? session.archived;
+    const nextPinned = nextArchived ? false : request.pinned ?? session.pinned;
+    const nextModel = request.model === undefined ? session.model : this.#model(request.model);
+    const changingModel = nextModel !== session.model;
+    if (changingModel) {
+      if (nextArchived) throw new ContractError("该会话已归档，请恢复后再切换模型", "WEB_SESSION_ARCHIVED");
+      if (this.#active.has(sessionId) || this.#maintenance.has(sessionId)) throw new ContractError("当前会话仍在运行或压缩，请先停止任务再切换模型", "WEB_SESSION_BUSY");
+      // Reserve the idle boundary while checking durable executions and saving the new selection.
+      this.#maintenance.add(sessionId);
+    }
+    try {
+      if (changingModel) {
+        const states = await this.#repository.listStates();
+        const parents = new Map(states.map((state) => [state.sessionId, state.parentSessionId]));
+        const belongsToSession = (state: AgentState): boolean => {
+          const visited = new Set<string>();
+          let id: string | undefined = state.sessionId;
+          while (id !== undefined && !visited.has(id)) {
+            if (id === sessionId) return true;
+            visited.add(id);
+            id = parents.get(id);
+          }
+          return false;
+        };
+        if (states.some((state) => !isTerminalState(state.kind) && belongsToSession(state))
+          || await this.#repository.pendingInputCount(sessionId) > 0) {
+          throw new ContractError("当前会话还有执行中、等待审批或排队的任务，请先停止任务再切换模型", "WEB_SESSION_BUSY");
+        }
+      }
+      if (changingModel || request.archived === true) {
+        const runtime = this.#modeRuntimes.get(sessionId);
+        if (runtime) await runtime.close();
+        this.#modeRuntimes.delete(sessionId);
+        this.#modeRuntimeKeys.delete(sessionId);
+      }
+      const events = [] as { readonly type: string; readonly payload: JsonValue }[];
+      if (nextTitle !== session.title || nextArchived !== session.archived || changingModel) {
+        events.push({
+          type: "session.updated",
+          payload: { from: { title: session.title, archived: session.archived, model: session.model }, to: { title: nextTitle, archived: nextArchived, model: nextModel } },
+        });
+      }
+      if (nextPinned !== session.pinned) events.push({ type: "ui.session.pinned", payload: { pinned: nextPinned } });
+      if (events.length > 0) await this.#repository.appendSessionEvents(sessionId, events);
+      return summaryOf(await this.#loadRequiredSession(sessionId));
+    } finally {
+      if (changingModel) this.#maintenance.delete(sessionId);
+    }
+  }
+
+  async setFeedback(sessionId: string, request: SetMessageFeedbackRequest): Promise<SessionDetail> {
+    const session = await this.#loadRequiredSession(sessionId);
+    if (typeof request.messageId !== "string" || !request.messageId) throw new ContractError("消息标识无效", "WEB_MESSAGE_ID_INVALID");
+    const events = this.#eventsBySession.get(sessionId) ?? [];
+    const durableAssistant = (await this.#messages.messages(sessionId)).some((message) => message.messageId === request.messageId && message.message.role === "assistant");
+    if (!durableAssistant) throw new ContractError("找不到这条助手消息", "WEB_MESSAGE_NOT_FOUND");
+    if (request.rating !== null && request.rating !== "up" && request.rating !== "down") throw new ContractError("反馈类型无效", "WEB_MESSAGE_FEEDBACK_INVALID");
+    await this.#repository.appendSessionEvents(sessionId, [{ type: "ui.message.feedback", payload: { messageId: request.messageId, rating: request.rating } }]);
+    const updatedEvents = this.#eventsBySession.get(sessionId) ?? events;
+    return { ...summaryOf(session), events: structuredClone(updatedEvents), feedback: feedbackFrom(updatedEvents) };
+  }
+
+  async forkSession(sessionId: string, request: ForkSessionRequest): Promise<SessionSummary> {
+    const source = await this.#loadRequiredSession(sessionId);
+    const sourceEvents = this.#eventsBySession.get(sessionId) ?? [];
+    const requestedMessageId = request?.messageId;
+    if (requestedMessageId !== undefined && (typeof requestedMessageId !== "string" || !requestedMessageId)) throw new ContractError("消息标识无效", "WEB_MESSAGE_ID_INVALID");
+    const surfaceMessages = await this.#messages.surfaceMessages(source.id);
+    const completedAssistant = (message: (typeof surfaceMessages)[number]): boolean => message.message.role === "assistant"
+      && message.sourceEventSeq !== undefined
+      && sourceEvents.some((event) => event.cursor === message.sourceEventSeq && event.type === "model.completed");
+    const durableMessage = requestedMessageId === undefined
+      ? [...surfaceMessages].reverse().find(completedAssistant)
+      : surfaceMessages.find((message) => message.messageId === requestedMessageId && completedAssistant(message));
+    const completionCursor = durableMessage?.sourceEventSeq;
+    const completion = completionCursor === undefined ? undefined : sourceEvents.find((event) => event.cursor === completionCursor && event.type === "model.completed");
+    if (!completion || durableMessage === undefined) throw new ContractError("该会话还没有可分叉的已完成回复", "WEB_FORK_TARGET_INVALID");
+    if (durableMessage.message.role === "assistant" && durableMessage.message.toolCalls?.length) {
+      throw new ContractError("包含工具调用的中间步骤不是可分叉的最终回复", "WEB_FORK_TARGET_INVALID");
+    }
+    const targetState = completion.turnId === undefined ? undefined : await this.#repository.loadState(completion.turnId).catch(() => undefined);
+    if (targetState?.turnState.kind !== "settled"
+      || (durableMessage.producingTurnId !== undefined && durableMessage.seq > targetState.turnState.messageEndSeq)) {
+      throw new ContractError("只能从已经固定消息边界的 Turn 回复分叉", "WEB_FORK_TARGET_UNSETTLED");
+    }
+    if (durableMessage.producingTurnId !== undefined) {
+      const messageEndSeq = targetState.turnState.messageEndSeq;
+      const finalAssistant = surfaceMessages
+        .filter((message) => message.producingTurnId === durableMessage.producingTurnId
+          && message.seq <= messageEndSeq
+          && completedAssistant(message))
+        .at(-1);
+      if (finalAssistant?.messageId !== durableMessage.messageId) {
+        throw new ContractError("只能从 Turn 的最终助手回复分叉", "WEB_FORK_TARGET_INVALID");
+      }
+    }
+    const forkThroughSeq = targetState.causeEventSeq;
+    const id = newId("session");
+    const suffix = "（分支）";
+    const baseTitle = [...source.title].slice(0, Math.max(1, 100 - [...suffix].length)).join("");
+    this.#rootByRuntimeSession.set(id, id);
+    this.#eventsBySession.set(id, []);
+    await this.#repository.appendSessionEvents(id, [{
+      type: "session.created",
+      payload: {
+        title: `${baseTitle}${suffix}`,
+        workspace: source.workspace,
+        workspaceId: source.workspaceId ?? null,
+        model: source.model,
+        mode: source.mode,
+        permissionMode: source.permissionMode,
+        archived: false,
+        createdAt: systemClock.now().toISOString(),
+        forkedFromSessionId: source.id,
+        forkThroughSeq,
+      },
+    }, {
+      type: "session.forked",
+      payload: { sourceSessionId: source.id, throughEventSeq: forkThroughSeq, messageId: durableMessage.messageId },
+    }]);
+    const sourceMessages = durableMessage.producingTurnId === undefined
+      ? surfaceMessages.slice(0, surfaceMessages.indexOf(durableMessage) + 1)
+      : await this.#messages.surfaceMessages(source.id, targetState.turnState.messageEndSeq);
+    await this.#messageCommitterFor(source.model).writeMany(sourceMessages.map((message, index) => ({
+      messageId: `message:fork:${id}:${index}`,
+      sessionId: id,
+      step: message.step,
+      message: message.message,
+      sourceKind: "history_seed" as const,
+      sourceId: `${source.id}:${message.messageId}`,
+      ...(message.sourceEventSeq === undefined ? {} : { sourceEventSeq: message.sourceEventSeq }),
+    })));
+    const fork = await this.#loadRequiredSession(id);
+    return summaryOf(fork);
+  }
+
+  async invokePresentationAction(sessionId: string, raw: unknown): Promise<SessionSummary> {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new ContractError("公开操作格式无效", "PRESENTATION_ACTION_INVALID");
+    const request = raw as Record<string, unknown>;
+    const keys = ["componentId", "publicationId", "actionId", "operationId"];
+    if (Object.keys(request).some(key => !keys.includes(key)) || keys.some(key => typeof request[key] !== "string" || !(request[key] as string).trim() || (request[key] as string).length > 256)) {
+      throw new ContractError("公开操作只接受发布者、发布版本、操作和幂等标识", "PRESENTATION_ACTION_INVALID");
+    }
+    const identity = request as Record<string, string>;
+    const prior = this.#presentationActions.get(sessionId);
+    const operation = (async () => {
+      await prior?.catch(() => undefined);
+      this.#requireOwnership(sessionId);
+      const session = await this.#loadRequiredSession(sessionId);
+      const history = await this.#repository.eventsByTypes(sessionId, ["host.presentation.action.requested", "host.presentation.action.accepted"]);
+      let receipt = history.find(event => event.type === "host.presentation.action.requested" && (event.payload as JsonObject)["operationId"] === identity["operationId"]);
+      const identityHash = hashJson(identity);
+      if (receipt && (receipt.payload as JsonObject)["identityHash"] !== identityHash) throw new ContractError("同一操作标识不能用于不同操作", "PRESENTATION_ACTION_CONFLICT");
+      if (history.some(event => event.type === "host.presentation.action.accepted" && (event.payload as JsonObject)["operationId"] === identity["operationId"])) return summaryOf(session, this.#isActivelyRunning(sessionId));
+      if (session.archived) throw new ContractError("该会话已归档", "WEB_SESSION_ARCHIVED");
+      if (this.#maintenance.has(sessionId)) throw new ContractError("当前会话正在维护", "WEB_SESSION_MAINTENANCE_BUSY");
+      if (!receipt) {
+        receipt = await this.#serializeInput(sessionId, async () => {
+          const events = (await this.get(sessionId))!.events;
+          const view = publishedPresentations(events, sessionId).find(item => item.componentId === identity["componentId"]);
+          if (!view || view.publicationId !== identity["publicationId"]) throw new ContractError("公开状态已更新或撤回，请刷新后操作", "PRESENTATION_ACTION_STALE");
+          const action = view.presentation.actions?.find(item => item.id === identity["actionId"]);
+          if (!action || action.kind !== "input") throw new ContractError("当前发布未提供此操作", "PRESENTATION_ACTION_UNKNOWN");
+          this.#assertCanRun(action.input);
+          const owned = this.#interruptOwnership(sessionId, await this.#repository.listStates());
+          const activeTurnIds = [...owned.turns.values()].filter(state => state.sessionId === sessionId && !isTerminalState(state.kind)).map(state => state.turnId);
+          const driverTurnId = this.#active.get(sessionId)?.turnId;
+          const interruptTargets = action.interrupt ? [...owned.turns.values()]
+            .filter(state => !isTerminalState(state.kind) || state.turnId === driverTurnId)
+            .map(state => ({ sessionId: state.sessionId, turnId: state.turnId })) : [];
+          const interruptInputs = action.interrupt ? (await Promise.all([...owned.sessions].map(async id =>
+            (await this.#repository.pendingInputs(id)).map(input => ({ sessionId: id, inputId: input.inputId }))))).flat() : [];
+          // Fork history rebases source identities for display. Read questions from
+          // the owned sessions' durable events, never from that historical view.
+          const questionEvents = action.interrupt ? (await Promise.all([...owned.sessions].map(id => this.#repository.eventsByTypes(id,
+            ["host.question", "host.question.answered", "host.presentation.action.requested", "turn.failed", "turn.interrupted", "turn.blocked", "state.failed", "state.interrupted"]))))
+            .flat().sort((left, right) => left.seq - right.seq).map(event => webEvent(sessionId, event)) : [];
+          try {
+            return (await this.#repository.appendSessionEvents(sessionId, [{ type: "host.presentation.action.requested", payload: {
+              ...identity, identityHash, inputId: `presentation:${hashJson({ sessionId, operationId: identity["operationId"]! })}`,
+              content: action.input, interruptTurnIds: action.interrupt ? activeTurnIds : [],
+              interruptTargets, interruptInputs,
+              // Waiting questions can outlive their settled Turn. Capture identities
+              // with acceptance; replay must not cancel later questions.
+              interruptQuestions: pendingUserQuestions(questionEvents).map(question => ({
+                requestId: question.requestId, sourceSessionId: question.sourceSessionId,
+                ...(question.turnId === undefined ? {} : { turnId: question.turnId }),
+              })),
+            } }], view.source))[0]!;
+          } catch (error) {
+            if (error instanceof StateConflictError) throw new ContractError("公开状态已更新或撤回，请刷新后操作", "PRESENTATION_ACTION_STALE");
+            throw error;
+          }
+        });
+      }
+      await this.#deliverPresentationAction(sessionId, receipt.payload as JsonObject);
+      return summaryOf(await this.#loadRequiredSession(sessionId), this.#isActivelyRunning(sessionId));
+    })();
+    this.#presentationActions.set(sessionId, operation);
+    try { return await operation; }
+    finally {
+      if (this.#presentationActions.get(sessionId) === operation) this.#presentationActions.delete(sessionId);
+      this.#releaseIdleOwnership(sessionId);
+    }
+  }
+
+  async #deliverPresentationAction(sessionId: string, receipt: JsonObject): Promise<void> {
+    const inputId = receipt["inputId"] as string, content = receipt["content"] as string;
+    this.#assertCanRun(content);
+    await this.#serializeInput(sessionId, () => this.#cancelPresentationTargets(sessionId, receipt));
+    await this.#serializeInput(sessionId, async () => {
+      await this.#refreshSession(sessionId);
+      const pending = new Set(pendingUserQuestions(this.#eventsBySession.get(sessionId) ?? []).map(question => question.requestId));
+      for (const [key, question] of this.#pendingUserQuestions) {
+        if (question.rootSessionId === sessionId && !pending.has(question.requestId)) this.#pendingUserQuestions.delete(key);
+      }
+      await this.#enqueueInput(sessionId, inputId, content);
+    });
+    await this.#repository.appendSessionEvents(sessionId, [{ type: "host.presentation.action.accepted", payload: { operationId: receipt["operationId"]!, inputId } }]);
+  }
+
+  /** Execution lineage is authoritative; visible fork history does not transfer ownership. */
+  #interruptOwnership(sessionId: string, states: readonly AgentState[]): { sessions: Set<string>; turns: Map<string, AgentState> } {
+    const all = new Map(states.map(state => [state.turnId, state]));
+    const memo = new Map<string, boolean>();
+    const owns = (state: AgentState, seen = new Set<string>()): boolean => {
+      if (memo.has(state.turnId)) return memo.get(state.turnId)!;
+      if (seen.has(state.turnId)) return false;
+      seen.add(state.turnId);
+      const parent = state.parentTurnId === undefined ? undefined : all.get(state.parentTurnId);
+      // A descendant can be triggered by its parent Session's Turn (delegate
+      // or explicitly caused follow-up), or by an earlier Turn in its own
+      // Session (ordinary or queued follow-up). parentSessionId remains the
+      // owning parent Session in both cases; it is not the causal Turn's
+      // Session for the latter. Require the causal chain to reach this root,
+      // so a fork's copied presentation history cannot transfer ownership.
+      const delegated = parent?.sessionId === state.parentSessionId;
+      const continued = parent?.sessionId === state.sessionId
+        && parent.parentSessionId === state.parentSessionId;
+      const result = state.sessionId === sessionId || (parent !== undefined
+        && parent.rootTurnId === state.rootTurnId && (delegated || continued) && owns(parent, seen));
+      memo.set(state.turnId, result);
+      return result;
+    };
+    const turns = new Map(states.filter(state => owns(state)).map(state => [state.turnId, state]));
+    return { turns, sessions: new Set([sessionId, ...[...turns.values()].map(state => state.sessionId)]) };
+  }
+
+  /** Cancel only the execution identities accepted in this receipt, never a newly enumerated tree. */
+  async #cancelPresentationTargets(sessionId: string, receipt: JsonObject): Promise<void> {
+    // Legacy receipts only identified root Turns. Do not guess a missing child scope.
+    const targets = receipt["interruptTargets"] === undefined
+      ? (receipt["interruptTurnIds"] as readonly string[]).map(turnId => ({ sessionId, turnId }))
+      : receipt["interruptTargets"] as readonly { readonly sessionId: string; readonly turnId: string }[];
+    const owned = this.#interruptOwnership(sessionId, await this.#repository.listStates());
+    const invalidScope = () => new ContractError("中断收据包含不属于当前会话执行树的对象", "PRESENTATION_INTERRUPT_SCOPE_INVALID");
+    const states = targets.map(target => {
+      const state = owned.turns.get(target.turnId);
+      if (state?.sessionId !== target.sessionId) throw invalidScope();
+      return state;
+    });
+    const inputs = (receipt["interruptInputs"] ?? []) as readonly { readonly sessionId: string; readonly inputId: string }[];
+    for (const target of inputs) if (!owned.sessions.has(target.sessionId)) throw invalidScope();
+    for (const question of (receipt["interruptQuestions"] ?? []) as readonly { readonly sourceSessionId: string; readonly turnId?: string }[]) {
+      if (!owned.sessions.has(question.sourceSessionId)
+        || (question.turnId !== undefined && owned.turns.get(question.turnId)?.sessionId !== question.sourceSessionId)) throw invalidScope();
+    }
+    // Suppress continuation/child completion wakeups before aborting captured work.
+    for (const rootTurnId of new Set(states.map(state => state.rootTurnId))) {
+      const history = await this.#repository.turnEventsByTypes(rootTurnId, ["turn.advance.cancelled"]);
+      if (!history.some(event => (event.payload as JsonObject)["operationId"] === receipt["operationId"])) {
+        await this.#repository.appendEvents(rootTurnId, [{ type: "turn.advance.cancelled", payload: {
+          scope: "execution_tree", sessionIds: [...new Set(states.filter(state => state.rootTurnId === rootTurnId).map(state => state.sessionId))],
+          operationId: receipt["operationId"]!, reason: "Published interrupt accepted",
+        } }]);
+      }
+    }
+    const active = this.#active.get(sessionId);
+    const ownsDriver = active !== undefined && targets.some(target => target.turnId === active.turnId);
+    if (ownsDriver) {
+      active.accepting = false;
+      active.wakeInput?.();
+      if (active.interrupt) await active.interrupt("公开操作中断", "user", targets.map(target => target.turnId));
+      if (active.pendingApproval && targets.some(target => target.turnId === active.pendingApproval!.turnId)) {
+        active.pendingApproval.reject(new Error("公开操作取消了原审批"));
+        delete active.pendingApproval;
+      }
+    }
+    for (const target of targets) {
+      for (let attempt = 0; ; attempt += 1) {
+        const state = await this.#repository.loadState(target.turnId);
+        if (isTerminalState(state.kind)) { await reconcileCancelledTurn(this.#repository, this.#messages, state); break; }
+        if (state.kind !== "paused" || attempt >= 16) throw new ContractError("原中断对象尚未结束，不能提交后续操作", "PRESENTATION_INTERRUPT_INCOMPLETE");
+        if (await cancelPausedTurn(this.#repository, this.#messages, state)) break;
+      }
+    }
+    for (const target of inputs) {
+      if (await this.#repository.cancelInput(target.sessionId, target.inputId)) await this.#repository.appendSessionEvents(target.sessionId, [{ type: "input.queue.cancelled", payload: { inputId: target.inputId } }]);
+      if (ownsDriver) active.pendingInputs = active.pendingInputs.filter(input => input.inputId !== target.inputId);
+    }
+    if (ownsDriver) await active.completion;
+  }
+
+  async answerHumanInput(sessionId: string, raw: unknown): Promise<SessionSummary> {
+    await this.#loadRequiredSession(sessionId);
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new ContractError("人工交互回答无效", "HUMAN_INPUT_ANSWER_INVALID");
+    const { requestId, requestHash, value, ...extra } = raw as Record<string, JsonValue>;
+    if (typeof requestId !== "string" || typeof requestHash !== "string" || !requestHash || value === undefined || Object.keys(extra).length) throw new ContractError("人工交互请求编号或回答无效", "HUMAN_INPUT_ANSWER_INVALID");
+    // Serialize deliveries, then compare with the durable answer (including conflicting double clicks).
+    const prior = this.#humanAnswers.get(sessionId);
+    const operation = (async () => {
+      await prior?.catch(() => undefined);
+      this.#requireOwnership(sessionId);
+      const pending = await this.#humanInputs.recordAnswer(sessionId, requestId, value, requestHash);
+      if (pending) {
+        await this.#active.get(sessionId)?.completion;
+        const state = await this.#repository.loadState(pending.turnId);
+        if (state.kind !== "paused") throw new ContractError("人工交互已取消，没有恢复执行", "HUMAN_INPUT_STALE");
+        this.#launchApprovalResume(sessionId, pending.turnId, requestId);
+      }
+      return summaryOf(await this.#loadRequiredSession(sessionId), this.#active.has(sessionId));
+    })();
+    this.#humanAnswers.set(sessionId, operation);
+    try { return await operation; }
+    finally {
+      if (this.#humanAnswers.get(sessionId) === operation) this.#humanAnswers.delete(sessionId);
+      this.#releaseIdleOwnership(sessionId);
+    }
+  }
+
+  async interrupt(sessionId: string): Promise<void> {
+    return this.#serializeInput(sessionId, () => this.#interrupt(sessionId));
+  }
+
+  async #interrupt(sessionId: string): Promise<void> {
+    // An owned driver already has its session and execution routing loaded.
+    // Do not hydrate chat history on the active cancellation path; retain the
+    // full load for cold cancellation and its historical child routing.
+    const session = this.#active.has(sessionId)
+      ? this.#requiredSession(sessionId)
+      : await this.#loadRequiredSession(sessionId);
+    const pendingInteraction = await this.#humanInputs.pending(sessionId);
+    if (pendingInteraction) {
+      if (!await this.#humanInputs.cancel(sessionId)) return this.#interrupt(sessionId);
+      const driver = this.#active.get(sessionId);
+      if (driver) { driver.accepting = false; driver.wakeInput?.(); }
+      for (const input of await this.#repository.pendingInputs(sessionId)) {
+        if (await this.#repository.cancelInput(sessionId, input.inputId)) await this.#repository.appendSessionEvents(sessionId, [{ type: "input.queue.cancelled", payload: { inputId: input.inputId } }]);
+      }
+      return;
+    }
+    const active = this.#active.get(sessionId);
+    const waitingRuntime = active?.interrupt === undefined && active?.waitingForInput === true && active.harness !== undefined;
+    if (!active?.interrupt && !waitingRuntime) {
+      let cancelled = false;
+      for (const state of await this.#repository.listStates()) if (state.kind === "paused" && (state.sessionId === sessionId || this.#rootByRuntimeSession.get(state.sessionId) === sessionId)) {
+        cancelled = await cancelPausedTurn(this.#repository, this.#messages, state) || cancelled;
+        for (const input of await this.#repository.pendingInputs(state.sessionId)) await this.#repository.cancelInput(state.sessionId, input.inputId);
+      }
+      if (cancelled) { await this.#refreshSessionRecord(sessionId); return; }
+      if (webStatus(session) !== "running") return;
+      throw new ContractError("当前会话没有可停止的任务", "WEB_SESSION_NOT_RUNNING");
+    }
+    if (active === undefined) throw new ContractError("当前会话没有可停止的任务", "WEB_SESSION_NOT_RUNNING");
+    active.accepting = false;
+    active.wakeInput?.();
+    const cancelled = active.pendingInputs.splice(0);
+    if (!waitingRuntime) {
+      for (const [key, question] of this.#pendingUserQuestions) {
+        if (question.rootSessionId === sessionId) this.#pendingUserQuestions.delete(key);
+      }
+    }
+    if (cancelled.length > 0) {
+      await Promise.all(cancelled.map((input) => this.#repository.cancelInput(sessionId, input.inputId)));
+      await this.#repository.appendEvents(active.turnId, cancelled.map((input) => ({ type: "input.queue.cancelled", payload: { inputId: input.inputId } })));
+    }
+    if (active.interrupt !== undefined) await active.interrupt("由网页端停止", "user");
+    else await active.completion;
+    active.pendingApproval?.reject(new Error("用户停止了当前会话"));
+    delete active.pendingApproval;
+  }
+
+  subscribe(sessionId: string, subscriber: Subscriber): () => void {
+    this.#requiredSession(sessionId);
+    const subscribers = this.#subscribers.get(sessionId) ?? new Set<Subscriber>();
+    subscribers.add(subscriber);
+    this.#subscribers.set(sessionId, subscribers);
+    for (const snapshot of this.#liveModelSnapshots.values()) {
+      if (snapshot.rootSessionId === sessionId) subscriber(this.#liveModelEvent(snapshot));
+    }
+    return () => {
+      subscribers.delete(subscriber);
+      if (subscribers.size === 0) this.#subscribers.delete(sessionId);
+    };
+  }
+
+  async close(): Promise<void> {
+    const active = [...this.#active];
+    const results = await Promise.allSettled(active.map(async ([sessionId, turn]) => {
+      turn.accepting = false;
+      turn.wakeInput?.();
+      if (await this.#humanInputs.pending(sessionId)) { await turn.completion; return; }
+      if (turn.interrupt) await turn.interrupt("网页服务正在关闭", "host_shutdown");
+      await turn.completion;
+    }));
+    results.push(...await Promise.allSettled([...this.#modeRuntimes.values()].map(async (runtime) => runtime.close())));
+    this.#modeRuntimes.clear();
+    this.#modeRuntimeKeys.clear();
+    // Attempt every owned resource even when an earlier closer rejects.
+    for (const close of [() => this.#messages.close(), () => this.#repository.close(), () => this.executionOwnership.close()]) {
+      results.push(...await Promise.allSettled([Promise.resolve().then(close)]));
+    }
+    const errors = results.flatMap(result => result.status === "rejected" ? [result.reason] : []);
+    if (errors.length) throw new AggregateError(errors, "Host session cleanup failed");
+  }
+
+  async #initialize(): Promise<void> {
+    await this.#refreshWorkspaceRegistry();
+    if (!this.#workspaceRegistry.initialized) {
+      const workspaceId = newId("workspace");
+      await this.#repository.appendSessionEvents("host:web", [{
+        type: "workspace.registered",
+        payload: { workspaceId, path: this.options.workspace, title: basename(this.options.workspace) || this.options.workspace, createdAt: systemClock.now().toISOString() },
+      }, { type: "workspace.selected", payload: { workspaceId } }]);
+      await this.#refreshWorkspaceRegistry();
+    } else if (this.#workspaceRegistry.items.some((workspace) => isLegacyWorkspaceId(workspace.id))) {
+      const migratedIds = new Map<string, string>();
+      const events: { readonly type: string; readonly payload: JsonValue }[] = [];
+      for (const workspace of this.#workspaceRegistry.items) {
+        if (!isLegacyWorkspaceId(workspace.id)) continue;
+        const workspaceId = newId("workspace");
+        migratedIds.set(workspace.id, workspaceId);
+        events.push({
+          type: "workspace.registered",
+          payload: { workspaceId, path: workspace.path, title: workspace.title, createdAt: workspace.createdAt },
+        });
+      }
+      const migratedActiveId = this.#workspaceRegistry.activeWorkspaceId === undefined
+        ? undefined
+        : migratedIds.get(this.#workspaceRegistry.activeWorkspaceId);
+      if (migratedActiveId !== undefined) events.push({ type: "workspace.selected", payload: { workspaceId: migratedActiveId } });
+      await this.#repository.appendSessionEvents("host:web", events);
+      await this.#refreshWorkspaceRegistry();
+    }
+    const activeWorkspace = this.#workspaceRegistry.items.find((workspace) => workspace.id === this.#workspaceRegistry.activeWorkspaceId);
+    this.#workspace = activeWorkspace?.path ?? this.#workspaceRegistry.activePath ?? this.#unscopedWorkspace;
+    this.#workspaceId = activeWorkspace?.id;
+    await this.#refreshAllSessions();
+    const recoveryStates = await this.#repository.listStates();
+    const parents = new Map(recoveryStates.map(state => [state.sessionId, state.parentSessionId]));
+    const rootOf = (state: AgentState): string | undefined => {
+      const seen = new Set<string>();
+      let root = state.sessionId;
+      while (parents.get(root) !== undefined) {
+        if (seen.has(root)) return undefined;
+        seen.add(root); root = parents.get(root)!;
+      }
+      return root;
+    };
+    const unfinishedRoots = new Set(recoveryStates.filter(state => !isTerminalState(state.kind)).map(rootOf));
+    const recoveryRoots = new Set<string>();
+    for (const id of this.#sessions.keys()) {
+      if (unfinishedRoots.has(id) && !this.executionOwnership.hasRecord(id) && this.options.legacyRecovery !== "confirmed-stopped") {
+        this.#unownedLegacySessions.add(id);
+        if (!(await this.#repository.eventsByTypes(id, ["host.recovery.blocked"])).length) await this.#repository.appendSessionEvents(id, [{
+          type: "host.recovery.blocked", payload: { code: "HOST_LEGACY_OWNERSHIP_UNKNOWN", message: "旧轮次缺少执行归属记录，已保留原事实。请停止旧执行器后显式迁移；当前入口不会自动接管或中断它。" },
+        }]);
+      } else if (this.executionOwnership.tryClaim(id)) recoveryRoots.add(id);
+    }
+    const mayRecover = (state: AgentState): boolean => { const root = rootOf(state); return root !== undefined && recoveryRoots.has(root); };
+    for (const state of await this.#repository.listStates()) await reconcileCancelledTurn(this.#repository, this.#messages, state);
+    const activeRootSessionIds = new Set([...this.#sessions.values()]
+      .filter((session) => session.sessionStatus.kind === "active")
+      .map((session) => session.id));
+    const recovery = await recoverOrphanedTurns(this.#repository, this.#messages, systemClock, activeRootSessionIds, mayRecover);
+    if (recovery.interruptedTurnIds.length > 0) await this.#refreshAllSessions();
+    // Honor already accepted stops before recovering approval answers or queued work.
+    for (const sessionId of recoveryRoots) {
+      const events = await this.#repository.eventsByTypes(sessionId, ["host.presentation.action.requested", "host.presentation.action.accepted"]);
+      const accepted = new Set(events.filter(event => event.type === "host.presentation.action.accepted").map(event => (event.payload as JsonObject)["operationId"]));
+      for (const event of events) if (event.type === "host.presentation.action.requested" && !accepted.has((event.payload as JsonObject)["operationId"])) {
+        await this.#cancelPresentationTargets(sessionId, event.payload as JsonObject);
+      }
+    }
+    let recoveredApprovalQuestion = false;
+    const answeredApprovals: Array<{ readonly runtimeSessionId: string; readonly turnId: string; readonly requestId: string; readonly response?: ToolApprovalResponse }> = [];
+    for (const state of await this.#repository.listStates()) {
+      if (state.kind !== "paused" || !mayRecover(state)) continue;
+      const interaction = await this.#humanInputs.recover(state);
+      if (interaction) {
+        recoveredApprovalQuestion = true;
+        if (interaction.answered && this.#apiKey) answeredApprovals.push({ runtimeSessionId: state.sessionId, turnId: state.turnId, requestId: interaction.requestId });
+        continue;
+      }
+      const approvalReasons = state.suspensionReasons.filter((reason) => reason.kind === "approval");
+      if (approvalReasons.length === 0) continue;
+      const events = await this.#repository.turnEventsByTypes(state.turnId, ["permission.approval.requested", "host.question", "host.question.answered"]);
+      for (const reason of approvalReasons) {
+        const question = [...events].reverse().find((event) => event.type === "host.question"
+          && event.payload !== null && typeof event.payload === "object" && !Array.isArray(event.payload)
+          && (event.payload as JsonValue as Readonly<Record<string, JsonValue>>)["requestId"] === reason.requestId);
+        const answered = question === undefined ? undefined : events.find((event) => event.seq > question.seq
+          && event.type === "host.question.answered"
+          && event.payload !== null && typeof event.payload === "object" && !Array.isArray(event.payload)
+          && (event.payload as JsonValue as Readonly<Record<string, JsonValue>>)["requestId"] === reason.requestId);
+        const answeredContent = answered?.payload !== null && typeof answered?.payload === "object" && !Array.isArray(answered.payload)
+          ? (answered.payload as JsonValue as Readonly<Record<string, JsonValue>>)["content"]
+          : undefined;
+        if (typeof answeredContent === "string" && this.#apiKey) {
+          answeredApprovals.push({ runtimeSessionId: state.sessionId, turnId: state.turnId, requestId: reason.requestId, response: approvalResponse(answeredContent) });
+          continue;
+        }
+        if (question !== undefined && answered === undefined) continue;
+        if (question !== undefined && typeof answeredContent === "string") {
+          await this.#repository.appendEvents(state.turnId, [{
+            type: "host.question",
+            payload: { ...(question.payload as JsonObject), recovered: true, reissued: true },
+          }]);
+          recoveredApprovalQuestion = true;
+          continue;
+        }
+        const requested = [...events].reverse().find((event) => event.type === "permission.approval.requested"
+          && event.payload !== null && typeof event.payload === "object" && !Array.isArray(event.payload)
+          && (event.payload as JsonValue as Readonly<Record<string, JsonValue>>)["requestId"] === reason.requestId);
+        if (requested?.payload === null || typeof requested?.payload !== "object" || Array.isArray(requested.payload)) continue;
+        const request = requested.payload as Readonly<Record<string, JsonValue>>;
+        const execution = request["execution"];
+        const target = request["target"];
+        if (execution === null || typeof execution !== "object" || Array.isArray(execution)) continue;
+        const executionRecord = execution as Readonly<Record<string, JsonValue>>;
+        const targetRecord = target !== null && typeof target === "object" && !Array.isArray(target) ? target as Readonly<Record<string, JsonValue>> : undefined;
+        const description = typeof targetRecord?.["description"] === "string"
+          ? targetRecord["description"]
+          : typeof request["suggestedRule"] === "string" ? request["suggestedRule"] : "此工具调用";
+        await this.#repository.appendEvents(state.turnId, [{
+          type: "host.question",
+          payload: {
+            requestId: reason.requestId,
+            callId: typeof executionRecord["callId"] === "string" ? executionRecord["callId"] : "approval",
+            actionId: reason.actionId,
+            questions: [{ question: `是否允许：${description}？`, header: "权限确认", options: [{ label: "允许", description: "只允许本次调用。" }, { label: "拒绝", description: "阻止本次调用。" }], multiSelect: false }],
+            kind: "approval",
+            recovered: true,
+          },
+        }]);
+        recoveredApprovalQuestion = true;
+      }
+    }
+    if (recoveredApprovalQuestion) await this.#refreshAllSessions();
+    const migrations = (await Promise.all([...this.#sessions.values()].map(async (session) => {
+      if (session.workspaceId !== undefined) return undefined;
+      const events = await this.#repository.eventsByTypes(session.id, [
+        "session.created",
+        "session.metadata.snapshot",
+        "ui.session.created",
+        "session.updated",
+        "ui.session.updated",
+      ]);
+      if (events.some(declaresWorkspaceSelection)) return undefined;
+      const workspace = this.#workspaceRegistry.items.find((candidate) => candidate.path === session.workspace);
+      return workspace === undefined ? undefined : { sessionId: session.id, workspaceId: workspace.id };
+    }))).filter((migration): migration is { readonly sessionId: string; readonly workspaceId: string } => migration !== undefined);
+    await Promise.all(migrations.map(({ sessionId, workspaceId }) => this.#repository.appendSessionEvents(sessionId, [{
+      type: "session.updated",
+      payload: { to: { workspaceId } },
+    }])));
+    if (migrations.length > 0) await this.#refreshAllSessions();
+    // Rebuild runtime-session ownership before recovering admitted inputs. Child
+    // answers belong to the child Session even though execution is hosted by the
+    // root Web session.
+    await Promise.all([...this.#sessions.keys()].map((rootSessionId) => this.#runtimeTreeEvents(rootSessionId, rootSessionId, new Set())));
+    for (const approval of answeredApprovals) {
+      const rootSessionId = this.#rootByRuntimeSession.get(approval.runtimeSessionId);
+      if (rootSessionId !== undefined && !this.#active.has(rootSessionId)) {
+        this.#launchApprovalResume(rootSessionId, approval.turnId, approval.requestId, approval.response);
+      }
+    }
+    const pendingByRoot = new Map<string, Array<PendingSessionInput & { readonly admissionSeq: number }>>();
+    for (const runtimeSessionId of await this.#repository.listSessionIds()) {
+      const rootSessionId = this.#rootByRuntimeSession.get(runtimeSessionId);
+      if (rootSessionId === undefined || !this.#sessions.has(rootSessionId) || !recoveryRoots.has(rootSessionId)) continue;
+      const entries = pendingByRoot.get(rootSessionId) ?? [];
+      for (const input of await this.#repository.pendingInputs(runtimeSessionId)) {
+        if (input.origin?.kind === "policy_advance") continue;
+        if (input.parentTurnId !== undefined) {
+          const parent = await this.#repository.loadState(input.parentTurnId).catch(() => undefined);
+          const expectation = parent?.turnOutcome?.kind === "waiting"
+            ? parent.turnOutcome.expectations.find((candidate) => candidate.kind === "user_input")
+            : undefined;
+          if (expectation?.kind === "user_input") {
+            const answered = (await this.#repository.turnEventsByTypes(parent!.turnId, ["host.question.answered"]))
+              .some((event) => webEventString(webEvent(rootSessionId, event), "requestId") === expectation.requestId);
+            if (!answered) {
+              await this.#repository.appendEvents(parent!.turnId, [{
+                type: "host.question.answered",
+                payload: { requestId: expectation.requestId, inputId: input.inputId, content: input.content, recovered: true },
+              }]);
+            }
+          }
+        }
+        entries.push({
+          inputId: input.inputId,
+          content: input.content,
+          admissionSeq: input.admissionSeq,
+          ...(runtimeSessionId === rootSessionId ? {} : { runtimeSessionId }),
+          ...(input.rootTurnId === undefined ? {} : { rootTurnId: input.rootTurnId }),
+          ...(input.parentTurnId === undefined ? {} : { parentTurnId: input.parentTurnId }),
+          ...(input.causedByCallId === undefined ? {} : { causedByCallId: input.causedByCallId }),
+        });
+      }
+      pendingByRoot.set(rootSessionId, entries);
+    }
+    const allStates = await this.#repository.listStates();
+    for (const [rootSessionId, queued] of pendingByRoot) {
+      const session = this.#sessions.get(rootSessionId)!;
+      if (!this.#apiKey || session.archived || queued.length === 0) continue;
+      const runtimeIds = new Set([rootSessionId, ...[...this.#rootByRuntimeSession].filter(([, root]) => root === rootSessionId).map(([runtime]) => runtime)]);
+      if (allStates.some((state) => runtimeIds.has(state.sessionId) && !isTerminalState(state.kind))) continue;
+      const [first, ...rest] = queued.toSorted((left, right) => left.admissionSeq - right.admissionSeq);
+      const causal = (input: PendingSessionInput): Pick<PendingSessionInput, "runtimeSessionId" | "rootTurnId" | "parentTurnId" | "causedByCallId" | "advanceFromTurnId"> => ({
+        ...(input.runtimeSessionId === undefined ? {} : { runtimeSessionId: input.runtimeSessionId }),
+        ...(input.rootTurnId === undefined ? {} : { rootTurnId: input.rootTurnId }),
+        ...(input.parentTurnId === undefined ? {} : { parentTurnId: input.parentTurnId }),
+        ...(input.causedByCallId === undefined ? {} : { causedByCallId: input.causedByCallId }),
+      });
+      this.#launchTurn(rootSessionId, first!.inputId, first!.content, causal(first!));
+      this.#active.get(rootSessionId)?.pendingInputs.push(...rest.map((input) => ({ inputId: input.inputId, content: input.content, ...causal(input) })));
+    }
+    if (this.#apiKey) for (const advance of await recoverableTurnAdvances(this.#repository)) {
+      const session = this.#sessions.get(advance.sessionId);
+      if (session && recoveryRoots.has(session.id) && !session.archived && !this.#active.has(session.id)) {
+        this.#launchTurn(session.id, `recover:${advance.sourceTurnId}`, "", { advanceFromTurnId: advance.sourceTurnId });
+      }
+    }
+    if (this.#apiKey) for (const session of this.#sessions.values()) {
+      if (session.archived || !recoveryRoots.has(session.id)) continue;
+      const events = await this.#repository.eventsByTypes(session.id, ["host.presentation.action.requested", "host.presentation.action.accepted"]);
+      const accepted = new Set(events.filter(event => event.type === "host.presentation.action.accepted").map(event => (event.payload as JsonObject)["operationId"]));
+      for (const event of events) if (event.type === "host.presentation.action.requested" && !accepted.has((event.payload as JsonObject)["operationId"])) {
+        await this.#deliverPresentationAction(session.id, event.payload as JsonObject);
+      }
+    }
+    for (const id of recoveryRoots) this.#releaseIdleOwnership(id);
+  }
+
+  async #refreshWorkspaceRegistry(): Promise<void> {
+    this.#workspaceRegistry = await this.#workspaceCatalog.snapshot();
+  }
+
+  #assertCanRun(content: string): void {
+    if (!this.#apiKey) throw new ContractError("未配置模型密钥，请先在设置中填写 API Key", "MODEL_API_KEY_MISSING");
+    if (!content.trim()) throw new ContractError("消息不能为空", "WEB_INPUT_EMPTY");
+    if (content.length > 100_000) throw new ContractError("消息超过 100000 个字符", "WEB_INPUT_TOO_LARGE");
+  }
+
+  #requiredSession(id: string): SessionRecord {
+    const session = this.#sessions.get(id);
+    if (!session) throw new ContractError(`找不到会话：${id}`, "WEB_SESSION_NOT_FOUND");
+    return session;
+  }
+
+  async #loadRequiredSession(id: string): Promise<SessionRecord> {
+    await this.#refreshSession(id);
+    return this.#requiredSession(id);
+  }
+
+  async #refreshSessionRecord(id: string): Promise<SessionRecord | undefined> {
+    let session = await this.#catalog.get(id);
+    if (session === undefined) {
+      this.#sessions.delete(id);
+      this.#eventsBySession.delete(id);
+      return undefined;
+    }
+    session = this.#withDriverFailure(session);
+    this.#sessions.set(id, session);
+    return session;
+  }
+
+  #withDriverFailure(session: SessionRecord): SessionRecord {
+    const failure = this.#driverFailures.get(session.id);
+    if (failure === undefined) return session;
+    const turnAdvanced = failure.sessionTurnRevision !== undefined && session.latestTurnRevision !== undefined
+      && session.latestTurnRevision > failure.sessionTurnRevision;
+    if (failure.sessionTurnId !== session.latestTurnId || turnAdvanced) {
+      this.#driverFailures.delete(session.id);
+      return session;
+    }
+    return { ...session, sessionStatus: { kind: "system_error", error: {
+      code: "HOST_TURN_DRIVER_FAILED", message: driverErrorMessage(failure.error), recoverable: false, occurredAt: failure.occurredAt,
+    } } };
+  }
+
+  async #refreshSession(id: string): Promise<SessionRecord | undefined> {
+    const session = await this.#refreshSessionRecord(id);
+    if (session === undefined) return undefined;
+    this.#rootByRuntimeSession.set(id, id);
+    this.#eventsBySession.set(id, await this.#projectSessionEvents(session, undefined, new Set()));
+    return session;
+  }
+
+  async #refreshAllSessions(): Promise<void> {
+    const sessions = await this.#catalog.list();
+    const currentIds = new Set(sessions.map((session) => session.id));
+    for (const id of this.#sessions.keys()) {
+      if (!currentIds.has(id) && !this.#active.has(id)) {
+        this.#sessions.delete(id);
+        this.#eventsBySession.delete(id);
+      }
+    }
+    for (const session of sessions) {
+      this.#sessions.set(session.id, this.#withDriverFailure(session));
+      this.#rootByRuntimeSession.set(session.id, session.id);
+    }
+  }
+
+  #permissionMode(value: unknown): SessionPermissionMode {
+    if (!isSessionPermissionMode(value)) throw new ContractError("无效的权限模式", "WEB_PERMISSION_MODE_INVALID");
+    return value;
+  }
+
+  #model(value: unknown): ModelName {
+    if (typeof value !== "string" || !(this.options.supportedModels ?? DEFAULT_SESSION_MODELS).includes(value)) throw new ContractError(`无效的模型，可选 ${DEFAULT_SESSION_MODELS.join("、")}`, "WEB_MODEL_UNSUPPORTED");
+    return value;
+  }
+
+  #mode(value: unknown): string {
+    if (typeof value !== "string" || !this.#modeConfigs.some((mode) => mode.id === value)) {
+      throw new ContractError("无效的模式", "WEB_MODE_UNSUPPORTED");
+    }
+    return value;
+  }
+
+  #inputId(value: unknown): string {
+    if (value === undefined) return newId("input");
+    if (typeof value !== "string" || !/^[a-zA-Z0-9:_-]{1,200}$/u.test(value)) {
+      throw new ContractError("输入标识无效", "WEB_INPUT_ID_INVALID");
+    }
+    return value;
+  }
+
+  #questionRequestId(value: unknown): string {
+    if (typeof value !== "string" || !/^(?:question|approval):[a-zA-Z0-9:_-]{1,240}$/u.test(value)) {
+      throw new ContractError("问题标识无效", "WEB_QUESTION_ID_INVALID");
+    }
+    return value;
+  }
+
+  async #pendingQuestion(rootSessionId: string, requestId: string): Promise<PendingUserQuestion | undefined> {
+    const key = pendingQuestionKey(rootSessionId, requestId);
+    const cached = this.#pendingUserQuestions.get(key);
+    const root = await this.#refreshSession(rootSessionId);
+    if (root === undefined) return undefined;
+    const events = this.#eventsBySession.get(rootSessionId) ?? [];
+    if (!pendingUserQuestions(events).some(question => question.requestId === requestId)) {
+      this.#pendingUserQuestions.delete(key);
+      return undefined;
+    }
+    if (cached !== undefined && cached.rootSessionId === rootSessionId) return cached;
+    const question = [...events].reverse().find((event) => event.type === "host.question"
+      && event.turnId !== undefined
+      && webEventString(event, "requestId") === requestId);
+    if (question?.turnId === undefined) return undefined;
+    const state = await this.#repository.loadState(question.turnId);
+    const callId = webEventString(question, "callId");
+    if (callId === undefined) return undefined;
+    const kind = webEventString(question, "kind") === "approval" ? "approval" as const : "user_input" as const;
+    if (kind === "approval") {
+      if (state.kind !== "paused"
+        || !state.suspensionReasons.some((reason) => reason.kind === "approval" && reason.requestId === requestId)) return undefined;
+    } else if (state.turnOutcome?.kind !== "waiting"
+      || !state.turnOutcome.expectations.some((expectation) => expectation.kind === "user_input" && expectation.requestId === requestId)) return undefined;
+    const pending: PendingUserQuestion = {
+      kind,
+      requestId,
+      rootSessionId,
+      sessionId: question.sourceSessionId,
+      turnId: question.turnId,
+      rootTurnId: state.rootTurnId,
+      callId,
+      questions: [],
+    };
+    this.#pendingUserQuestions.set(key, pending);
+    return pending;
+  }
+
+  async #runtimeForSession(session: SessionRecord): Promise<ModeRuntime> {
+    const key = hashJson({ mode: session.mode, workspace: session.workspace, permissionMode: session.permissionMode });
+    const existing = this.#modeRuntimes.get(session.id);
+    if (existing && this.#modeRuntimeKeys.get(session.id) === key) return existing;
+    if (existing) { await existing.close(); this.#modeRuntimes.delete(session.id); }
+    const presentQuestion = async (
+      questions: readonly ToolQuestion[],
+      context: { readonly sessionId: string; readonly turnId: string; readonly callId: string; readonly signal: AbortSignal },
+    ): Promise<{ readonly requestId: string }> => {
+      const active = this.#active.get(session.id);
+      if (!active) throw new ContractError("当前会话没有可接收回答的 Turn", "WEB_QUESTION_SESSION_INACTIVE");
+      if ([...this.#pendingUserQuestions.values()].some((question) => question.sessionId === context.sessionId)) throw new ContractError("已有一个问题正在等待回答", "WEB_QUESTION_ALREADY_PENDING");
+      const questionTurn = await this.#repository.loadState(context.turnId);
+      if (questionTurn.sessionId !== context.sessionId) throw new ContractError("提问方当前没有活动 Turn", "WEB_QUESTION_TURN_INACTIVE");
+      const requestId = `question:${newId("event")}`;
+      this.#pendingUserQuestions.set(pendingQuestionKey(session.id, requestId), {
+        kind: "user_input",
+        requestId,
+        rootSessionId: session.id,
+        sessionId: context.sessionId,
+        turnId: questionTurn.turnId,
+        rootTurnId: questionTurn.rootTurnId,
+        callId: context.callId,
+        questions,
+      });
+      await this.#repository.appendEvents(questionTurn.turnId, [{ type: "host.question", payload: { requestId, callId: context.callId, questions: questions as unknown as JsonValue } }]);
+      return { requestId };
+    };
+    const askForApproval = async (questions: readonly ToolQuestion[], signal: AbortSignal, request: ToolApprovalRequest): Promise<ToolQuestionAnswer> => {
+      const active = this.#active.get(session.id);
+      if (!active) return Promise.reject(new ContractError("当前会话没有可接收审批的 Turn", "WEB_QUESTION_SESSION_INACTIVE"));
+      if (active.pendingApproval) return Promise.reject(new ContractError("已有一个审批正在等待回答", "WEB_QUESTION_ALREADY_PENDING"));
+      const questionTurn = await this.#repository.loadState(request.execution.turnId);
+      if (questionTurn.kind !== "paused"
+        || !questionTurn.suspensionReasons.some((reason) => reason.kind === "approval" && reason.requestId === request.requestId)) {
+        return Promise.reject(new ContractError("审批方当前没有已暂停的 Turn", "WEB_QUESTION_TURN_INACTIVE"));
+      }
+      this.#pendingUserQuestions.set(pendingQuestionKey(session.id, request.requestId), {
+        kind: "approval",
+        requestId: request.requestId,
+        rootSessionId: session.id,
+        sessionId: request.execution.sessionId,
+        turnId: request.execution.turnId,
+        rootTurnId: questionTurn.rootTurnId,
+        callId: request.execution.callId,
+        questions,
+      });
+      await this.#repository.appendEvents(questionTurn.turnId, [{
+        type: "host.question",
+        payload: {
+          requestId: request.requestId,
+          callId: request.execution.callId,
+          actionId: request.execution.actionId,
+          questions: questions as unknown as JsonValue,
+          kind: "approval",
+        },
+      }]);
+      return new Promise((resolveAnswer, rejectAnswer) => {
+        const abort = (): void => { delete active.pendingApproval; rejectAnswer(new Error("审批已取消")); };
+        signal.addEventListener("abort", abort, { once: true });
+        active.pendingApproval = {
+          turnId: questionTurn.turnId,
+          requestId: request.requestId,
+          resolve: (answer) => { signal.removeEventListener("abort", abort); resolveAnswer({ ...answer, answers: Object.fromEntries(questions.map((question) => [question.question, answer.response ?? Object.values(answer.answers)[0] ?? ""])) }); },
+          reject: (error) => { signal.removeEventListener("abort", abort); rejectAnswer(error); },
+        };
+      });
+    };
+    const requestHumanInput: Parameters<typeof createHumanInputServiceProvider>[0] = async (request, signal, runtimeSessionId, caller) => {
+      const active = this.#active.get(session.id);
+      if (!active?.harness || runtimeSessionId !== session.id) throw new ContractError("当前会话不能接收人工交互", "HUMAN_INPUT_SESSION_INACTIVE");
+      if (active.pendingApproval) throw new ContractError("已有一个审批正在等待回答", "HUMAN_INPUT_ALREADY_PENDING");
+      signal.throwIfAborted();
+      return this.#humanInputs.prepare(request, caller, (interaction) => active.harness!.kernel.suspendForHumanInput(interaction));
+    };
+    const runtime = await createModeRuntime({
+      mode: session.mode,
+      ...(this.options.modeConfigRoot === undefined ? {} : { modeConfigRoot: this.options.modeConfigRoot }),
+      workspaceRoot: session.workspace,
+      permissionMode: session.permissionMode,
+      policyEnvironment: { stateDirectory: join(dirname(this.options.eventLogSqlitePath), "policies") },
+      toolEnvironment: {
+        stateDirectory: resolve(session.workspace, ".longcat-harness", "tools"),
+      },
+      toolPermission: this.options.interactive === false ? {} : {
+        approve: async (request, signal) => {
+          const answer = await askForApproval([{ question: `是否允许：${request.target.description ?? request.suggestedRule}？`, header: "权限确认", options: [{ label: "允许", description: "只允许本次调用。" }, { label: "拒绝", description: "阻止本次调用。" }], multiSelect: false }], signal, request);
+          return approvalResponse(answer.response ?? Object.values(answer.answers)[0] ?? "");
+        },
+      },
+      serviceProviders: [
+        ...(this.options.interactive === false ? [] : [createUserQuestionServiceProvider(presentQuestion), createHumanInputServiceProvider(requestHumanInput)]),
+        await createSchedulerServiceProvider({
+          stateDirectory: resolve(session.workspace, ".longcat-harness", "tools"),
+          sessionId: session.id,
+          deliverPrompt: async (targetSessionId, prompt) => { await this.sendMessage(targetSessionId, prompt); },
+        }),
+        createNotificationServiceProvider(async (message) => {
+          const active = this.#active.get(session.id);
+          if (active) await this.#repository.appendEvents(active.turnId, [{ type: "host.activity", payload: { message: `[通知] ${message}` } }]);
+          return { localSent: true };
+        }),
+      ],
+    });
+    this.#modeRuntimes.set(session.id, runtime);
+    this.#modeRuntimeKeys.set(session.id, key);
+    return runtime;
+  }
+
+  #launchTurn(sessionId: string, inputId: string, content: string, causal: Pick<PendingSessionInput, "runtimeSessionId" | "rootTurnId" | "parentTurnId" | "causedByCallId" | "advanceFromTurnId"> = {}): string {
+    this.#requireOwnership(sessionId);
+    this.#driverFailures.delete(sessionId);
+    const turnId = newId("turn");
+    const active: ActiveTurn = {
+      turnId,
+      completion: Promise.resolve(),
+      accepting: true,
+      pendingInputs: [],
+      sideEffects: new Set(),
+    };
+    this.#active.set(sessionId, active);
+    active.completion = this.#executeTurns(sessionId, { inputId, content, ...causal }, active).then(
+      () => this.#settleDriver(sessionId, active),
+      error => this.#settleDriver(sessionId, active, error),
+    );
+    void active.completion.catch(() => undefined);
+    return turnId;
+  }
+
+  #launchApprovalResume(sessionId: string, turnId: string, requestId: string, response?: ToolApprovalResponse): void {
+    this.#requireOwnership(sessionId);
+    if (this.#active.has(sessionId)) throw new ContractError("当前会话已有活动任务", "WEB_SESSION_BUSY");
+    this.#driverFailures.delete(sessionId);
+    const { latestTurnId, latestTurnRevision } = this.#requiredSession(sessionId);
+    const active: ActiveTurn = {
+      turnId,
+      // Resume may fail before its first commit and before a final state read succeeds.
+      ...(latestTurnId === undefined || latestTurnRevision === undefined ? {} : {
+        sessionTurnVersion: { turnId: latestTurnId, revision: latestTurnRevision },
+      }),
+      completion: Promise.resolve(),
+      accepting: true,
+      pendingInputs: [],
+      sideEffects: new Set(),
+    };
+    this.#active.set(sessionId, active);
+    active.completion = this.#executeApprovalResume(sessionId, turnId, requestId, response, active).then(
+      () => this.#settleDriver(sessionId, active),
+      error => this.#settleDriver(sessionId, active, error),
+    );
+    void active.completion.catch(() => undefined);
+  }
+
+  async #executeApprovalResume(
+    sessionId: string,
+    turnId: string,
+    requestId: string,
+    response: ToolApprovalResponse | undefined,
+    active: ActiveTurn,
+  ): Promise<void> {
+    const apiKey = this.#apiKey;
+    if (!apiKey) throw new ContractError("未配置模型密钥", "MODEL_API_KEY_MISSING");
+    const session = this.#requiredSession(sessionId);
+    const runtime = await this.#runtimeForSession(session);
+    const provider = new OpenAIChatProvider({ baseUrl: this.#modelSettings.baseUrl, apiKey });
+    const harness = await runtime.createHarness({
+      bindingSeed: `web-ui:${runtime.modeId}:${sessionId}`,
+      provider,
+      tokenCounter: this.#tokenCounterFor(session.model),
+      repository: this.#repository,
+      closeRepository: false,
+      messageStore: this.#messages,
+      closeMessageStore: false,
+      trace: this.#trace,
+      kernel: {
+        model: kernelModelConfig(this.#modelSettings, session.model),
+        onModelStream: (frame) => this.#onModelStream(sessionId, frame),
+      },
+    });
+    active.harness = harness;
+    let executionFailure: unknown;
+    const advanceAbort = new AbortController();
+    active.interrupt = async (reason, cause = "user", turnIds) => {
+      advanceAbort.abort();
+      if (turnIds) {
+        for (const id of turnIds) await harness.kernel.interrupt(id, reason, cause);
+        return this.#repository.loadState(active.turnId);
+      }
+      const [state] = await Promise.all([
+        harness.kernel.interrupt(active.turnId, reason, cause),
+        harness.subagents?.interruptDescendants(sessionId, `Root Web task interrupted: ${reason}`) ?? Promise.resolve(),
+      ]);
+      return state;
+    };
+    try {
+      const state = await this.#repository.loadState(turnId);
+      for (const input of await this.#repository.pendingInputs(sessionId)) {
+        if (!active.pendingInputs.some(item => item.inputId === input.inputId)) active.pendingInputs.push({ inputId: input.inputId, content: input.content });
+      }
+      let result = state.sessionId === sessionId
+        ? response === undefined ? await harness.kernel.resumeHumanInput(turnId, requestId) : await harness.kernel.resumeApproval(turnId, requestId, response)
+        : response === undefined ? undefined : await harness.subagents?.resumeApproval(sessionId, state.sessionId, turnId, requestId, response);
+      if (result === undefined) throw new ContractError("当前模式不支持恢复子 Agent 审批", "WEB_SUBAGENT_UNAVAILABLE");
+      if (result.kind === "paused") { active.accepting = false; return; }
+      if (result.turnOutcome?.kind !== "waiting") await harness.subagents?.waitForIdle(sessionId);
+      while (active.accepting && active.pendingInputs.length === 0 && !advanceAbort.signal.aborted && result.sessionId === sessionId) {
+        const next = await harness.turnAdvancement.advance(result.turnId, advanceAbort.signal);
+        if (!next) break;
+        active.turnId = next.turnId;
+        result = harness.subagents ? await harness.subagents.waitForTurn(next) : await next.completion;
+        if (result.kind !== "paused" && result.turnOutcome?.kind !== "waiting") await harness.subagents?.waitForIdle(sessionId);
+      }
+      if (result.kind === "paused") { active.accepting = false; return; }
+      const pending = active.accepting ? active.pendingInputs.shift() : undefined;
+      if (pending) {
+        active.turnId = newId("turn");
+        await this.#executeTurns(sessionId, pending, active);
+      }
+      active.accepting = false;
+    } catch (error) {
+      executionFailure = error;
+      throw error;
+    } finally {
+      delete active.interrupt;
+      delete active.harness;
+      try { await harness.close(); }
+      catch (cleanupError) {
+        throw executionFailure === undefined ? cleanupError : new AggregateError([executionFailure, cleanupError], "Turn resume and cleanup failed");
+      }
+    }
+  }
+
+  async #executeTurns(sessionId: string, firstInput: PendingSessionInput, active: ActiveTurn): Promise<void> {
+    let executionFailure: unknown;
+    try {
+      let input: PendingSessionInput | undefined = firstInput;
+      while (input) {
+        active.currentInputId = input.inputId;
+        const state = await this.#executeTurn(sessionId, active.turnId, input, active);
+        if (!active.accepting || state?.kind === "paused") break;
+        input = active.pendingInputs.shift();
+        const waitingForRootInput = state?.sessionId === sessionId && state.turnOutcome?.kind === "waiting"
+          && state.turnOutcome.expectations.some((expectation) => expectation.kind === "user_input");
+        if (input === undefined && waitingForRootInput) {
+          active.waitingForInput = true;
+          await new Promise<void>((resolveInput) => {
+            active.wakeInput = resolveInput;
+            if (!active.accepting || active.pendingInputs.length > 0) resolveInput();
+          });
+          delete active.waitingForInput;
+          delete active.wakeInput;
+          if (!active.accepting) break;
+          input = active.pendingInputs.shift();
+        }
+        if (!input) {
+          active.accepting = false;
+          break;
+        }
+        active.turnId = newId("turn");
+      }
+    } catch (error) {
+      executionFailure = error;
+      throw error;
+    } finally {
+      const harness = active.harness;
+      delete active.harness;
+      try { await harness?.close(); }
+      catch (cleanupError) {
+        throw executionFailure === undefined ? cleanupError : new AggregateError([executionFailure, cleanupError], "Turn execution and cleanup failed");
+      }
+    }
+  }
+
+  async #executeTurn(sessionId: string, turnId: string, input: PendingSessionInput, active: ActiveTurn): Promise<AgentState | undefined> {
+    let harness = active.harness;
+    let result: AgentState | undefined;
+    try {
+      const startedAt = runtimePerformanceNow();
+      const apiKey = this.#apiKey;
+      if (!apiKey) throw new ContractError("未配置模型密钥", "MODEL_API_KEY_MISSING");
+      const session = this.#requiredSession(sessionId);
+      const trace = this.#trace;
+      const runtimeStartedAt = runtimePerformanceNow();
+      const runtime = await this.#runtimeForSession(session);
+      const runtimeDurationMs = runtimePerformanceNow() - runtimeStartedAt;
+      const provider = new OpenAIChatProvider({ baseUrl: this.#modelSettings.baseUrl, apiKey });
+      const harnessStartedAt = runtimePerformanceNow();
+      if (harness === undefined) {
+        harness = await runtime.createHarness({
+          bindingSeed: `web-ui:${runtime.modeId}:${sessionId}`,
+          provider,
+          tokenCounter: this.#tokenCounterFor(session.model),
+          repository: this.#repository,
+          closeRepository: false,
+          messageStore: this.#messages,
+          closeMessageStore: false,
+          trace,
+          kernel: {
+            model: kernelModelConfig(this.#modelSettings, session.model),
+            onModelStream: (frame) => this.#onModelStream(sessionId, frame),
+          },
+        });
+        active.harness = harness;
+      }
+      active.continueChildInput = async (childInput): Promise<void> => {
+        if (childInput.runtimeSessionId === undefined || childInput.rootTurnId === undefined
+          || childInput.parentTurnId === undefined || childInput.causedByCallId === undefined) {
+          throw new ContractError("子 Agent 回答缺少续接因果信息", "WEB_SUBAGENT_CONTINUATION_INVALID");
+        }
+        if (harness!.subagents === undefined) throw new ContractError("当前模式不支持继续子 Agent", "WEB_SUBAGENT_UNAVAILABLE");
+        await harness!.subagents.continueFromInput(sessionId, childInput.runtimeSessionId, {
+          turnId: newId("turn"),
+          inputId: childInput.inputId,
+          content: childInput.content,
+          rootTurnId: childInput.rootTurnId,
+          parentTurnId: childInput.parentTurnId,
+          causedByCallId: childInput.causedByCallId,
+        });
+      };
+      const harnessDurationMs = runtimePerformanceNow() - harnessStartedAt;
+      const startTurnStartedAt = runtimePerformanceNow();
+      const runtimeSessionId = input.runtimeSessionId ?? sessionId;
+      const advanceAbort = new AbortController();
+      if (input.advanceFromTurnId) active.interrupt = async () => { advanceAbort.abort(); return this.#repository.loadState(input.advanceFromTurnId!); };
+      let handle = input.advanceFromTurnId ? await harness.turnAdvancement.advance(input.advanceFromTurnId, advanceAbort.signal) : runtimeSessionId === sessionId
+        ? await harness.kernel.startTurn({
+            sessionId,
+            turnId,
+            inputId: input.inputId,
+            content: input.content,
+            ...(input.rootTurnId === undefined ? {} : { rootTurnId: input.rootTurnId }),
+            ...(input.parentTurnId === undefined ? {} : { parentTurnId: input.parentTurnId }),
+            ...(input.causedByCallId === undefined ? {} : { causedByCallId: input.causedByCallId }),
+          })
+        : await harness.subagents?.continueFromInput(sessionId, runtimeSessionId, {
+            turnId,
+            inputId: input.inputId,
+            content: input.content,
+            rootTurnId: input.rootTurnId!,
+            parentTurnId: input.parentTurnId!,
+            causedByCallId: input.causedByCallId!,
+          });
+      if (handle === undefined && input.advanceFromTurnId) return undefined;
+      if (handle === undefined) throw new ContractError("当前模式不支持继续子 Agent", "WEB_SUBAGENT_UNAVAILABLE");
+      runtimePerformanceTrace("turn.prepared", {
+        sessionId,
+        inputId: input.inputId,
+        turnId,
+        runtimeDurationMs: Number(runtimeDurationMs.toFixed(3)),
+        harnessDurationMs: Number(harnessDurationMs.toFixed(3)),
+        startTurnDurationMs: Number((runtimePerformanceNow() - startTurnStartedAt).toFixed(3)),
+        durationMs: Number((runtimePerformanceNow() - startedAt).toFixed(3)),
+      });
+      active.interrupt = async (reason, cause = "user", turnIds) => {
+        advanceAbort.abort();
+        if (turnIds) {
+          for (const id of turnIds) await harness!.kernel.interrupt(id, reason, cause);
+          return this.#repository.loadState(handle!.turnId);
+        }
+        const [state] = await Promise.all([
+          harness!.kernel.interrupt(handle!.turnId, reason, cause),
+          harness!.subagents?.interruptDescendants(sessionId, `Root Web task interrupted: ${reason}`) ?? Promise.resolve(),
+        ]);
+        return state;
+      };
+      while (handle) {
+        active.turnId = handle.turnId;
+        if (harness.subagents === undefined) result = await handle.completion;
+        else {
+          result = await harness.subagents.waitForTurn(handle);
+          if (result.kind !== "paused" && result.turnOutcome?.kind !== "waiting") await harness.subagents.waitForIdle(sessionId);
+        }
+        if (!active.accepting || active.pendingInputs.length > 0 || runtimeSessionId !== sessionId) break;
+        const next = await harness.turnAdvancement.advance(result.turnId, advanceAbort.signal);
+        if (!next) break;
+        handle = next;
+      }
+      delete active.interrupt;
+      await Promise.allSettled([...active.sideEffects]);
+      return result;
+    } catch (error) {
+      const message = errorMessage(error);
+      let existing: readonly DurableEvent[] = [];
+      try { existing = await this.#repository.turnEvents(turnId); }
+      catch (readError) { throw new AggregateError([error, readError], "Turn execution failed and its durable facts could not be read"); }
+      const inputAccepted = existing.some((event) => event.type === "input.promoted"
+        && event.payload !== null && typeof event.payload === "object" && !Array.isArray(event.payload)
+        && (event.payload as Readonly<Record<string, JsonValue>>)["inputId"] === input.inputId);
+      if (existing.length === 0) {
+        try {
+          await this.#repository.appendSessionEvents(sessionId, [{
+            type: "turn.failed",
+            payload: { turnId, code: "WEB_TURN_START_FAILED", message, ...(inputAccepted ? {} : { inputId: input.inputId }) },
+          }]);
+        } catch (reportError) {
+          throw new AggregateError([error, reportError], "Turn startup and error reporting failed");
+        }
+      } else {
+        // Kernel state is the authority. A query/cleanup error is a Host fault,
+        // not a new Turn failure appended after an already committed outcome.
+        throw error;
+      }
+      active.accepting = false;
+    } finally {
+      if (active.turnId === turnId) {
+        delete active.interrupt;
+        delete active.continueChildInput;
+        active.pendingApproval?.reject(new Error("当前工具会话已结束"));
+        delete active.pendingApproval;
+      }
+    }
+  }
+
+  #isActivelyRunning(sessionId: string): boolean {
+    const active = this.#active.get(sessionId);
+    // Keep the driver/ownership until cleanup finishes, but do not let a
+    // stopped driver override the durable turn outcome in public queries.
+    return active !== undefined && active.accepting && active.waitingForInput !== true;
+  }
+
+  async #settleDriver(sessionId: string, active: ActiveTurn, failure?: unknown): Promise<void> {
+    active.accepting = false;
+    let sessionTurnId = active.sessionTurnVersion?.turnId ?? this.#sessions.get(sessionId)?.latestTurnId;
+    let sessionTurnRevision = active.sessionTurnVersion?.revision;
+    try {
+      const session = await this.#refreshSessionRecord(sessionId);
+      // Fix the failure's version while this Host still owns the execution.
+      // A later release error must not be attached to another Host's progress.
+      sessionTurnId = session?.latestTurnId;
+      sessionTurnRevision = session?.latestTurnRevision;
+      if (session !== undefined) await this.#repository.appendSessionEvents(sessionId, [{
+        type: "ui.session.status.changed", payload: { status: webStatus(session) },
+      }]);
+    } catch (error) {
+      failure = failure === undefined ? error : new AggregateError([failure, error], "Turn driver and final notification failed");
+    }
+    try {
+      // Finish error reporting while this Host still owns the session. Another
+      // Host must not start a new Turn before the old error has been recorded.
+      if (failure !== undefined) {
+        try { await this.#recordDriverFailure(sessionId, active.turnId, failure, sessionTurnId, sessionTurnRevision); }
+        catch (reportedError) { failure = reportedError; }
+      }
+      try {
+        if (!this.#inputOperations.has(sessionId) && !this.#humanAnswers.has(sessionId)
+          && !this.#presentationActions.has(sessionId) && !this.#maintenance.has(sessionId)) this.executionOwnership.release(sessionId);
+      } catch (releaseError) {
+        failure = failure === undefined ? releaseError : new AggregateError([failure, releaseError], "Turn execution and ownership release failed");
+        try { await this.#recordDriverFailure(sessionId, active.turnId, failure, sessionTurnId, sessionTurnRevision); }
+        catch (reportedError) { failure = reportedError; }
+      }
+      if (failure !== undefined) throw failure;
+    } finally {
+      if (this.#active.get(sessionId) === active) this.#active.delete(sessionId);
+    }
+  }
+
+  async #recordDriverFailure(sessionId: string, turnId: string, error: unknown, sessionTurnId: string | undefined, sessionTurnRevision: number | undefined): Promise<never> {
+    const occurredAt = systemClock.now().toISOString();
+    this.#driverFailures.set(sessionId, { sessionTurnId, sessionTurnRevision, error, occurredAt });
+    try {
+      await this.#repository.appendSessionEvents(sessionId, [{ type: "host.execution.failed", payload: {
+        turnId, sessionTurnId: sessionTurnId ?? null, code: "HOST_TURN_DRIVER_FAILED", message: driverErrorMessage(error), occurredAt,
+        ...(sessionTurnRevision === undefined ? {} : { sessionTurnRevision }),
+      } }]);
+    } catch (reportError) {
+      error = new AggregateError([error, reportError], `Host driver failed and error reporting failed: ${errorMessage(error)}`);
+      this.#driverFailures.set(sessionId, { sessionTurnId, sessionTurnRevision, error, occurredAt });
+    }
+    throw error;
+  }
+
+  async #onDurableEvents(events: readonly DurableEvent[]): Promise<void> {
+    const routed: { readonly event: DurableEvent; readonly rootSessionId: string }[] = [];
+    const changedStates = new Map<string, string>();
+    for (const event of events) {
+      let rootSessionId = this.#rootByRuntimeSession.get(event.sessionId);
+      if (rootSessionId === undefined && this.#sessions.has(event.sessionId)) {
+        rootSessionId = event.sessionId;
+        this.#rootByRuntimeSession.set(event.sessionId, event.sessionId);
+      }
+      const childId = subagentIdFrom(event);
+      if (rootSessionId !== undefined && childId !== undefined) this.#rootByRuntimeSession.set(childId, rootSessionId);
+      if (rootSessionId === undefined) continue;
+      if (event.type === "state.committed" && event.sessionId === rootSessionId && event.turnId !== undefined) {
+        const revision = (event.payload as Readonly<Record<string, JsonValue>>)["revision"];
+        const active = this.#active.get(rootSessionId);
+        if (active !== undefined && typeof revision === "number" && Number.isSafeInteger(revision)) {
+          active.sessionTurnVersion = { turnId: event.turnId, revision };
+        }
+      }
+      if (event.type === "state.committed" || event.type === "turn.binding.committed") changedStates.set(event.sessionId, rootSessionId);
+      if (event.type === "model.completed" || event.type === "model.failed" || event.type === "model.interrupted" || event.type === "turn.interrupted") {
+        for (const key of this.#liveModelSnapshots.keys()) {
+          if (key.startsWith(`${event.sessionId}:${event.turnId}:`)) this.#liveModelSnapshots.delete(key);
+        }
+      }
+      if (!(LIVE_PRESENTATION_EVENT_TYPES as readonly string[]).includes(event.type)) continue;
+      routed.push({ event, rootSessionId });
+    }
+    const roots = new Set(routed.map(({ rootSessionId }) => rootSessionId));
+    await Promise.all([...roots].map((root) => this.#refreshSessionRecord(root)));
+    for (const { event, rootSessionId } of routed) {
+      const original = webEvent(rootSessionId, event, this.#sessions.get(rootSessionId)?.updatedAt);
+      const projected = this.#adaptEvent(original, [...(this.#eventsBySession.get(rootSessionId) ?? []), original]);
+      const cached = this.#eventsBySession.get(rootSessionId) ?? [];
+      if (!cached.some((candidate) => !candidate.transient && candidate.cursor === projected.cursor)) {
+        cached.push(projected);
+        cached.sort((left, right) => left.cursor - right.cursor);
+        this.#eventsBySession.set(rootSessionId, cached);
+      }
+      for (const subscriber of this.#subscribers.get(rootSessionId) ?? []) {
+        try {
+          subscriber(projected);
+        } catch {
+          // A disconnected HTTP response is isolated by its subscriber disposer.
+        }
+      }
+    }
+    for (const [sourceSessionId, rootSessionId] of changedStates) {
+      const snapshots = await this.#readStateViews(sourceSessionId);
+      for (const snapshot of snapshots) {
+        const projected = { ...snapshot, sessionId: rootSessionId };
+        const cached = (this.#eventsBySession.get(rootSessionId) ?? []).filter(event => event.eventId !== projected.eventId);
+        this.#eventsBySession.set(rootSessionId, [...cached, projected]);
+        for (const subscriber of this.#subscribers.get(rootSessionId) ?? []) {
+          try { subscriber(projected); } catch { /* A disconnected view cannot affect execution. */ }
+        }
+      }
+    }
+  }
+
+  #onModelStream(rootSessionId: string, frame: ModelStreamFrame): void {
+    const key = `${frame.sessionId}:${frame.turnId}:${frame.planId}`;
+    const snapshot = this.#liveModelSnapshots.get(key) ?? {
+      rootSessionId,
+      sourceSessionId: frame.sessionId,
+      turnId: frame.turnId,
+      planId: frame.planId,
+      content: "",
+      reasoningContent: "",
+      updatedAt: systemClock.now().toISOString(),
+    };
+    if (frame.event.kind === "content_delta") snapshot.content += frame.event.text;
+    else if (frame.event.kind === "reasoning_delta") snapshot.reasoningContent += frame.event.text;
+    else if (frame.event.kind === "usage") snapshot.usage = frame.event.usage as unknown as JsonValue;
+    snapshot.updatedAt = systemClock.now().toISOString();
+    this.#liveModelSnapshots.set(key, snapshot);
+    const projected = this.#liveModelEvent(snapshot);
+    for (const subscriber of this.#subscribers.get(rootSessionId) ?? []) {
+      try {
+        subscriber(projected);
+      } catch {
+        // A disconnected HTTP response is isolated by its subscriber disposer.
+      }
+    }
+  }
+
+  #liveModelEvent(snapshot: LiveModelSnapshot): SessionEvent {
+    const payload = {
+      planId: snapshot.planId,
+      content: snapshot.content,
+      reasoningContent: snapshot.reasoningContent,
+      ...(snapshot.usage === undefined ? {} : { usage: snapshot.usage }),
+    } as const;
+    return {
+      cursor: 0,
+      eventId: `live-model:${snapshot.sourceSessionId}:${snapshot.turnId}:${snapshot.planId}`,
+      sessionId: snapshot.rootSessionId,
+      sourceSessionId: snapshot.sourceSessionId,
+      turnId: snapshot.turnId,
+      type: "model.stream.snapshot",
+      payload,
+      payloadHash: hashJson(payload),
+      traceId: null,
+      createdAt: snapshot.updatedAt,
+      ...(this.#sessions.get(snapshot.rootSessionId)?.updatedAt === undefined
+        ? {}
+        : { sessionUpdatedAt: this.#sessions.get(snapshot.rootSessionId)!.updatedAt }),
+      transient: true,
+    };
+  }
+
+  async #onState(state: AgentState): Promise<void> {
+    const root = this.#rootByRuntimeSession.get(state.sessionId) ?? (this.#sessions.has(state.sessionId) ? state.sessionId : undefined);
+    const active = root === undefined ? undefined : this.#active.get(root);
+    if (active !== undefined && state.sessionId === root && state.parentSessionId === undefined) {
+      active.sessionTurnVersion = { turnId: state.turnId, revision: state.revision };
+    }
+    if (root !== undefined) await this.#refreshSessionRecord(root);
+
+  }
+
+  #readStateViews(sessionId: string): Promise<readonly SessionEvent[]> {
+    return readSessionPolicyStateViews(this.#repository, sessionId, this.options.policyStateViews ?? firstPartyPolicyStateViews());
+  }
+
+  async #projectSessionEvents(session: SessionRecord, throughSeq: number | undefined, visiting: Set<string>): Promise<SessionEvent[]> {
+    if (visiting.has(session.id)) throw new ContractError(`会话分支形成循环：${session.id}`, "WEB_SESSION_FORK_CYCLE");
+    visiting.add(session.id);
+    try {
+      const inherited: SessionEvent[] = [];
+      if (session.forkedFromSessionId !== undefined && session.forkThroughSeq !== undefined) {
+        const source = this.#sessions.get(session.forkedFromSessionId)
+          ?? await this.#refreshSessionRecord(session.forkedFromSessionId);
+        if (source === undefined) throw new ContractError(`找不到分叉源会话：${session.forkedFromSessionId}`, "WEB_SESSION_FORK_SOURCE_NOT_FOUND");
+        inherited.push(...await this.#projectSessionEvents(source, session.forkThroughSeq, visiting));
+      }
+      const own = await this.#runtimeTreeEvents(session.id, session.id, new Set());
+      const maximum = throughSeq ?? Number.POSITIVE_INFINITY;
+      const rebasedInherited = inherited.map((event) => ({
+        ...event,
+        sessionId: session.id,
+        sourceSessionId: event.sourceSessionId === session.forkedFromSessionId ? session.id : event.sourceSessionId,
+      }));
+      const merged = [...rebasedInherited, ...own.filter((event) => event.seq <= maximum).map((event) => webEvent(session.id, event, session.updatedAt))]
+        .filter((event) => event.cursor <= maximum)
+        .map((event) => event.sessionId === session.id ? event : { ...event, sessionId: session.id });
+      const history = [...new Map(merged.map((event) => [event.cursor, this.#adaptEvent(event, merged)])).values()].sort((left, right) => left.cursor - right.cursor);
+      // A fork's historical cutoff must never acquire the source session's current state.
+      return throughSeq === undefined ? [...history, ...await this.#readStateViews(session.id)] : history;
+    } finally {
+      visiting.delete(session.id);
+    }
+  }
+
+  #adaptEvent(event: SessionEvent, history: readonly SessionEvent[]): SessionEvent {
+    let projected = event;
+    if (event.type === "host.execution.failed") {
+      // Convert Host health only for live and restored conversation views.
+      // Public audit reads retain the stored type, payload and hash.
+      const payload = { ...(event.payload as Readonly<Record<string, SessionJson>>), status: "failed" };
+      projected = { ...event, type: "ui.session.status.changed", payload, payloadHash: hashJson(payload) };
+    }
+    return HISTORY_ADAPTERS.reduce((value, adapter) => adapter.eventTypes.includes(value.type) ? adapter.project(value, history) : value, projected);
+  }
+
+  async #runtimeTreeEvents(sessionId: string, rootSessionId: string, visited: Set<string>): Promise<DurableEvent[]> {
+    if (visited.has(sessionId)) return [];
+    visited.add(sessionId);
+    this.#rootByRuntimeSession.set(sessionId, rootSessionId);
+    const own = await this.#repository.eventsByTypes(sessionId, PRESENTATION_EVENT_TYPES);
+    const resultEvents = await this.#repository.eventsByTypes(sessionId, ["tool.result"]);
+    const ownPayload = (event: DurableEvent): Readonly<Record<string, JsonValue>> | undefined => event.payload !== null
+      && typeof event.payload === "object" && !Array.isArray(event.payload)
+      ? event.payload as Readonly<Record<string, JsonValue>>
+      : undefined;
+    const calls = new Map(own.flatMap((event): readonly (readonly [string, Readonly<Record<string, JsonValue>>])[] => {
+      if (event.type !== "tool.call") return [];
+      const payload = ownPayload(event);
+      const callId = payload?.["callId"];
+      return typeof callId === "string" && payload !== undefined ? [[`${event.turnId}:${callId}`, payload] as const] : [];
+    }));
+    const settlements = new Map(own.flatMap((event): readonly (readonly [string, string])[] => {
+      if (event.type !== "action.settled") return [];
+      const attributes = ownPayload(event)?.["attributes"];
+      if (attributes === null || typeof attributes !== "object" || Array.isArray(attributes)) return [];
+      const actionId = (attributes as Readonly<Record<string, JsonValue>>)["actionId"];
+      const status = (attributes as Readonly<Record<string, JsonValue>>)["status"];
+      return typeof actionId === "string" && typeof status === "string" ? [[actionId, status] as const] : [];
+    }));
+    const messageEvents = (await this.#messages.messages(sessionId)).flatMap((message): readonly DurableEvent[] => {
+      if (message.sourceEventSeq === undefined) return [];
+      let type: "model.completed" | "tool.result";
+      let payload: JsonValue;
+      if (message.sourceKind === "model" && message.message.role === "assistant") {
+        type = "model.completed";
+        payload = {
+          content: message.message.content,
+          reasoningContent: message.message.reasoningContent ?? "",
+          toolCalls: (message.message.toolCalls ?? []) as unknown as JsonValue,
+        };
+      } else if (message.sourceKind === "tool" && message.message.role === "tool") {
+        type = "tool.result";
+        const call = calls.get(`${message.producingTurnId}:${message.message.toolCallId}`);
+        const source = resultEvents.find(event => event.seq === message.sourceEventSeq && event.turnId === message.producingTurnId);
+        const result = source === undefined ? undefined : ownPayload(source);
+        const actionId = call?.["actionId"];
+        const status = typeof result?.["status"] === "string" ? result["status"] : typeof actionId === "string" ? settlements.get(actionId) ?? "failed" : "failed";
+        payload = {
+          ...result,
+          callId: message.message.toolCallId,
+          name: typeof result?.["name"] === "string" ? result["name"] : typeof call?.["name"] === "string" ? call["name"] : "tool",
+          status,
+          isError: status !== "succeeded",
+          content: message.message.content,
+        };
+      } else {
+        return [];
+      }
+      if (message.producingTurnId === undefined) return [];
+      return [{
+        eventId: `projection:${message.eventId}`,
+        sessionId: message.sessionId,
+        turnId: message.producingTurnId,
+        seq: message.sourceEventSeq,
+        type,
+        payload,
+        payloadHash: hashJson(payload),
+        createdAt: message.createdAt,
+      }];
+    });
+    // Nested invocations have durable results but intentionally no standalone
+    // model message. Match the complete execution identity, not just a call ID.
+    const nestedResults = resultEvents.filter(event => {
+      const result = ownPayload(event);
+      if (typeof result?.["parentCallId"] !== "string" || typeof result["callId"] !== "string") return false;
+      const call = calls.get(`${event.turnId}:${result["callId"]}`);
+      return call !== undefined && call["parentCallId"] === result["parentCallId"]
+        && call["name"] === result["name"] && call["source"] === result["source"];
+    });
+    const descendants: DurableEvent[] = [];
+    for (const event of own) {
+      const childId = subagentIdFrom(event);
+      if (childId !== undefined) descendants.push(...await this.#runtimeTreeEvents(childId, rootSessionId, visited));
+    }
+    return [...own, ...messageEvents, ...nestedResults, ...descendants].sort((left, right) => left.seq - right.seq);
+  }
+
+}

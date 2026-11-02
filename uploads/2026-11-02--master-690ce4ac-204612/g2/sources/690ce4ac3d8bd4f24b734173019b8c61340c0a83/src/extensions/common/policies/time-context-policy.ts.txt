@@ -1,0 +1,88 @@
+import { ContractError } from "../../../kernel/api/foundation/errors.js";
+import type { JsonValue } from "../../../kernel/api/foundation/json.js";
+import type {
+  ContextEffectForPoint,
+  ContextPoint,
+  ContextPolicy,
+  ContextSnapshot,
+  PolicyInputEnvelope,
+  PolicyResult,
+} from "../../../kernel/api/policy/types.js";
+import { createDescriptor } from "../../../kernel/api/policy/descriptor.js";
+
+interface TimeContextConfig {
+  readonly timeZone?: string;
+}
+
+interface TimeContextState {
+  readonly sampleKey: string;
+  readonly sampledAt: string;
+}
+
+function readState(value: Readonly<JsonValue | null>): TimeContextState | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const source = value as Readonly<Record<string, JsonValue>>;
+  return typeof source["sampleKey"] === "string" && typeof source["sampledAt"] === "string"
+    ? { sampleKey: source["sampleKey"], sampledAt: source["sampledAt"] }
+    : undefined;
+}
+
+/** Injects one stable wall-clock sample for each Agent turn. */
+export class TimeContextPolicy implements ContextPolicy<"assemble"> {
+  readonly descriptor = createDescriptor({
+    apiVersion: "policy.longcat/v1",
+    id: "builtin.time_context",
+    version: "1.1.0",
+    configSchema: {
+      type: "object",
+      properties: { timeZone: { type: "string" } },
+      additionalProperties: false,
+    },
+    implementedInterfaces: ["context/v1"],
+    points: ["assemble"],
+    claims: [{ kind: "key_prefix", resource: "context.runtime", prefix: "runtime" }],
+    replayMode: "recorded_external_io",
+  });
+
+  constructor(private readonly now: () => Date = () => new Date()) {}
+
+  async decideContext(input: PolicyInputEnvelope<ContextPoint, ContextSnapshot>): Promise<PolicyResult<ContextEffectForPoint<"assemble">>> {
+    if (input.point !== "assemble") return { decision: "abstain", proposals: [] };
+    const config = input.config as TimeContextConfig;
+    const timeZone = config.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+    let formatter: Intl.DateTimeFormat;
+    try {
+      formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        dateStyle: "full",
+        timeStyle: "long",
+      });
+    } catch (error) {
+      throw new ContractError(`Invalid time-context IANA time zone: ${timeZone}`, "TIME_CONTEXT_ZONE_INVALID", { cause: error });
+    }
+    // One user turn may require several model calls. Re-sampling on every step
+    // changes the system-prefix bytes and defeats provider prefix caching even
+    // though the user-visible notion of "now" has not meaningfully changed.
+    const sampleKey = input.agent.turnId;
+    const previous = readState(input.privateState);
+    const sampledAt = previous?.sampleKey === sampleKey ? previous.sampledAt : this.now().toISOString();
+    const sampled = new Date(sampledAt);
+    if (Number.isNaN(sampled.getTime())) throw new ContractError("Time Context Policy produced an invalid timestamp", "TIME_CONTEXT_INVALID_SAMPLE");
+    const state: TimeContextState = { sampleKey, sampledAt };
+    return {
+      decision: "propose",
+      proposals: [{
+        kind: "upsert_runtime_context",
+        key: "runtime/time",
+        ref: { kind: "turn_time", turnId: input.agent.turnId, sampledAt },
+        content: [{ type: "text", text: [
+          `Current date and time sampled for turn ${input.agent.turnId}: ${formatter.format(sampled)}.`,
+          `IANA time zone: ${timeZone}. UTC timestamp: ${sampledAt}.`,
+          "Treat this as runtime context for interpreting relative dates such as today, yesterday, and tomorrow.",
+        ].join("\n") }],
+        projection: { kind: "message_overlay", target: "turn_input", position: "suffix" },
+      }],
+      privateState: state as unknown as JsonValue,
+    };
+  }
+}

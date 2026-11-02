@@ -1,0 +1,262 @@
+import { PERMISSION_MODES, isPermissionMode, type PermissionMode } from "../foundation/permission-mode.js";
+import type { SessionStatus, TurnOutcome } from "../state/types.js";
+
+export type SessionJson = null | boolean | number | string | readonly SessionJson[] | { readonly [key: string]: SessionJson };
+
+export type SessionDisplayStatus = "idle" | "running" | "waiting" | "completed" | "blocked" | "failed" | "interrupted";
+export type MessageFeedback = "up" | "down";
+
+export type ModelName = string;
+
+export const SESSION_PERMISSION_MODES = PERMISSION_MODES;
+export type SessionPermissionMode = PermissionMode;
+
+export function isSessionPermissionMode(value: unknown): value is SessionPermissionMode {
+  return isPermissionMode(value);
+}
+
+export interface WorkspaceSummary {
+  readonly id: string;
+  readonly path: string;
+  readonly label: string;
+  readonly createdAt: string;
+}
+
+export interface ModeSummary {
+  readonly id: string;
+  readonly label: string;
+  readonly description?: string;
+}
+
+export interface SessionConfig {
+  readonly appName: "LongCat Harness";
+  readonly version: string;
+  readonly model: ModelName;
+  readonly models: readonly ModelName[];
+  readonly defaultMode: string;
+  readonly modes: readonly ModeSummary[];
+  readonly contextWindowTokens: number;
+  readonly workspace: string;
+  readonly workspaceId?: string;
+  readonly workspaceLabel: string;
+  readonly workspaces: readonly WorkspaceSummary[];
+  readonly defaultPermissionMode: SessionPermissionMode;
+  readonly permissionModes: readonly SessionPermissionMode[];
+  readonly modelConfigured: boolean;
+}
+
+export interface ModelSettingsView {
+  readonly name: ModelName;
+  readonly baseUrl: string;
+  readonly apiKeyConfigured: boolean;
+  readonly apiKeySource: "saved" | "environment" | "none";
+  readonly maxOutputTokens: number;
+  readonly contextWindowTokens: number;
+  readonly temperature: number;
+  readonly thinkingEnabled: boolean;
+  readonly thinkingBudgetTokens: number;
+  readonly headersTimeoutMs: number;
+  readonly chunkStallTimeoutMs: number;
+  readonly absoluteTimeoutMs: number;
+}
+
+export interface UpdateModelSettingsRequest {
+  readonly name: ModelName;
+  readonly baseUrl: string;
+  /** Omit or send an empty string to keep the currently effective key. */
+  readonly apiKey?: string;
+  readonly maxOutputTokens: number;
+  readonly contextWindowTokens: number;
+  readonly temperature: number;
+  readonly thinkingEnabled: boolean;
+  readonly thinkingBudgetTokens: number;
+  readonly headersTimeoutMs: number;
+  readonly chunkStallTimeoutMs: number;
+  readonly absoluteTimeoutMs: number;
+}
+
+export interface SessionEvent {
+  readonly cursor: number;
+  readonly eventId: string;
+  readonly sessionId: string;
+  readonly sourceSessionId: string;
+  readonly turnId?: string;
+  readonly type: string;
+  readonly payload: SessionJson;
+  readonly payloadHash: string;
+  readonly traceId: string | null;
+  readonly createdAt: string;
+  /** Current Session list timestamp, projected from its latest message fact. */
+  readonly sessionUpdatedAt?: string;
+  /** Transport-only projection (streaming or a current state view), never stored in event_log.sqlite. */
+  readonly transient?: true;
+}
+
+export interface SessionTokenUsage {
+  readonly promptTokens?: number;
+  readonly completionTokens?: number;
+  readonly reasoningTokens?: number;
+  readonly cachedTokens?: number;
+  readonly totalTokens?: number;
+}
+
+/** Current context occupancy, kept separate from the last model's cache accounting. */
+export interface ContextUsage {
+  readonly tokenCount: number;
+  readonly source: "model" | "compaction";
+  readonly accuracy: "exact" | "estimated";
+  readonly cursor: number;
+}
+
+export interface SessionSummary {
+  readonly id: string;
+  readonly title: string;
+  readonly workspace: string;
+  readonly workspaceId?: string;
+  readonly model: string;
+  readonly mode: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly status: SessionDisplayStatus;
+  readonly sessionStatus: SessionStatus;
+  readonly latestTurnOutcome?: TurnOutcome;
+  readonly turnCount: number;
+  readonly lastCursor: number;
+  readonly permissionMode: SessionPermissionMode;
+  readonly pinned: boolean;
+  readonly archived: boolean;
+  readonly blank: boolean;
+}
+
+export interface SessionDetail extends SessionSummary {
+  /** Opaque projections explicitly published by their owning policy components. */
+  readonly publicStates?: Readonly<Record<string, SessionJson>>;
+  /** Conversation-only events; trajectory audit bodies are fetched per Turn. */
+  readonly events: readonly SessionEvent[];
+  readonly feedback: Readonly<Record<string, MessageFeedback>>;
+  /** Latest main-Agent model accounting, loaded without hydrating the full trajectory. */
+  readonly latestModelUsage?: SessionTokenUsage;
+  readonly contextUsage?: ContextUsage;
+}
+
+export interface TurnSummary {
+  readonly id: string;
+  readonly number: number;
+  readonly title: string;
+  readonly turnId: string;
+  readonly status: Exclude<SessionDisplayStatus, "idle">;
+  readonly startedAt: string;
+  readonly endedAt: string;
+  readonly startCursor: number;
+  readonly endCursor: number;
+  readonly eventCount: number;
+  /** Lightweight child metadata only; child event bodies are fetched separately. */
+  readonly subagents: readonly SubagentSummary[];
+}
+
+export interface TurnDetail extends TurnSummary {
+  readonly events: readonly SessionEvent[];
+}
+
+export type SubagentStatus = "running" | "waiting" | "completed" | "failed" | "stopped";
+
+export interface SubagentSummary {
+  readonly id: string;
+  readonly subagentId: string;
+  readonly turnId: string;
+  /** Every Turn executed by this stable child Session, in durable order. */
+  readonly turnIds: readonly string[];
+  readonly parentTurnId: string;
+  readonly parentSessionId: string;
+  readonly label: string;
+  readonly mode: "spawn" | "fork";
+  readonly depth: number;
+  readonly status: SubagentStatus;
+  readonly createdAt: string;
+  readonly settledAt?: string;
+  readonly eventCount: number;
+}
+
+export interface SubagentDetail extends SubagentSummary {
+  /** Events emitted by all Turns of this child only; nested child bodies remain lazy. */
+  readonly events: readonly SessionEvent[];
+}
+
+export interface CreateSessionRequest {
+  readonly content: string;
+  readonly inputId?: string;
+  readonly permissionMode?: SessionPermissionMode;
+  readonly model?: ModelName;
+  readonly mode?: string;
+}
+
+export interface SendMessageRequest {
+  readonly content: string;
+  readonly inputId?: string;
+  /** Explicitly answers one durable AskUserQuestion request; omit for an independent input. */
+  readonly replyToRequestId?: string;
+}
+
+export interface CompactSessionResponse {
+  readonly commandId: string;
+  readonly status: "completed" | "no_progress";
+  readonly replacedMessageCount: number;
+  readonly replacedTokenCount: number;
+  readonly replacementTokenCount: number;
+  readonly releasedTokenCount: number;
+}
+
+export interface SetPermissionRequest {
+  readonly permissionMode: SessionPermissionMode;
+}
+
+export interface UpdateSessionRequest {
+  readonly title?: string;
+  readonly pinned?: boolean;
+  readonly archived?: boolean;
+}
+
+export interface SetMessageFeedbackRequest {
+  readonly messageId: string;
+  readonly rating: MessageFeedback | null;
+}
+
+export interface ForkSessionRequest {
+  /** Omit to fork through the Session's latest completed assistant response. */
+  readonly messageId?: string;
+}
+
+export interface SelectWorkspaceRequest {
+  /** Null clears the Workspace association for subsequently created Sessions. */
+  readonly path: string | null;
+  readonly create?: boolean;
+}
+
+export interface RenameWorkspaceRequest {
+  readonly title: string;
+}
+
+export interface PickWorkspaceResponse {
+  readonly path: string | null;
+}
+
+export interface AttachmentReference {
+  readonly kind: "file" | "directory";
+  readonly name: string;
+  readonly path: string;
+}
+
+export interface PickAttachmentsResponse {
+  readonly attachments: readonly AttachmentReference[];
+}
+
+export interface ResolveDroppedAttachmentResponse {
+  readonly attachment: AttachmentReference | null;
+}
+
+export interface ApiErrorBody {
+  readonly error: {
+    readonly code: string;
+    readonly message: string;
+  };
+}

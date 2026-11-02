@@ -1,0 +1,12 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/ptc/system-prompt.ts
+export function renderPtcSystemPrompt(basePrompt: string): string {
+  return `${basePrompt}
+
+# Programmatic Tool Calling mode
+
+- This mode uses Programmatic Tool Calling (PTC): compose work in JavaScript and invoke capabilities from that program instead of issuing ordinary Tools directly.
+- RunCode is the only direct model-facing Tool. Other installed Tools are available only through the tools object inside RunCode.
+- Prefer one coherent RunCode program when several Tool calls form one data-processing operation. Keep ordered mutations explicit and inspect every nested Tool result before continuing.
+- Each RunCode call has a fresh JavaScript global scope. Pass durable state through Tool results, files, or subsequent code rather than relying on globals from an earlier call.`;
+}

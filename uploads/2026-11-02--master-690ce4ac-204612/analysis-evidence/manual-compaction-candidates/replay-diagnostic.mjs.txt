@@ -1,0 +1,21 @@
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+import {pathToFileURL} from 'node:url';
+const compiled=process.argv[2],input=JSON.parse(fs.readFileSync(process.argv[3],'utf8'));
+const original=fs.readFileSync(compiled,'utf8');
+const adapted=original.replace(/from (["'])(\.{1,2}\/[^"']+)\1/g,(_,quote,relative)=>'from '+JSON.stringify(new URL(relative,pathToFileURL(compiled)).href))+'\nexport {summaryContractError};\n';
+const modulePath=process.argv[4]+'.diagnostic.mjs';
+fs.writeFileSync(modulePath,adapted);
+const policy=await import(pathToFileURL(modulePath).href);
+const rows=input.candidates.map(item=>{
+ const raw=item.content.trim();
+ const stripped=policy.stripLeakedProviderControlMarkers(raw,input.sourceMaterial);
+ const strippedError=policy.summaryContractError(stripped,input.sourceMaterial,'');
+ const selected=stripped.length>0&&strippedError===undefined?stripped:raw;
+ return {seq:item.seq,rawSha256:crypto.createHash('sha256').update(item.content).digest('hex'),strippedSha256:crypto.createHash('sha256').update(stripped).digest('hex'),strippedContractError:strippedError??null,selected:'stripped'=== (selected===stripped?'stripped':'raw')?'stripped':'raw',selectedContractError:policy.summaryContractError(selected,input.sourceMaterial,'')??null};
+});
+if(rows.some(x=>x.selectedContractError===null))throw Error('Candidate did not reproduce an independent contract rejection');
+const result={kind:'compaction-candidate-contract-diagnostic',status:'VERIFIED',scope:'Pure validation of recorded candidates with the frozen master implementation. Imports are made absolute and a private pure validator is exported only in a separate diagnostic copy. The summary system prompt is empty: this checks independent structural failures conservatively; it does not reconstruct missing auxiliary request messages or change G1.',compiledSourceSha256:crypto.createHash('sha256').update(original).digest('hex'),adaptedSourceSha256:crypto.createHash('sha256').update(adapted).digest('hex'),rows};
+fs.writeFileSync(process.argv[4],JSON.stringify(result,null,2)+'\n');
+fs.unlinkSync(modulePath);
+process.stdout.write(JSON.stringify(rows)+'\n');

@@ -1,0 +1,833 @@
+{
+  "schemaVersion": 3,
+  "kind": "lch-evaluation-failure-diagnostics",
+  "caseId": "standard.live-input-fifo",
+  "mode": "standard",
+  "repeatEachIndex": 3,
+  "retry": 0,
+  "testStatus": "failed",
+  "expectedStatus": "passed",
+  "failureMessages": [
+    "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m0\u001b[39m\n\nCall Log:\n- Timeout 120000ms exceeded while waiting on the predicate"
+  ],
+  "storageSnapshot": {
+    "capturedAt": "2026-11-02T16:12:30.380Z",
+    "eventLog": {
+      "available": true,
+      "integrity": "ok",
+      "turns": [
+        {
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "kind": "failed",
+          "createdAt": "2026-11-02T16:10:30.870Z",
+          "updatedAt": "2026-11-02T16:10:31.589Z",
+          "policyState": {
+            "builtin.plan_mode": {
+              "active": false,
+              "planFilePath": "/tmp/lch-e2e-NmBDrh/state/policies/artifacts/plans/ffcce992af9af3b6dded6736.md"
+            },
+            "builtin.time_context": {
+              "sampleKey": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+              "sampledAt": "2026-11-02T16:10:31.250Z"
+            },
+            "builtin.agent_instructions": {
+              "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            "builtin.skills": {
+              "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+            },
+            "builtin.repeat_tool_reminder": {
+              "lastInputId": "input_web_43a09e31-7390-4821-9d4c-dd0dc5e14c49"
+            },
+            "builtin.repeated_failure_reminder": {
+              "task": "请在当前工作区运行一次 node check-release-window.mjs，前台等待检查完成，再告诉我发布窗口检查结果。不修改脚本或其他文件、不联网、不委派、不进入计划阶段。",
+              "sequence": 0,
+              "observations": [],
+              "fingerprints": {},
+              "seenCalls": [],
+              "reviews": []
+            },
+            "builtin.subagent_context": {},
+            "builtin.task_list_reminder": {
+              "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+              "tasks": []
+            }
+          }
+        }
+      ],
+      "eventCount": 71,
+      "eventCountsByType": {
+        "binding.completed": 1,
+        "binding.started": 1,
+        "context.model_error.unhandled": 3,
+        "context.plan.committed": 6,
+        "input.promoted": 1,
+        "message.appended": 2,
+        "model.failed": 3,
+        "policy.binding.compiled": 1,
+        "policy.proposed": 14,
+        "service.call.completed": 3,
+        "service.call.started": 3,
+        "session.created": 1,
+        "state.committed": 15,
+        "state.transition.committed": 3,
+        "state.transition.requested": 6,
+        "system_message.seeded": 1,
+        "tool.scope.bound": 1,
+        "turn.binding.committed": 1,
+        "turn.created": 1,
+        "turn.failed": 1,
+        "ui.session.status.changed": 1,
+        "workspace.registered": 1,
+        "workspace.selected": 1
+      },
+      "recentEvents": [
+        {
+          "seq": 1,
+          "sessionId": "host:web",
+          "turnId": null,
+          "type": "workspace.registered",
+          "createdAt": "2026-11-02T16:10:29.094Z"
+        },
+        {
+          "seq": 2,
+          "sessionId": "host:web",
+          "turnId": null,
+          "type": "workspace.selected",
+          "createdAt": "2026-11-02T16:10:29.094Z"
+        },
+        {
+          "seq": 3,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": null,
+          "type": "session.created",
+          "createdAt": "2026-11-02T16:10:30.834Z"
+        },
+        {
+          "seq": 4,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T16:10:30.870Z"
+        },
+        {
+          "seq": 5,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "message.appended",
+          "createdAt": "2026-11-02T16:10:31.170Z"
+        },
+        {
+          "seq": 6,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "message.appended",
+          "createdAt": "2026-11-02T16:10:31.173Z"
+        },
+        {
+          "seq": 7,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "turn.created",
+          "createdAt": "2026-11-02T16:10:31.173Z"
+        },
+        {
+          "seq": 8,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "turn.binding.committed",
+          "createdAt": "2026-11-02T16:10:31.175Z"
+        },
+        {
+          "seq": 9,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "tool.scope.bound",
+          "createdAt": "2026-11-02T16:10:31.194Z"
+        },
+        {
+          "seq": 10,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "input.promoted",
+          "createdAt": "2026-11-02T16:10:31.194Z"
+        },
+        {
+          "seq": 11,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "system_message.seeded",
+          "createdAt": "2026-11-02T16:10:31.195Z"
+        },
+        {
+          "seq": 12,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "policy.binding.compiled",
+          "createdAt": "2026-11-02T16:10:31.216Z"
+        },
+        {
+          "seq": 13,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "binding.started",
+          "createdAt": "2026-11-02T16:10:31.217Z"
+        },
+        {
+          "seq": 14,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T16:10:31.217Z"
+        },
+        {
+          "seq": 15,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "binding.completed",
+          "createdAt": "2026-11-02T16:10:31.229Z"
+        },
+        {
+          "seq": 16,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T16:10:31.229Z"
+        },
+        {
+          "seq": 17,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "service.call.started",
+          "createdAt": "2026-11-02T16:10:31.275Z"
+        },
+        {
+          "seq": 18,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "service.call.completed",
+          "createdAt": "2026-11-02T16:10:31.299Z"
+        },
+        {
+          "seq": 19,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T16:10:31.300Z"
+        },
+        {
+          "seq": 20,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T16:10:31.300Z"
+        },
+        {
+          "seq": 21,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T16:10:31.300Z"
+        },
+        {
+          "seq": 22,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T16:10:31.301Z"
+        },
+        {
+          "seq": 23,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "context.plan.committed",
+          "createdAt": "2026-11-02T16:10:31.315Z"
+        },
+        {
+          "seq": 24,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "context.plan.committed",
+          "createdAt": "2026-11-02T16:10:31.316Z"
+        },
+        {
+          "seq": 25,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T16:10:31.331Z"
+        },
+        {
+          "seq": 26,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "model.failed",
+          "createdAt": "2026-11-02T16:10:31.400Z"
+        },
+        {
+          "seq": 27,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T16:10:31.401Z"
+        },
+        {
+          "seq": 28,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "context.model_error.unhandled",
+          "createdAt": "2026-11-02T16:10:31.408Z"
+        },
+        {
+          "seq": 29,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T16:10:31.408Z"
+        },
+        {
+          "seq": 30,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T16:10:31.421Z"
+        },
+        {
+          "seq": 31,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.transition.requested",
+          "createdAt": "2026-11-02T16:10:31.423Z"
+        },
+        {
+          "seq": 32,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.transition.requested",
+          "createdAt": "2026-11-02T16:10:31.424Z"
+        },
+        {
+          "seq": 33,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T16:10:31.424Z"
+        },
+        {
+          "seq": 34,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.transition.committed",
+          "createdAt": "2026-11-02T16:10:31.429Z"
+        },
+        {
+          "seq": 35,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "service.call.started",
+          "createdAt": "2026-11-02T16:10:31.434Z"
+        },
+        {
+          "seq": 36,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "service.call.completed",
+          "createdAt": "2026-11-02T16:10:31.447Z"
+        },
+        {
+          "seq": 37,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T16:10:31.447Z"
+        },
+        {
+          "seq": 38,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T16:10:31.448Z"
+        },
+        {
+          "seq": 39,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T16:10:31.448Z"
+        },
+        {
+          "seq": 40,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T16:10:31.448Z"
+        },
+        {
+          "seq": 41,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "context.plan.committed",
+          "createdAt": "2026-11-02T16:10:31.460Z"
+        },
+        {
+          "seq": 42,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "context.plan.committed",
+          "createdAt": "2026-11-02T16:10:31.461Z"
+        },
+        {
+          "seq": 43,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T16:10:31.475Z"
+        },
+        {
+          "seq": 44,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "model.failed",
+          "createdAt": "2026-11-02T16:10:31.489Z"
+        },
+        {
+          "seq": 45,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T16:10:31.489Z"
+        },
+        {
+          "seq": 46,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "context.model_error.unhandled",
+          "createdAt": "2026-11-02T16:10:31.497Z"
+        },
+        {
+          "seq": 47,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T16:10:31.497Z"
+        },
+        {
+          "seq": 48,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T16:10:31.508Z"
+        },
+        {
+          "seq": 49,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.transition.requested",
+          "createdAt": "2026-11-02T16:10:31.509Z"
+        },
+        {
+          "seq": 50,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.transition.requested",
+          "createdAt": "2026-11-02T16:10:31.510Z"
+        },
+        {
+          "seq": 51,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T16:10:31.510Z"
+        },
+        {
+          "seq": 52,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.transition.committed",
+          "createdAt": "2026-11-02T16:10:31.516Z"
+        },
+        {
+          "seq": 53,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "service.call.started",
+          "createdAt": "2026-11-02T16:10:31.521Z"
+        },
+        {
+          "seq": 54,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "service.call.completed",
+          "createdAt": "2026-11-02T16:10:31.533Z"
+        },
+        {
+          "seq": 55,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T16:10:31.533Z"
+        },
+        {
+          "seq": 56,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T16:10:31.534Z"
+        },
+        {
+          "seq": 57,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T16:10:31.534Z"
+        },
+        {
+          "seq": 58,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "policy.proposed",
+          "createdAt": "2026-11-02T16:10:31.534Z"
+        },
+        {
+          "seq": 59,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "context.plan.committed",
+          "createdAt": "2026-11-02T16:10:31.547Z"
+        },
+        {
+          "seq": 60,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "context.plan.committed",
+          "createdAt": "2026-11-02T16:10:31.547Z"
+        },
+        {
+          "seq": 61,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T16:10:31.557Z"
+        },
+        {
+          "seq": 62,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "model.failed",
+          "createdAt": "2026-11-02T16:10:31.568Z"
+        },
+        {
+          "seq": 63,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T16:10:31.568Z"
+        },
+        {
+          "seq": 64,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "context.model_error.unhandled",
+          "createdAt": "2026-11-02T16:10:31.575Z"
+        },
+        {
+          "seq": 65,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T16:10:31.575Z"
+        },
+        {
+          "seq": 66,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.transition.requested",
+          "createdAt": "2026-11-02T16:10:31.588Z"
+        },
+        {
+          "seq": 67,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "turn.failed",
+          "createdAt": "2026-11-02T16:10:31.588Z"
+        },
+        {
+          "seq": 68,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.transition.requested",
+          "createdAt": "2026-11-02T16:10:31.588Z"
+        },
+        {
+          "seq": 69,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.committed",
+          "createdAt": "2026-11-02T16:10:31.589Z"
+        },
+        {
+          "seq": 70,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": "turn_69bda50e-5c3b-40c9-87e8-f8dcf48a702e",
+          "type": "state.transition.committed",
+          "createdAt": "2026-11-02T16:10:31.594Z"
+        },
+        {
+          "seq": 71,
+          "sessionId": "session_7208d792-b043-4661-a062-60c7dafb2e1a",
+          "turnId": null,
+          "type": "ui.session.status.changed",
+          "createdAt": "2026-11-02T16:10:31.605Z"
+        }
+      ],
+      "modelOutcomes": [],
+      "policyDiagnostics": [
+        {
+          "seq": 19,
+          "diagnostics": []
+        },
+        {
+          "seq": 20,
+          "diagnostics": []
+        },
+        {
+          "seq": 21,
+          "diagnostics": []
+        },
+        {
+          "seq": 22,
+          "diagnostics": []
+        },
+        {
+          "seq": 30,
+          "diagnostics": []
+        },
+        {
+          "seq": 37,
+          "diagnostics": []
+        },
+        {
+          "seq": 38,
+          "diagnostics": []
+        },
+        {
+          "seq": 39,
+          "diagnostics": []
+        },
+        {
+          "seq": 40,
+          "diagnostics": []
+        },
+        {
+          "seq": 48,
+          "diagnostics": []
+        },
+        {
+          "seq": 55,
+          "diagnostics": []
+        },
+        {
+          "seq": 56,
+          "diagnostics": []
+        },
+        {
+          "seq": 57,
+          "diagnostics": []
+        },
+        {
+          "seq": 58,
+          "diagnostics": []
+        }
+      ],
+      "rejectedContexts": [],
+      "compactionSummaries": [
+        {
+          "seq": 18,
+          "evaluationId": "evaluation_4d56a3ec-0796-4cd4-b7c7-b23d07741412",
+          "serviceOrdinal": 0,
+          "finishReason": null,
+          "contentUtf8Bytes": 0,
+          "content": null
+        },
+        {
+          "seq": 36,
+          "evaluationId": "evaluation_91cf2c91-0a29-4a12-92bb-05c6d74917a7",
+          "serviceOrdinal": 0,
+          "finishReason": null,
+          "contentUtf8Bytes": 0,
+          "content": null
+        },
+        {
+          "seq": 54,
+          "evaluationId": "evaluation_12fd3e4e-d0ce-41e8-b13e-6a96850de281",
+          "serviceOrdinal": 0,
+          "finishReason": null,
+          "contentUtf8Bytes": 0,
+          "content": null
+        }
+      ],
+      "selectedCompactionSummary": null,
+      "pendingInputCount": 0,
+      "pendingMessageWriteCount": 0
+    },
+    "messages": {
+      "available": true,
+      "integrity": "ok",
+      "messageCount": 2,
+      "messageCountsByRole": {
+        "system": 1,
+        "user": 1
+      },
+      "messageCountsBySession": {
+        "session_7208d792-b043-4661-a062-60c7dafb2e1a": 2
+      },
+      "toolMessageRows": []
+    },
+    "consistency": "Each database uses one read transaction; the two database snapshots are captured consecutively."
+  },
+  "proxyEvents": [
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "1",
+      "phase": "request_accepted",
+      "at": "2026-11-02T16:10:31.379Z",
+      "elapsedMs": 0
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "1",
+      "phase": "upstream_request_started",
+      "at": "2026-11-02T16:10:31.380Z",
+      "elapsedMs": 1,
+      "requestBytes": 37162,
+      "messageCount": 3,
+      "toolCount": 30,
+      "maxTokens": 4096,
+      "thinkingBudget": 1024,
+      "thinkingEnabled": true
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "1",
+      "phase": "stream_failed",
+      "at": "2026-11-02T16:10:31.397Z",
+      "elapsedMs": 19,
+      "responseBytes": 0,
+      "responseChunks": 0,
+      "reason": "configuration_error",
+      "causeCodes": [
+        "ENOTFOUND"
+      ],
+      "upstreamPhase": "before_headers"
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "2",
+      "phase": "request_accepted",
+      "at": "2026-11-02T16:10:31.483Z",
+      "elapsedMs": 0
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "2",
+      "phase": "upstream_request_started",
+      "at": "2026-11-02T16:10:31.484Z",
+      "elapsedMs": 1,
+      "requestBytes": 37162,
+      "messageCount": 3,
+      "toolCount": 30,
+      "maxTokens": 4096,
+      "thinkingBudget": 1024,
+      "thinkingEnabled": true
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "2",
+      "phase": "stream_failed",
+      "at": "2026-11-02T16:10:31.488Z",
+      "elapsedMs": 4,
+      "responseBytes": 0,
+      "responseChunks": 0,
+      "reason": "configuration_error",
+      "causeCodes": [
+        "ENOTFOUND"
+      ],
+      "upstreamPhase": "before_headers"
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "3",
+      "phase": "request_accepted",
+      "at": "2026-11-02T16:10:31.564Z",
+      "elapsedMs": 0
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "3",
+      "phase": "upstream_request_started",
+      "at": "2026-11-02T16:10:31.564Z",
+      "elapsedMs": 0,
+      "requestBytes": 37162,
+      "messageCount": 3,
+      "toolCount": 30,
+      "maxTokens": 4096,
+      "thinkingBudget": 1024,
+      "thinkingEnabled": true
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "3",
+      "phase": "stream_failed",
+      "at": "2026-11-02T16:10:31.567Z",
+      "elapsedMs": 3,
+      "responseBytes": 0,
+      "responseChunks": 0,
+      "reason": "configuration_error",
+      "causeCodes": [
+        "ENOTFOUND"
+      ],
+      "upstreamPhase": "before_headers"
+    }
+  ],
+  "externalCondition": {
+    "external": false,
+    "evidence": [],
+    "candidateEvidence": [],
+    "decision": "no gateway or network failure evidence"
+  },
+  "artifactAttachments": {
+    "attempted": false,
+    "startedAt": null,
+    "completedAt": null,
+    "error": null
+  },
+  "cleanup": {
+    "startedAt": "2026-11-02T16:12:30.388Z",
+    "completedAt": "2026-11-02T16:12:30.443Z",
+    "results": [
+      {
+        "name": "LongCat Web UI",
+        "outcome": "graceful",
+        "exitCode": 0,
+        "signalCode": null
+      },
+      {
+        "name": "live model credential proxy",
+        "outcome": "graceful",
+        "exitCode": 0,
+        "signalCode": null
+      }
+    ],
+    "error": null
+  }
+}

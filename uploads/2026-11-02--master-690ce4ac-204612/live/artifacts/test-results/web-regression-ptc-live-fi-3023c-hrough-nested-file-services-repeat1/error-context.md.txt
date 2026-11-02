@@ -1,0 +1,331 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: web-regression.spec.ts >> ptc.live-file-handoff-summary >> PTC mode creates a source-derived handoff summary through nested file services
+- Location: test/e2e/web-regression.spec.ts:506:5
+
+# Error details
+
+```
+AssertionError: a failed RunCode program read an unrelated file or the output before its successful creation
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - button "LongCat Harness" [ref=e6] [cursor=pointer]
+      - button "收起侧边栏" [ref=e9] [cursor=pointer]
+    - button "新会话" [ref=e12] [cursor=pointer]
+    - generic [ref=e16]:
+      - generic [ref=e17]: 工作区
+      - generic [ref=e18]:
+        - button "搜索会话" [ref=e19] [cursor=pointer]
+        - button "筛选会话" [ref=e23] [cursor=pointer]
+        - button "添加工作区" [ref=e28] [cursor=pointer]
+    - textbox "搜索会话" [ref=e35]:
+      - /placeholder: 搜索会话…
+    - generic [ref=e37]:
+      - generic "/private/tmp/lch-e2e-UcgFQi/workspace" [ref=e38]:
+        - button "workspace" [expanded] [ref=e39] [cursor=pointer]
+        - generic [ref=e46]:
+          - button "workspace 的工作区操作" [ref=e47] [cursor=pointer]
+          - button "在 workspace 中新建会话" [ref=e52] [cursor=pointer]
+      - generic [ref=e55]:
+        - button "请用 JavaScript 完成一项小交接统计：读取工作… 刚刚" [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]: 请用 JavaScript 完成一项小交接统计：读取工作…
+          - time [ref=e59]: 刚刚
+        - button "请用 JavaScript 完成一项小交接统计：读取工作… 的会话操作" [ref=e60] [cursor=pointer]
+    - button "归档会话" [ref=e65] [cursor=pointer]
+    - button "设置" [ref=e69] [cursor=pointer]
+  - main [ref=e73]:
+    - generic [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]: 请用 JavaScript 完成一项小交接统计：读取工作…
+        - button "复制会话 ID session_86791d81-c223-4726-bac1-831dccf13fe1" [ref=e78] [cursor=pointer]:
+          - generic [ref=e79]: session_86791d81-c223-4726-bac1-831dccf13fe1
+      - generic [ref=e83]:
+        - button "对话" [ref=e84] [cursor=pointer]
+        - button "轨迹" [ref=e87] [cursor=pointer]
+    - generic [ref=e90]:
+      - generic [ref=e93]:
+        - generic [ref=e96]:
+          - generic [ref=e97]: 请用 JavaScript 完成一项小交接统计：读取工作区根目录的 handoff-items.json，把读取结果中的 items 数组用于计算，再将统计结果保存为 handoff-count.json。读取、计算、写入可以在同一段程序中完成，不必拆成多段，也不需要开发通用脚本。 结果是一个 JSON 对象，只含 itemCount（数组条目总数）和 firstItem（数组第一项）两个字段。完整读取并算好后一次性新建文件，不写空文件或中间版本，不重复写入。不要修改源文件或处理其他文件，禁止终端和 shell 命令。 请让程序输出实际统计结果，完成后报告生成的文件名，并用 JSON 展示实际结果文件的内容。
+          - generic:
+            - time: 23:16
+            - button "复制消息"
+        - group [ref=e99]:
+          - generic "用时 39 秒" [ref=e100] [cursor=pointer]
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - paragraph [ref=e106]: 完成。
+            - paragraph [ref=e107]:
+              - strong [ref=e108]: 生成的文件名：
+              - code [ref=e109]: handoff-count.json
+            - paragraph [ref=e110]:
+              - strong [ref=e111]: 实际结果文件内容：
+            - generic [ref=e112]:
+              - generic [ref=e113]: json
+              - code [ref=e116]: "{\"itemCount\":3,\"firstItem\":\"review\"}"
+            - paragraph [ref=e117]:
+              - strong [ref=e118]: 说明：
+            - list [ref=e119]:
+              - listitem [ref=e120]:
+                - text: 源文件
+                - code [ref=e121]: handoff-items.json
+                - text: 的
+                - code [ref=e122]: items
+                - text: 数组为
+                - code [ref=e123]: "[\"review\",\"release\",\"handoff\"]"
+              - listitem [ref=e124]:
+                - code [ref=e125]: itemCount
+                - text: = 3（数组条目总数）
+              - listitem [ref=e126]:
+                - code [ref=e127]: firstItem
+                - text: =
+                - code [ref=e128]: "\"review\""
+                - text: （数组第一项）
+              - listitem [ref=e129]: 源文件未修改，结果一次性写入，无中间版本
+          - generic [ref=e130]:
+            - button "复制回答" [ref=e131] [cursor=pointer]
+            - button "赞" [ref=e135] [cursor=pointer]
+            - button "踩" [ref=e138] [cursor=pointer]
+            - button "从此回答分叉会话" [ref=e141] [cursor=pointer]
+      - generic [ref=e149]:
+        - textbox "继续输入消息" [ref=e150]
+        - generic [ref=e151]:
+          - generic [ref=e152]:
+            - button "添加" [ref=e154] [cursor=pointer]
+            - generic [ref=e157] [cursor=pointer]: PTC 模式
+            - button "权限：工作区写入" [ref=e163] [cursor=pointer]:
+              - generic [ref=e166]: 工作区写入
+          - generic [ref=e169]:
+            - button "模型：LongCat-2.0" [ref=e171] [cursor=pointer]:
+              - generic [ref=e172]: LongCat-2.0
+              - generic [ref=e173]: 思考
+            - generic "模型缓存与上下文用量" [ref=e176]:
+              - meter "最近一次模型请求缓存命中 10,496 / 10,760 输入令牌（97.5%）" [ref=e177]:
+                - generic [ref=e178]: 缓存
+                - strong [ref=e179]: 98%
+              - meter "上下文已使用 10,760 / 1,048,576 令牌（1.0%）；最近一次模型请求" [ref=e180]:
+                - generic [ref=e181]: 令牌
+                - strong [ref=e182]: 1%
+            - button "发送消息" [disabled] [ref=e183]
+    - generic [ref=e186]:
+      - generic [ref=e189]: 与本地服务的事件连接已断开，正在自动重连
+      - button "关闭" [ref=e190] [cursor=pointer]
+```
+
+# Test source
+
+```ts
+  422 |       for (let index = 0; index < lines.length; index += 1) {
+  423 |         const line = lines[index]!;
+  424 |         collected.push(...dataEvidence(line, kind, [...path, "line", index]));
+  425 |         const start = /^[^{\[]*([\[{])/u.exec(line);
+  426 |         if (start === null) continue;
+  427 |         const firstLine = line.slice(start[0].length - 1);
+  428 |         try { JSON.parse(firstLine); continue; } catch { /* A pretty-printed JSON body may continue on later lines. */ }
+  429 |         const remaining = [firstLine, ...lines.slice(index + 1)].join("\n");
+  430 |         const range = parseDocument(remaining, { schema: "json", uniqueKeys: true }).contents?.range;
+  431 |         if (range === undefined) continue;
+  432 |         const fragment = remaining.slice(range[0], range[1]);
+  433 |         if (!fragment.includes("\n")) continue;
+  434 |         try { JSON.parse(fragment); } catch { continue; }
+  435 |         const block = parseJson(fragment, "json", [...path, "line", index, "block"]);
+  436 |         collected.push(...block);
+  437 |         index += fragment.split("\n").length - 1;
+  438 |       }
+  439 |       return collected;
+  440 |     }
+  441 |     const jsonSuffix = /^[^{\[]*(\{.*\}|\[.*\])$/u.exec(value.trim());
+  442 |     if (jsonSuffix !== null) return parseJson(jsonSuffix[1]!, "json-suffix");
+  443 |     if (kind !== "summary") return [];
+  444 |     const marker = /^itemCount\s*[:=]\s*(\d+)\s*[,;]\s*firstItem\s*[:=]\s*(.+)$/u.exec(value.trim());
+  445 |     if (marker === null) return [];
+  446 |     const itemCount = Number(marker[1]);
+  447 |     let firstItem: unknown = marker[2]!.trim();
+  448 |     if (typeof firstItem === "string" && firstItem.startsWith('"')) {
+  449 |       try { firstItem = JSON.parse(firstItem); } catch { return []; }
+  450 |     }
+  451 |     return Number.isSafeInteger(itemCount) && itemCount > 0 && typeof firstItem === "string" && firstItem.length > 0
+  452 |       ? evidence({ itemCount, firstItem }) : [];
+  453 |   }
+  454 |   if (value === null || typeof value !== "object") return [];
+  455 |   let ownEvidence: readonly PtcDataEvidence[] = [];
+  456 |   if (kind === "source" && Array.isArray(value) && value.length > 0
+  457 |     && value.every((item) => typeof item === "string")) ownEvidence = evidence(value as readonly string[]);
+  458 |   if (kind === "summary") {
+  459 |     const fields = Array.isArray(value) && value.length === 2
+  460 |       ? { itemCount: value[0], firstItem: value[1] } : value as Readonly<Record<string, unknown>>;
+  461 |     if (typeof fields["itemCount"] === "number" && Number.isSafeInteger(fields["itemCount"]) && fields["itemCount"] > 0
+  462 |       && typeof fields["firstItem"] === "string" && fields["firstItem"].length > 0) {
+  463 |       ownEvidence = evidence({ itemCount: fields["itemCount"], firstItem: fields["firstItem"] });
+  464 |     }
+  465 |   }
+  466 |   return [...ownEvidence, ...Object.entries(value).flatMap(([key, item]) => dataEvidence(item, kind, [...path, key]))];
+  467 | }
+  468 | 
+  469 | function programDataEvidence(value: unknown, output: unknown, kind: PtcDataEvidenceKind): readonly PtcDataEvidence[] {
+  470 |   return [
+  471 |     ...dataEvidence(value, kind, ["result"]),
+  472 |     ...(typeof output === "string" ? dataEvidence(output, kind, ["output"]) : []),
+  473 |   ];
+  474 | }
+  475 | 
+  476 | export interface ReadOnlyProgramFailureCandidate {
+  477 |   readonly call: ToolFact;
+  478 |   readonly result: ToolFact;
+  479 |   readonly errorText: string;
+  480 |   readonly nestedReads: readonly ToolFact[];
+  481 | }
+  482 | 
+  483 | export function assertPtcRecoverableReadOnlyProgramFailureShape(
+  484 |   call: ToolFact,
+  485 |   result: ToolFact,
+  486 |   nested: readonly ToolFact[],
+  487 |   resultsById: ReadonlyMap<string, ToolFact>,
+  488 |   turnId: string,
+  489 |   inputPath: string,
+  490 |   serviceRejectionReason?: string,
+  491 |   writtenOutput?: { readonly path: string; readonly resultSeq: number },
+  492 | ): { readonly errorText: string; readonly nestedReads: readonly ToolFact[] } {
+  493 |   assert.equal(call.name, "RunCode", "only a recovered top-level RunCode program error may be tolerated");
+  494 |   assert.equal(call.turnId, turnId, "a RunCode program failure outside the ordinary user Turn is not recoverable");
+  495 |   assert.equal(call.payload["nestingDepth"], 0);
+  496 |   assert.equal(call.payload["parentCallId"], undefined);
+  497 |   assert.equal(result.payload["status"], "failed");
+  498 |   assert.equal(result.payload["isError"], true);
+  499 |   assert.equal(result.payload["errorCode"], "TOOL_EXECUTION_FAILED");
+  500 |   assert.equal(result.payload["canonicalValue"], undefined);
+  501 |   const errorText = messageContent(result.payload["content"]);
+  502 |   if (serviceRejectionReason !== undefined) {
+  503 |     assert.equal(errorText, `TOOL_EXECUTION_FAILED: Error: ${serviceRejectionReason}`);
+  504 |     assert.deepEqual(nested, [], "an unknown-service program must have zero nested execution");
+  505 |     return { errorText, nestedReads: [] };
+  506 |   }
+  507 |   assert.match(errorText,
+  508 |     /^TOOL_EXECUTION_FAILED: (?:Error|EvalError|RangeError|ReferenceError|SyntaxError|TypeError|URIError): /u,
+  509 |     "the failed RunCode result is not a clear model-generated JavaScript exception");
+  510 |   if (nested.length === 0 && errorText.startsWith("TOOL_EXECUTION_FAILED: SyntaxError:")) {
+  511 |     const code = textValue(jsonObject(call.payload["arguments"], "failed program arguments")["code"], "failed program code");
+  512 |     assert.throws(() => new Script(`(async () => { ${code}\n})()`), SyntaxError,
+  513 |       "a zero-execution syntax failure must be independently reproducible");
+  514 |     return { errorText, nestedReads: [] };
+  515 |   }
+  516 |   assert.ok(nested.length > 0, "a recoverable RunCode failure did not perform its intended read-only work");
+  517 |   assert.ok(nested.every((nestedCall) => nestedCall.name === "Read"),
+  518 |     "a failed RunCode program invoked a mutating, terminal, or unrelated nested Tool");
+  519 |   for (const read of nested) {
+  520 |     assert.equal(read.turnId, turnId);
+  521 |     const path = jsonObject(read.payload["arguments"], "failed PTC Read arguments")["file_path"];
+> 522 |     assert.ok(path === inputPath || (writtenOutput !== undefined && path === writtenOutput.path && read.seq > writtenOutput.resultSeq),
+      |            ^ AssertionError: a failed RunCode program read an unrelated file or the output before its successful creation
+  523 |       "a failed RunCode program read an unrelated file or the output before its successful creation");
+  524 |     successfulResult(resultsById, read);
+  525 |   }
+  526 |   return { errorText, nestedReads: nested };
+  527 | }
+  528 | 
+  529 | export function readOnlyProgramFailureCandidates(
+  530 |   calls: readonly ToolFact[],
+  531 |   resultsById: ReadonlyMap<string, ToolFact>,
+  532 |   turnId: string,
+  533 |   inputPath: string,
+  534 |   rejectedPrograms: ReadonlyMap<string, string> = new Map(),
+  535 |   writtenOutput?: { readonly path: string; readonly resultSeq: number },
+  536 | ): readonly ReadOnlyProgramFailureCandidate[] {
+  537 |   return calls.flatMap((call) => {
+  538 |     const result = resultForCall(resultsById, call);
+  539 |     if (result.payload["status"] === "succeeded" && result.payload["isError"] !== true) return [];
+  540 |     const nested = calls.filter((nestedCall) => nestedCall.payload["parentCallId"] === call.callId);
+  541 |     const { errorText, nestedReads } = assertPtcRecoverableReadOnlyProgramFailureShape(
+  542 |       call, result, nested, resultsById, turnId, inputPath, rejectedPrograms.get(call.callId), writtenOutput);
+  543 |     return [{ call, result, errorText, nestedReads }];
+  544 |   });
+  545 | }
+  546 | 
+  547 | export function auditReadOnlyProgramFailureRecovery(
+  548 |   failures: readonly ReadOnlyProgramFailureCandidate[],
+  549 |   calls: readonly ToolFact[],
+  550 |   resultsById: ReadonlyMap<string, ToolFact>,
+  551 |   finalPlan: Readonly<Record<string, unknown>>,
+  552 |   inputPath: string,
+  553 |   outputPath: string,
+  554 |   expectedInput: string,
+  555 |   expectedSummary: PtcFileHandoffSummary,
+  556 | ): readonly PtcRecoverableRunCodeFailure[] {
+  557 |   return failures.map((failure) => {
+  558 |     assert.deepEqual(toolMessageTexts(finalPlan, failure.call.callId), [failure.errorText],
+  559 |       "a failed RunCode result was not consumed by the successful final decision");
+  560 |     const recoveryCandidates = calls.filter((call) => call.name === "RunCode" && call.turnId === failure.call.turnId
+  561 |       && call.seq > failure.result.seq).flatMap((call) => {
+  562 |       const result = resultForCall(resultsById, call);
+  563 |       if (result.payload["status"] !== "succeeded" || result.payload["isError"] === true) return [];
+  564 |       const completeReads = calls.filter((nested) => nested.payload["parentCallId"] === call.callId && nested.name === "Read")
+  565 |         .filter((read) => {
+  566 |           const args = jsonObject(read.payload["arguments"], "recovery PTC Read arguments");
+  567 |           if (args["file_path"] !== inputPath) return false;
+  568 |           const canonical = jsonObject(successfulResult(resultsById, read).payload["canonicalValue"], "recovery PTC Read result");
+  569 |           if (canonical["type"] !== "text") return false;
+  570 |           const file = jsonObject(canonical["file"], "recovery PTC source file");
+  571 |           return file["startLine"] === 1 && file["truncatedByTokenCap"] !== true
+  572 |             && String(file["content"]).trim() === expectedInput.trim();
+  573 |         });
+  574 |       const canonical = jsonObject(result.payload["canonicalValue"], "recovery RunCode result");
+  575 |       const verifiedOutputReads = calls.filter((read) => read.payload["parentCallId"] === call.callId && read.name === "Read")
+  576 |         .filter((read) => {
+  577 |           if (jsonObject(read.payload["arguments"], "recovery Read arguments")["file_path"] !== outputPath) return false;
+  578 |           const value = jsonObject(successfulResult(resultsById, read).payload["canonicalValue"], "recovery output Read");
+  579 |           if (value["type"] !== "text") return false;
+  580 |           const file = jsonObject(value["file"], "recovery output file");
+  581 |           if (file["startLine"] !== 1 || file["truncatedByTokenCap"] === true) return false;
+  582 |           try { return isDeepStrictEqual(parsePtcFileHandoffSummary(String(file["content"])), expectedSummary); }
+  583 |           catch { return false; }
+  584 |         });
+  585 |       if (completeReads.length === 0 && verifiedOutputReads.length === 0) return [];
+  586 |       const carriesSummary = programDataEvidence(canonical["result"], canonical["output"], "summary")
+  587 |         .some(({ value }) => isDeepStrictEqual(value, expectedSummary));
+  588 |       const carriesSource = programDataEvidence(canonical["result"], canonical["output"], "source")
+  589 |         .some(({ value }) => isDeepStrictEqual(value, jsonObject(JSON.parse(expectedInput), "PTC expected source")["items"]));
+  590 |       const createsSummary = calls.filter((nested) => nested.payload["parentCallId"] === call.callId && nested.name === "Write")
+  591 |         .some((write) => {
+  592 |           const args = jsonObject(write.payload["arguments"], "recovery PTC Write arguments");
+  593 |           if (args["file_path"] !== outputPath || typeof args["content"] !== "string") return false;
+  594 |           try {
+  595 |             return completeReads.some((read) => successfulResult(resultsById, read).seq < write.seq)
+  596 |               && isDeepStrictEqual(parsePtcFileHandoffSummary(args["content"]), expectedSummary);
+  597 |           } catch {
+  598 |             return false;
+  599 |           }
+  600 |         });
+  601 |       // A read-back may return Read's exact numbered projection instead of reparsing JSON.
+  602 |       const contains = (value: unknown, text: string): boolean => value === text
+  603 |         || (value !== null && typeof value === "object" && Object.values(value).some((item) => contains(item, text)));
+  604 |       const carriesReadback = verifiedOutputReads.some((read) => {
+  605 |         const text = messageContent(successfulResult(resultsById, read).payload["content"]);
+  606 |         return contains(canonical["result"], text) || canonical["output"] === text;
+  607 |       });
+  608 |       return carriesSource || carriesSummary || createsSummary || carriesReadback ? [{ call, result }] : [];
+  609 |     });
+  610 |     assert.ok(recoveryCandidates.length > 0,
+  611 |       "a failed RunCode program was not superseded by a successful source read or correct output verification");
+  612 |     const recovery = recoveryCandidates[0]!;
+  613 |     assert.deepEqual(toolMessageValues(finalPlan, recovery.call.callId), [recovery.result.payload["canonicalValue"]],
+  614 |       "the successful recovery result was not consumed by the final answer");
+  615 |     return {
+  616 |       callId: failure.call.callId,
+  617 |       resultSeq: failure.result.seq,
+  618 |       errorCode: "TOOL_EXECUTION_FAILED",
+  619 |       errorText: failure.errorText,
+  620 |       nestedReadCallIds: failure.nestedReads.map(({ callId }) => callId),
+  621 |       recoveryRunCodeCallId: recovery.call.callId,
+  622 |     };
+```

@@ -1,0 +1,17 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/tasks/tools.ts
+  });
+
+  const taskCreate = defineTool(taskToolSchemas.TaskCreate, {
+    permission: () => ({ action: "TaskCreate", resource: "*", mutates: true, permissionRequired: false }),
+    execute: async (raw, context) => update(context.sessionId, (state) => {
+      const args = objectValue(raw, "TaskCreate");
+      const now = new Date().toISOString();
+      const activeForm = optionalString(args, "activeForm");
+      const task: StoredTask = { id: String(state.tasks.reduce((maximum, item) => Math.max(maximum, Number(item.id) || 0), 0) + 1), subject: stringValue(args, "subject"), description: stringValue(args, "description"), ...(activeForm === undefined ? {} : { activeForm }), status: "pending", metadata: isObject(args["metadata"]) ? { ...args["metadata"] } : {}, blocks: [], blockedBy: [], createdAt: now, updatedAt: now };
+      state.tasks.push(task);
+      return { task } as unknown as JsonValue;
+    }),
+  });
+  const taskGet = defineTool(taskToolSchemas.TaskGet, {
+    parallel: true,

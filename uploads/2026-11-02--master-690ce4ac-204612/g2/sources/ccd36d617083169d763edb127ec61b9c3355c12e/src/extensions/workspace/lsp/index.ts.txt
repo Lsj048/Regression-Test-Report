@@ -1,0 +1,118 @@
+import { workspaceToolSchemas } from "../schemas.js";
+import { readFile, stat } from "node:fs/promises";
+import { isAbsolute, relative, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+import { ContractError } from "../../../kernel/api/foundation/errors.js";
+import type { JsonValue } from "../../../kernel/api/foundation/json.js";
+import type { ToolControlContext, ToolDefinition, ToolExecutionResult, ToolLifecycleControl, ToolTurnContext } from "../../../kernel/api/tool/types.js";
+import { defineTool, objectValue, optionalString, stringValue } from "../../common/tool-definition/definition.js";
+import { DEFAULT_LSP_COMPONENT_CONFIG } from "./config.js";
+import { formatLspResult } from "./format.js";
+import { LspServerManager } from "./manager.js";
+import type { LspComponentConfig, LspRuntimeRoute } from "./types.js";
+
+const MAX_LSP_FILE_SIZE_BYTES = 10_000_000;
+
+export interface BuiltinLspTools {
+  readonly definitions: readonly ToolDefinition[];
+  readonly control: ToolLifecycleControl;
+  close(): Promise<void>;
+}
+
+function route(context: Pick<ToolTurnContext, "sessionId" | "turnId" | "actionId" | "callId" | "services">): LspRuntimeRoute {
+  return { sessionId: context.sessionId, turnId: context.turnId, actionId: context.actionId, callId: context.callId, services: context.services };
+}
+
+function inside(root: string, path: string): boolean {
+  const local = relative(root, path);
+  return local === "" || (!local.startsWith("..") && !isAbsolute(local));
+}
+
+function methodAndParams(operation: string, filePath: string, line: number, character: number, query?: string): { readonly method: string; readonly params: JsonValue } {
+  const textDocument = { uri: pathToFileURL(filePath).href };
+  const position = { line: line - 1, character: character - 1 };
+  if (operation === "goToDefinition") return { method: "textDocument/definition", params: { textDocument, position } };
+  if (operation === "findReferences") return { method: "textDocument/references", params: { textDocument, position, context: { includeDeclaration: true } } };
+  if (operation === "hover") return { method: "textDocument/hover", params: { textDocument, position } };
+  if (operation === "documentSymbol") return { method: "textDocument/documentSymbol", params: { textDocument } };
+  if (operation === "workspaceSymbol") return { method: "workspace/symbol", params: { query: query ?? "" } };
+  if (operation === "goToImplementation") return { method: "textDocument/implementation", params: { textDocument, position } };
+  if (operation === "prepareCallHierarchy" || operation === "incomingCalls" || operation === "outgoingCalls") {
+    return { method: "textDocument/prepareCallHierarchy", params: { textDocument, position } };
+  }
+  throw new ContractError(`Unknown LSP operation: ${operation}`, "LSP_OPERATION_INVALID");
+}
+
+export function createBuiltinLspTools(options: {
+  readonly workspaceRoot: string;
+  readonly config?: LspComponentConfig;
+}): BuiltinLspTools {
+  const workspaceRoot = resolve(options.workspaceRoot);
+  const manager = new LspServerManager(workspaceRoot, options.config ?? DEFAULT_LSP_COMPONENT_CONFIG);
+  const tool = defineTool(workspaceToolSchemas.LSP, {
+    promptSections: [{ key: "usage", order: 106, content: "Use LSP for semantic definitions, references, hover information and symbols when textual search cannot establish code relationships." }],
+    parallel: true,
+    permission: (raw) => {
+      const input = stringValue(objectValue(raw, "LSP"), "filePath");
+      const file = resolve(isAbsolute(input) ? input : resolve(workspaceRoot, input));
+      return { action: "LSP", resource: file, mutates: false, permissionRequired: !inside(workspaceRoot, file) };
+    },
+    execute: async (raw, context) => {
+      const args = objectValue(raw, "LSP");
+      const operation = stringValue(args, "operation");
+      const inputPath = stringValue(args, "filePath");
+      if (inputPath.startsWith("\\\\") || inputPath.startsWith("//")) {
+        throw new ContractError("LSP 不接受 UNC 网络路径", "LSP_PATH_UNSAFE");
+      }
+      const file = resolve(isAbsolute(inputPath) ? inputPath : resolve(workspaceRoot, inputPath));
+      const metadata = await stat(file);
+      if (!metadata.isFile()) throw new ContractError("LSP filePath must reference a file", "LSP_FILE_INVALID");
+      if (metadata.size > MAX_LSP_FILE_SIZE_BYTES) throw new ContractError("LSP file exceeds the 10 MB limit", "LSP_FILE_TOO_LARGE");
+      if (!manager.supports(file)) throw new ContractError(`No LSP server is configured for ${file}`, "LSP_LANGUAGE_UNAVAILABLE");
+      const content = await readFile(file, "utf8");
+      const requestRoute = route(context);
+      if (!manager.isFileOpen(file)) await manager.openFile(file, content, requestRoute);
+      const line = args["line"] as number;
+      const character = args["character"] as number;
+      const request = methodAndParams(operation, file, line, character, optionalString(args, "query"));
+      let result = await manager.request(file, request.method, request.params, requestRoute);
+      if (operation === "incomingCalls" || operation === "outgoingCalls") {
+        const items = Array.isArray(result) ? result : [];
+        if (items.length > 0) {
+          result = await manager.request(
+            file,
+            operation === "incomingCalls" ? "callHierarchy/incomingCalls" : "callHierarchy/outgoingCalls",
+            { item: items[0]! },
+            requestRoute,
+          );
+        }
+      }
+      const formatted = formatLspResult(operation, result, workspaceRoot);
+      return {
+        operation,
+        filePath: file,
+        result: formatted.result.length <= 100_000 ? formatted.result : `${formatted.result.slice(0, 100_000)}\n[truncated]`,
+        resultCount: formatted.resultCount,
+        fileCount: formatted.fileCount,
+      };
+    },
+  });
+  const control: ToolLifecycleControl = Object.freeze({
+    serviceComponentId: "LSP",
+    beforeToolUse: () => ({ allowed: true }),
+    afterToolUse: (result: Readonly<ToolExecutionResult>, controlContext: ToolControlContext) => {
+      if (result.status !== "succeeded" || (result.execution.name !== "Edit" && result.execution.name !== "Write")) return;
+      const args = result.execution.arguments;
+      if (args === null || typeof args !== "object" || Array.isArray(args)) return;
+      const input = args as Readonly<Record<string, JsonValue>>;
+      if (typeof input["file_path"] !== "string") return;
+      const file = resolve(input["file_path"] as string);
+      if (!manager.supports(file)) return;
+      manager.scheduleWrittenFileSynchronization(file, route({ ...result.execution, services: controlContext.services }));
+    },
+  });
+  return Object.freeze({ definitions: Object.freeze([tool]), control, close: () => manager.close() });
+}
+
+export { parseLspComponentConfig } from "./config.js";
+export type { LspComponentConfig, LspServerConfig } from "./types.js";

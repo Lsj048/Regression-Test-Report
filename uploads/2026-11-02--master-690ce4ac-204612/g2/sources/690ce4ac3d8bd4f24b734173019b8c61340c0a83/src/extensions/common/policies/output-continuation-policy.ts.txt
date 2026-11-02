@@ -1,0 +1,240 @@
+import type { JsonValue } from "../../../kernel/api/foundation/json.js";
+import { stoppedForRepetitiveReasoning } from "../../../kernel/api/model/metadata.js";
+import type {
+  ContextEffectForPoint,
+  ContextPoint,
+  ContextPolicy,
+  ContextSnapshot,
+  PolicyInputEnvelope,
+  PolicyResult,
+  StatePolicy,
+  StatePolicyInput,
+  StatePolicyResult,
+} from "../../../kernel/api/policy/types.js";
+import { createDescriptor } from "../../../kernel/api/policy/descriptor.js";
+
+interface OutputContinuationConfig {
+  readonly enabled?: boolean;
+  readonly maxContinuationsPerTurn?: number;
+  readonly prompt?: string;
+}
+
+interface PendingContinuation {
+  readonly outcomeId: string;
+  readonly sourceStep: number;
+  readonly cause: "output_limit" | "reasoning_exhausted" | "repetitive_reasoning";
+}
+
+interface OutputContinuationState {
+  readonly turnKey: string;
+  readonly continuationCount: number;
+  readonly pending?: PendingContinuation;
+}
+
+const DEFAULT_PROMPT = [
+  "The previous assistant response stopped because its output-token limit was reached.",
+  "Continue directly from the exact point where it ended. Do not restart, repeat the existing answer, or merely describe what remains.",
+  "Finish the user's current request. You may use tools if further work is genuinely required.",
+].join(" ");
+
+const REPETITIVE_REASONING_PROMPT = [
+  "The previous model generation was stopped because it repeated its internal reasoning without taking a new action.",
+  "Do not continue or restate that reasoning.",
+  "Now choose one concrete next step: call the minimum necessary tool that can produce new evidence, deliver the result if the task is already complete, or report a specific blocker if progress is impossible.",
+].join(" ");
+
+const REASONING_EXHAUSTED_PROMPT = [
+  "The previous model generation spent its entire output-token budget on internal reasoning and produced no visible answer.",
+  "Do not re-run that reasoning from the beginning; keep any further thinking to the minimum needed.",
+  "Deliver the final answer to the user's current request now, within the remaining budget.",
+].join(" ");
+
+function turnKey(input: { readonly agent: { readonly turnId: string } }): string {
+  return input.agent.turnId;
+}
+
+function readState(value: Readonly<JsonValue | null>, key: string): OutputContinuationState {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return { turnKey: key, continuationCount: 0 };
+  }
+  const record = value as Readonly<Record<string, JsonValue>>;
+  if (record["turnKey"] !== key) return { turnKey: key, continuationCount: 0 };
+  const continuationCount = typeof record["continuationCount"] === "number"
+    ? Math.max(0, Math.floor(record["continuationCount"]))
+    : 0;
+  const rawPending = record["pending"];
+  let pending: PendingContinuation | undefined;
+  if (rawPending !== null && typeof rawPending === "object" && !Array.isArray(rawPending)) {
+    const pendingRecord = rawPending as Readonly<Record<string, JsonValue>>;
+    if (typeof pendingRecord["outcomeId"] === "string" && typeof pendingRecord["sourceStep"] === "number") {
+      pending = {
+        outcomeId: pendingRecord["outcomeId"],
+        sourceStep: Math.floor(pendingRecord["sourceStep"]),
+        cause: pendingRecord["cause"] === "repetitive_reasoning"
+          ? "repetitive_reasoning"
+          : pendingRecord["cause"] === "reasoning_exhausted" ? "reasoning_exhausted" : "output_limit",
+      };
+    }
+  }
+  return { turnKey: key, continuationCount, ...(pending === undefined ? {} : { pending }) };
+}
+
+function stateValue(state: OutputContinuationState): JsonValue {
+  return state as unknown as JsonValue;
+}
+
+/**
+ * Converts a provider output-length stop into one bounded continuation step.
+ * The StatePolicy owns the transition; its ContextPolicy half supplies the
+ * model-facing instruction on the next request without adding a durable user message.
+ */
+export class OutputContinuationPolicy implements ContextPolicy<"assemble">, StatePolicy<"after_model_without_actions"> {
+  readonly descriptor = createDescriptor({
+    apiVersion: "policy.longcat/v1",
+    id: "builtin.output_continuation",
+    version: "1.0.0",
+    configSchema: {
+      type: "object",
+      properties: {
+        enabled: { type: "boolean" },
+        maxContinuationsPerTurn: { type: "integer", minimum: 1, maximum: 5 },
+        prompt: { type: "string", minLength: 1 },
+      },
+      additionalProperties: false,
+    },
+    implementedInterfaces: ["context/v1", "state/v1"],
+    points: ["assemble", "after_model_without_actions"],
+    claims: [
+      { kind: "key_prefix", resource: "context.runtime", prefix: "continuation" },
+      { kind: "chain_member", chain: "state.policies" },
+    ],
+    deterministic: true,
+  });
+
+  async decideContext(
+    input: PolicyInputEnvelope<ContextPoint, ContextSnapshot>,
+  ): Promise<PolicyResult<ContextEffectForPoint<"assemble">>> {
+    if (input.point !== "assemble") return { decision: "abstain", proposals: [] };
+    const config = input.config as OutputContinuationConfig;
+    if (config.enabled === false) return { decision: "abstain", proposals: [] };
+    const current = readState(input.privateState, turnKey(input));
+    if (current.pending === undefined || input.agent.step <= current.pending.sourceStep) {
+      return { decision: "abstain", proposals: [] };
+    }
+    if (input.agent.step > current.pending.sourceStep + 1) {
+      return {
+        decision: "abstain",
+        proposals: [],
+        privateState: stateValue({ turnKey: current.turnKey, continuationCount: current.continuationCount }),
+      };
+    }
+    return {
+      decision: "propose",
+      proposals: [{
+        kind: "upsert_runtime_context",
+        key: "continuation/output",
+        ref: { kind: "output_continuation", outcomeId: current.pending.outcomeId },
+        content: [{
+          type: "text",
+          text: current.pending.cause === "repetitive_reasoning"
+            ? REPETITIVE_REASONING_PROMPT
+            : current.pending.cause === "reasoning_exhausted"
+              ? REASONING_EXHAUSTED_PROMPT
+              : config.prompt?.trim() || DEFAULT_PROMPT,
+        }],
+        projection: { kind: "standalone_message", position: "after_history" },
+      }],
+    };
+  }
+
+  async decideState(
+    input: StatePolicyInput<"after_model_without_actions">,
+  ): Promise<StatePolicyResult<"after_model_without_actions">> {
+    if (input.point !== "after_model_without_actions") return {};
+    const config = input.config as OutputContinuationConfig;
+    if (config.enabled === false) return {};
+    const current = readState(input.privateState, turnKey(input));
+    const outcome = input.snapshot.modelOutcome;
+    if (outcome.finishReason !== "length") {
+      return current.pending === undefined
+        ? {}
+        : { privateStateAfterEvaluation: stateValue({ turnKey: current.turnKey, continuationCount: current.continuationCount }) };
+    }
+    if (current.pending?.outcomeId === outcome.outcomeId) return {};
+
+    const repeated = stoppedForRepetitiveReasoning(outcome);
+    // A length stop with no visible content means reasoning consumed the entire output
+    // budget: there is no answer breakpoint to continue from, so recovery must redirect
+    // the model instead of replaying the "continue where you left off" instruction.
+    const emptyOutput = outcome.content.trim().length === 0 && outcome.toolCalls.length === 0;
+    const cause: PendingContinuation["cause"] = repeated
+      ? "repetitive_reasoning"
+      : emptyOutput ? "reasoning_exhausted" : "output_limit";
+    const limit = config.maxContinuationsPerTurn ?? 2;
+    if (current.continuationCount >= limit) {
+      const answeredEarlier = input.snapshot.currentTurnMessages.some((message) =>
+        message.role === "assistant" && typeof message.content === "string" && message.content.trim().length > 0);
+      if (emptyOutput && !answeredEarlier) {
+        // Letting the turn complete would hand the user an empty answer after a long
+        // wait with no failure event; fail it so the error is visible instead.
+        return {
+          privateStateAfterEvaluation: stateValue({ turnKey: current.turnKey, continuationCount: current.continuationCount }),
+          proposal: {
+            directive: {
+              kind: "fail_turn",
+              cause: { kind: "policy_stop", code: "OUTPUT_CONTINUATION_EMPTY" },
+              error: {
+                code: "MODEL_OUTPUT_EMPTY",
+                message: repeated
+                  ? `The model kept repeating its reasoning and produced no visible answer after ${limit} recovery step(s); the turn failed.`
+                  : `The model spent its output-token budget on reasoning and produced no visible answer after ${limit} continuation step(s); the turn failed.`,
+              },
+            },
+            reason: {
+              code: "model_output_empty",
+              message: "Continuation cannot recover an answer the model never started writing.",
+            },
+          },
+        };
+      }
+      return {
+        privateStateAfterEvaluation: stateValue({ turnKey: current.turnKey, continuationCount: current.continuationCount }),
+        diagnostics: [{
+          severity: "warning",
+          code: "OUTPUT_CONTINUATION_LIMIT_REACHED",
+          message: repeated
+            ? `The model encountered repetitive reasoning after ${limit} recovery step(s); the turn is allowed to finish to prevent a loop.`
+            : `The model reached its output limit after ${limit} continuation step(s); the turn is allowed to finish to prevent a loop.`,
+        }],
+      };
+    }
+
+    const next: OutputContinuationState = {
+      ...current,
+      continuationCount: current.continuationCount + 1,
+      pending: {
+        outcomeId: outcome.outcomeId,
+        sourceStep: input.agent.step,
+        cause,
+      },
+    };
+    return {
+      proposal: {
+        directive: { kind: "continue_turn" },
+        reason: {
+          code: cause === "repetitive_reasoning"
+            ? "model_reasoning_repeated"
+            : cause === "reasoning_exhausted"
+              ? "model_reasoning_exhausted_budget"
+              : "model_output_truncated",
+          message: cause === "repetitive_reasoning"
+            ? "The model repeated its reasoning and must resume with a concrete action or conclusion."
+            : cause === "reasoning_exhausted"
+              ? "The model spent its output budget on reasoning and must now deliver the answer directly."
+              : "The model stopped at its output-token limit and must continue the same response.",
+        },
+      },
+      privateStateIfSelected: stateValue(next),
+    };
+  }
+}

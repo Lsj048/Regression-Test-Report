@@ -1,0 +1,44 @@
+{
+  "activeMemories": [
+    {
+      "id": "e494b6f1-b565-4118-8b91-8a395718fb7d",
+      "namespace": "personal-assistant",
+      "key": "work.weekly_report.title",
+      "value": "海棠周报",
+      "text": "用户的工作周报固定标题为\"海棠周报\"。",
+      "sourceSessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+      "sourceTurnId": "turn_96648318-8f11-4f19-ad45-653853fa210a"
+    }
+  ],
+  "history": [
+    {
+      "memoryId": "e494b6f1-b565-4118-8b91-8a395718fb7d",
+      "key": "work.weekly_report.title",
+      "event": "ADD",
+      "oldText": null,
+      "newText": "用户的工作周报固定标题为\"海棠周报\"。",
+      "evidence": "请长期记住:我的工作周报固定标题为海棠周报。",
+      "sourceSessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+      "sourceTurnId": "turn_96648318-8f11-4f19-ad45-653853fa210a"
+    }
+  ],
+  "captures": [
+    {
+      "outcomeId": "outcome_cfc12784-b3fd-4374-99d4-d3a3b5611e8c",
+      "namespace": "personal-assistant",
+      "sourceSessionId": "session_f8ddaa3b-ff80-4bbe-907a-24b3c275e294",
+      "sourceTurnId": "turn_96648318-8f11-4f19-ad45-653853fa210a"
+    }
+  ],
+  "captureCalls": [
+    {
+      "turnId": "turn_96648318-8f11-4f19-ad45-653853fa210a",
+      "serviceCallId": "service_9a1040b2-df9c-4c36-901c-efc1907ec6a3",
+      "status": "completed",
+      "finishReason": "stop",
+      "outcomeId": "outcome_abf4d5ca-a1e6-4531-9e37-0b304306dfc6",
+      "content": "{\"operations\":[{\"action\":\"ADD\",\"key\":\"work.weekly_report.title\",\"value\":\"海棠周报\",\"text\":\"用户的工作周报固定标题为\\\"海棠周报\\\"。\",\"evidence\":\"请长期记住：我的工作周报固定标题为海棠周报。\"}]}",
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+revision: b706d45f9131a86caabf0553b74457bab5f4864d
+file: test/e2e/audits/assistant-maintenance.ts
+          const hits = objects(value["hits"]);
+          const limit = Math.min(100, Math.max(1, Math.floor(Number(args["n"] ?? 5))));
+          assert.equal(hits.length, Math.min(limit, candidates.length));
+          assert.equal(new Set(hits.map(x => x["path"])).size, hits.length);
+          for (const hit of hits) {
+            const found = candidates.find(([p]) => p === hit["path"]); assert.ok(found);
+            const index = found[1].toLowerCase().indexOf(query);
+            assert.equal(hit["snippet"], found[1].slice(Math.max(0, index - 120), index + query.length + 240));
+          }
+          expected = { query, hits };
+          if (kind === "project-search" && query.trim() && hits.some(hit => hit["path"] === "migrations/settlement.txt")) targetCalls++;
+        } else {
+          assert.equal(kind, "project-delete"); assert.equal(path, scenarios["project-delete"].target);

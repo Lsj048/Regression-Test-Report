@@ -1,0 +1,127 @@
+{
+  "kind": "dns-request-failure-correlation",
+  "sampleDirectory": "live/artifacts/test-results/web-regression-goal-live-p-f06a1--resume-with-fresh-approval-repeat3",
+  "proxyFailures": [
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "4",
+      "phase": "stream_failed",
+      "at": "2026-11-02T16:07:48.744Z",
+      "elapsedMs": 15,
+      "responseBytes": 0,
+      "responseChunks": 0,
+      "reason": "configuration_error",
+      "causeCodes": [
+        "ENOTFOUND"
+      ],
+      "upstreamPhase": "before_headers"
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "5",
+      "phase": "stream_failed",
+      "at": "2026-11-02T16:07:48.859Z",
+      "elapsedMs": 3,
+      "responseBytes": 0,
+      "responseChunks": 0,
+      "reason": "configuration_error",
+      "causeCodes": [
+        "ENOTFOUND"
+      ],
+      "upstreamPhase": "before_headers"
+    },
+    {
+      "schemaVersion": 1,
+      "kind": "lch-live-model-proxy-event",
+      "requestId": "6",
+      "phase": "stream_failed",
+      "at": "2026-11-02T16:07:48.968Z",
+      "elapsedMs": 3,
+      "responseBytes": 0,
+      "responseChunks": 0,
+      "reason": "configuration_error",
+      "causeCodes": [
+        "ENOTFOUND"
+      ],
+      "upstreamPhase": "before_headers"
+    }
+  ],
+  "modelFailures": [
+    {
+      "seq": 108,
+      "createdAt": "2026-11-02T16:07:48.745Z",
+      "payload": {
+        "attempt": 0,
+        "category": "provider",
+        "code": "PROVIDER_HTTP_502",
+        "message": "Provider HTTP 502: {\"error\":\"LIVE_MODEL_PROXY_INTERNAL_ERROR\"}",
+        "outputCommitted": false,
+        "planId": "plan_2a3d05ef-54eb-462a-8306-7c81cb5edb24",
+        "recoverable": true,
+        "requestHash": "75b883650207ab23943617af4ae5985a42589108b117ca45c028e16e2ef3492a"
+      }
+    },
+    {
+      "seq": 126,
+      "createdAt": "2026-11-02T16:07:48.860Z",
+      "payload": {
+        "attempt": 1,
+        "category": "provider",
+        "code": "PROVIDER_HTTP_502",
+        "message": "Provider HTTP 502: {\"error\":\"LIVE_MODEL_PROXY_INTERNAL_ERROR\"}",
+        "outputCommitted": false,
+        "planId": "plan_666ec7bd-47e7-4230-8ca5-3faedcf5c16a",
+        "recoverable": true,
+        "requestHash": "75b883650207ab23943617af4ae5985a42589108b117ca45c028e16e2ef3492a"
+      }
+    },
+    {
+      "seq": 144,
+      "createdAt": "2026-11-02T16:07:48.969Z",
+      "payload": {
+        "attempt": 2,
+        "category": "provider",
+        "code": "PROVIDER_HTTP_502",
+        "message": "Provider HTTP 502: {\"error\":\"LIVE_MODEL_PROXY_INTERNAL_ERROR\"}",
+        "outputCommitted": false,
+        "planId": "plan_f974d92a-d2c1-4280-930c-e96d78d66f5e",
+        "recoverable": true,
+        "requestHash": "75b883650207ab23943617af4ae5985a42589108b117ca45c028e16e2ef3492a"
+      }
+    }
+  ],
+  "turnFailure": {
+    "kind": "event",
+    "seq": 149,
+    "event_id": "event_325a4321-82bc-492a-9f3b-a3358f3b0009",
+    "session_id": "session_375bca8e-5dca-42b2-8725-cdf7a9821ec3",
+    "turn_id": "turn_c4577064-896f-47d4-8155-981555db1e23",
+    "type": "turn.failed",
+    "payload_ref": null,
+    "payload_codec": "inline-json",
+    "payload_bytes": 206,
+    "payload_sha256": "2bb5a35b58887e01fd534207b851eb655383f011d68fab7609ce2a47671e9ce8",
+    "trace_id": null,
+    "created_at": "2026-11-02T16:07:49.001Z",
+    "payload": {
+      "cause": {
+        "category": "provider",
+        "kind": "llm_error",
+        "recoverable": true
+      },
+      "error": {
+        "code": "PROVIDER_HTTP_502",
+        "message": "Provider HTTP 502: {\"error\":\"LIVE_MODEL_PROXY_INTERNAL_ERROR\"}"
+      },
+      "kind": "fail_turn"
+    }
+  },
+  "formalExternalDecision": {
+    "external": false,
+    "evidence": [],
+    "candidateEvidence": [],
+    "decision": "no gateway or network failure evidence"
+  }
+}

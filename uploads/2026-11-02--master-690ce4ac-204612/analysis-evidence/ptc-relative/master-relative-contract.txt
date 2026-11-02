@@ -1,0 +1,7 @@
+revision: 690ce4ac3d8bd4f24b734173019b8c61340c0a83
+file: src/extensions/workspace/schemas.ts
+
+const PIPELINE_FAILURE_GUIDANCE = "For pipelines whose upstream failures must fail the command, including tests or builds piped to tail or tee, explicitly enable pipefail in a supporting shell (for example, bash -o pipefail -c '<command>'). Handle intentionally ignored failures or expected early termination explicitly.";
+const FILE_PATH_GUIDANCE = "Relative paths use the initial workspace root, unaffected by Bash cd or EnterWorktree; use absolute paths for other worktrees.";
+
+const ALIGNED_TOOL_DESCRIPTIONS = Object.freeze({

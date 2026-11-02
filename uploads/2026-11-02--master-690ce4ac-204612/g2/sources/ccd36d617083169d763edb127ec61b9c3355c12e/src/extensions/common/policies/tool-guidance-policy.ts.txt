@@ -1,0 +1,44 @@
+import type {
+  ContextEffectForPoint,
+  ContextPoint,
+  ContextPolicy,
+  ContextSnapshot,
+  PolicyInputEnvelope,
+  PolicyResult,
+} from "../../../kernel/api/policy/types.js";
+import { createDescriptor } from "../../../kernel/api/policy/descriptor.js";
+
+/** Materializes only guidance contributed by Tools visible in the resolved Agent scope. */
+export class ToolGuidancePolicy implements ContextPolicy<"assemble"> {
+  readonly descriptor = createDescriptor({
+    apiVersion: "policy.longcat/v1",
+    id: "builtin.tool_guidance",
+    version: "1.0.0",
+    configSchema: { type: "object", properties: {}, additionalProperties: false },
+    implementedInterfaces: ["context/v1"],
+    points: ["assemble"],
+    claims: [{ kind: "key_prefix", resource: "context.system.section", prefix: "tools" }],
+    deterministic: true,
+  });
+
+  async decideContext(input: PolicyInputEnvelope<ContextPoint, ContextSnapshot>): Promise<PolicyResult<ContextEffectForPoint<"assemble">>> {
+    if (input.point !== "assemble") return { decision: "abstain", proposals: [] };
+    const names = input.snapshot.availableTools.map((tool) => tool.name);
+    if (names.length === 0) return { decision: "abstain", proposals: [] };
+    const visible = new Set(names);
+    const sections = (input.snapshot.availableToolPromptSections ?? [])
+      .filter((section) => visible.has(section.toolName))
+      .sort((left, right) => left.order - right.order || left.toolName.localeCompare(right.toolName, "en") || left.key.localeCompare(right.key, "en"));
+    if (sections.length === 0) return { decision: "abstain", proposals: [] };
+    return {
+      decision: "propose",
+      proposals: sections.map((section) => ({
+        kind: "upsert_system_section" as const,
+        key: `tools/${section.toolName}/${section.key}`,
+        order: section.order,
+        mode: "replace_key" as const,
+        content: section.content,
+      })),
+    };
+  }
+}
