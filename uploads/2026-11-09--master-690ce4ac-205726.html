@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LCH 全量回归报告 · 2026-11-09</title>
+<style>
+:root{color-scheme:light;--ink:#192a38;--muted:#4c5d6a;--line:#d9e2e7;--paper:#fff;--accent:#125381}
+*{box-sizing:border-box}
+body{margin:0;background:#f4f7f9;color:var(--ink);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Noto Sans CJK SC",sans-serif}
+main{max-width:1024px;margin:auto;padding:36px 20px 52px}
+header,section{background:var(--paper);padding:24px 28px;margin:0 0 20px;border:1px solid var(--line);border-radius:12px}
+h1,h2,h3,h4{line-height:1.35;margin:0 0 .65em}
+h1{font-size:clamp(1.65rem,4vw,2.45rem)}
+h2{font-size:1.45rem}
+h3{font-size:1.16rem}
+p{margin:.6em 0}
+a{color:var(--accent);text-underline-offset:3px}
+nav{display:flex;gap:8px 20px;flex-wrap:wrap;margin:16px 0 0}
+code{font-family:ui-monospace,Menlo,monospace;overflow-wrap:anywhere;font-size:.9em}
+.muted,.meta{color:var(--muted)}
+.meta{font-size:.9rem}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{text-align:left;border-bottom:1px solid var(--line);padding:8px 10px;vertical-align:top}
+th{background:#edf3f7}
+article{padding:19px 0;border-top:1px solid var(--line);scroll-margin-top:14px}
+article:last-child{padding-bottom:0}
+article h3{font-size:1.08rem;margin-bottom:6px}
+article ul{padding-left:1.3em;margin:10px 0 0}
+article li{margin:8px 0}
+.tag{font-size:.82rem;font-weight:650;border-radius:4px;padding:2px 7px;background:#eaf1f6;display:inline-block}
+.group{padding-top:18px}
+.category-list{margin:16px 0}
+.category-list summary{cursor:pointer;color:var(--accent)}
+.category-list ul,.cleared{columns:2;column-gap:32px}
+.category-list li,.cleared li{break-inside:avoid}
+@media(max-width:640px){main{padding:14px 10px 28px}header,section{padding:17px}th,td{padding:7px 4px}.category-list ul,.cleared{columns:1}}
+</style>
+</head>
+<body><main id="top">
+<header>
+<p class="meta">2026-11-09 开始 · 2026-11-10 完成</p>
+<h1>LCH 全量回归报告</h1>
+<p>G1 有 35 个用例出现失败，共 61 个失败样本。相比 11 月 2 日，23 个用例本轮新增失败，12 个用例再次失败，7 个旧失败用例本轮全过。</p>
+<nav aria-label="报告目录"><a href="#results">实验结果</a><a href="#categories">失败分类</a><a href="#recurring">再次失败</a><a href="#new">新增失败</a><a href="#cleared">本轮全过</a><a href="#g2">G2 与变基</a></nav>
+</header>
+<section id="results">
+<h2>实验结果</h2>
+<p>北京时间 2026-11-09 20:58:33 至 2026-11-10 01:21:21。两轮被测 master 均为 <code>690ce4ac</code>。本轮套件为 <code>66c9f341</code>，实际测试树为 <code>1ba0e8f6a97d</code>。</p>
+<table><thead><tr><th scope="col">G1</th><th scope="col">11 月 2 日</th><th scope="col">11 月 9 日</th></tr></thead><tbody>
+<tr><td>确定性</td><td>430 通过 · 5 失败</td><td>435 通过 · 0 失败</td></tr>
+<tr><td>真实模型</td><td>321 通过 · 29 失败</td><td>289 通过 · 61 失败</td></tr>
+<tr><td>压缩第六样本</td><td>2 通过 · 0 失败</td><td>2 通过 · 0 失败</td></tr>
+<tr><td>样本合计</td><td>753 通过 · 34 失败</td><td>726 通过 · 61 失败</td></tr>
+<tr><td>出现失败的用例</td><td>19 / 157</td><td>35 / 157</td></tr>
+</tbody></table>
+<p>G1 原始判定为 <code>FAIL</code>。用例和样本是两个统计单位。常规用例各运行 5 个样本，两个压缩用例各另跑 1 个第六样本。已校验 787 个样本的保留轨迹和声明的产物。</p>
+<p><a href="https://lsj048.github.io/Regression-Test-Report/reports/2026-11-02/upload-master-690ce4ac-204612/html/index.html">查看 11 月 2 日报告</a></p>
+</section>
+<section id="categories">
+<h2>失败分类</h2>
+<p>按每份样本的主要失败原因归类。每份样本只计一次，同一个用例可出现在多个类别。新增失败表示该用例上一轮通过。两轮套件不同，且本轮存在连接失败。</p>
+<table><thead><tr><th scope="col">类别</th><th scope="col">失败样本</th><th scope="col">涉及用例</th><th scope="col">主要失败环节</th></tr></thead><tbody>
+<tr><td><a href="#design">Case 设计</a></td><td>15</td><td>8</td><td>核心操作已完成或已恢复，审计仍拒绝工具顺序、参数或答复格式。</td></tr>
+<tr><td>LCH 产品</td><td>0</td><td>0</td><td>本轮证据中未确认新的产品故障。上轮父轮次误取消子审批的修复未进入本轮被测 master，三份失败轨迹均未出现该取消事件。</td></tr>
+<tr><td><a href="#model">上游模型</a></td><td>21</td><td>12</td><td>模型选错工具、生成无效参数或截断输出，也包括模型服务流式响应错误。</td></tr>
+<tr><td><a href="#environment">环境</a></td><td>17</td><td>17</td><td>16 份在首个模型请求遇到 DNS 解析失败，1 份在 WebSocket 夹具写入时收到 EPIPE。</td></tr>
+<tr><td><a href="#review">待复核</a></td><td>8</td><td>6</td><td>涉及辅助提取验收范围、额外工具审批、延迟投递时间及模型等待预算。</td></tr>
+</tbody></table>
+<details class="category-list" id="environment"><summary>环境涉及的用例</summary><ul>
+<li><a href="#assistant.live-code-review-finding"><code>assistant.live-code-review-finding</code></a> <span class="meta">#0</span></li>
+<li><a href="#assistant.live-monitor-stream"><code>assistant.live-monitor-stream</code></a> <span class="meta">#2</span></li>
+<li><a href="#assistant.live-symbol-navigation"><code>assistant.live-symbol-navigation</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-approved-cron-create"><code>standard.live-approved-cron-create</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-approved-file-create"><code>standard.live-approved-file-create</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-clarified-file-create"><code>standard.live-clarified-file-create</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-context-compaction"><code>standard.live-context-compaction</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-cron-delete"><code>standard.live-cron-delete</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-cron-list-count"><code>standard.live-cron-list-count</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-denied-file-create"><code>standard.live-denied-file-create</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-file-discovery"><code>standard.live-file-discovery</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-local-relative-dates"><code>standard.live-local-relative-dates</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-manual-context-compaction"><code>standard.live-manual-context-compaction</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-multiselect-handoff"><code>standard.live-multiselect-handoff</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-notebook-cell-edit"><code>standard.live-notebook-cell-edit</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-targeted-fix"><code>standard.live-targeted-fix</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-task-detail-readback"><code>standard.live-task-detail-readback</code></a> <span class="meta">#0</span></li>
+</ul></details>
+<details class="category-list" id="model"><summary>上游模型涉及的用例</summary><ul>
+<li><a href="#assistant.live-dynamic-mcp-tool"><code>assistant.live-dynamic-mcp-tool</code></a> <span class="meta">#2</span></li>
+<li><a href="#assistant.live-feedback-submission"><code>assistant.live-feedback-submission</code></a> <span class="meta">#3</span></li>
+<li><a href="#assistant.live-memory-delete"><code>assistant.live-memory-delete</code></a> <span class="meta">#1、#2、#4</span></li>
+<li><a href="#assistant.live-memory-roundtrip"><code>assistant.live-memory-roundtrip</code></a> <span class="meta">#2、#3</span></li>
+<li><a href="#assistant.live-memory-update"><code>assistant.live-memory-update</code></a> <span class="meta">#0</span></li>
+<li><a href="#assistant.live-monitor-stop"><code>assistant.live-monitor-stop</code></a> <span class="meta">#1</span></li>
+<li><a href="#assistant.live-project-search"><code>assistant.live-project-search</code></a> <span class="meta">#1、#2、#3</span></li>
+<li><a href="#goal.live-cancel"><code>goal.live-cancel</code></a> <span class="meta">#0、#1、#3、#4</span></li>
+<li><a href="#goal.live-complete"><code>goal.live-complete</code></a> <span class="meta">#2、#3</span></li>
+<li><a href="#goal.live-pause-resume"><code>goal.live-pause-resume</code></a> <span class="meta">#2</span></li>
+<li><a href="#standard.live-spill-readback"><code>standard.live-spill-readback</code></a> <span class="meta">#2</span></li>
+<li><a href="#standard.live-wakeup-cancel"><code>standard.live-wakeup-cancel</code></a> <span class="meta">#1</span></li>
+</ul></details>
+<details class="category-list" id="design"><summary>Case 设计涉及的用例</summary><ul>
+<li><a href="#assistant.live-local-notification"><code>assistant.live-local-notification</code></a> <span class="meta">#3</span></li>
+<li><a href="#goal.live-complete"><code>goal.live-complete</code></a> <span class="meta">#0、#1、#4</span></li>
+<li><a href="#goal.live-pause-resume"><code>goal.live-pause-resume</code></a> <span class="meta">#3、#4</span></li>
+<li><a href="#standard.live-completed-subagent-followup"><code>standard.live-completed-subagent-followup</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-notebook-cell-edit"><code>standard.live-notebook-cell-edit</code></a> <span class="meta">#1、#3、#4</span></li>
+<li><a href="#standard.live-subagent-message"><code>standard.live-subagent-message</code></a> <span class="meta">#1、#2</span></li>
+<li><a href="#standard.live-wakeup-cancel"><code>standard.live-wakeup-cancel</code></a> <span class="meta">#2、#3</span></li>
+<li><a href="#standard.live-worktree-roundtrip"><code>standard.live-worktree-roundtrip</code></a> <span class="meta">#4</span></li>
+</ul></details>
+<details class="category-list" id="review"><summary>待复核涉及的用例</summary><ul>
+<li><a href="#assistant.live-mcp-resource-directory"><code>assistant.live-mcp-resource-directory</code></a> <span class="meta">#0、#2</span></li>
+<li><a href="#assistant.live-memory-update"><code>assistant.live-memory-update</code></a> <span class="meta">#2</span></li>
+<li><a href="#goal.live-pause-resume"><code>goal.live-pause-resume</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-spill-readback"><code>standard.live-spill-readback</code></a> <span class="meta">#1、#4</span></li>
+<li><a href="#standard.live-subagent-message"><code>standard.live-subagent-message</code></a> <span class="meta">#0</span></li>
+<li><a href="#standard.live-wakeup-delivery"><code>standard.live-wakeup-delivery</code></a> <span class="meta">#3</span></li>
+</ul></details>
+</section>
+<section id="recurring"><h2>再次失败 · 12 个用例</h2>
+<p>辅助记忆提取返回纯文本再次出现，Monitor 仍未在期限内主动停止，目标完成仍有成功恢复后被审计拒绝的样本。其余用例的差异见各项对照。</p>
+<p class="meta">样本编号从 0 开始。事件编号对应各样本自己的轨迹。</p>
+<article id="assistant.live-code-review-finding"><h3><code>assistant.live-code-review-finding</code></h3><div class="meta">1 / 5 个样本失败</div>
+<p><strong>上轮</strong> 参数被拒绝后已恢复，旧审计仍判失败。</p>
+<p><strong>本轮对照</strong> 本轮首个模型请求即被 DNS 阻断，未到达上轮参数恢复环节。</p>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 读取源文件和登记审查发现前</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 25, 42, 59</span></li>
+</ul></article>
+<article id="assistant.live-memory-update"><h3><code>assistant.live-memory-update</code></h3><div class="meta">2 / 5 个样本失败</div>
+<p><strong>上轮</strong> 正确召回后，辅助提取返回纯文本，缺少 capture。</p>
+<p><strong>本轮对照</strong> 纯文本辅助提取重复出现，另有一份截断。</p>
+<ul>
+<li data-sample="0"><span class="tag">上游模型</span> <strong>#0 · 正确召回后的辅助提取</strong><br>保存、更新和召回答案已完成。召回后辅助输出截断在 operations 的开头，finishReason 为 length，审计要求 stop。 <span class="meta">事件 32, 69, 99, 106</span></li>
+<li data-sample="2"><span class="tag">待复核</span> <strong>#2 · 正确召回后的成功提取记录</strong><br>更新和召回答案正确。召回后辅助模型再次返回普通文本，未生成成功 capture。需要复核该无变更辅助调用是否属于更新用例的必验目标。 <span class="meta">事件 69, 99, 106</span></li>
+</ul></article>
+<article id="assistant.live-monitor-stop"><h3><code>assistant.live-monitor-stop</code></h3><div class="meta">1 / 5 个样本失败</div>
+<p><strong>上轮</strong> 监听自动到期，模型没有主动停止。</p>
+<p><strong>本轮对照</strong> 同一主动停止目标再次失败。本轮有停止调用，但已超过期限。</p>
+<ul>
+<li data-sample="1"><span class="tag">上游模型</span> <strong>#1 · 自动期限前主动停止</strong><br>两次 Monitor 源参数被拒绝后成功建立 60 秒监听。阻塞式 TaskOutput 几乎用完期限，TaskStop 的结果在启动结果约 61.5 秒后才出现，未满足到期前主动停止。 <span class="meta">事件 38, 69, 100, 134, 165</span></li>
+</ul></article>
+<article id="assistant.live-project-search"><h3><code>assistant.live-project-search</code></h3><div class="meta">3 / 5 个样本失败</div>
+<p><strong>上轮</strong> 正确查到项目资料，但额外扫描工作区被审计拒绝。</p>
+<p><strong>本轮对照</strong> 仍出现额外工具路径，本轮停在 MCP 资源清单审批。</p>
+<ul>
+<li data-sample="1"><span class="tag">上游模型</span> <strong>#1 · 项目资料搜索的工具选择</strong><br>模型在检索前调用无关的 MCP 资源清单，触发审批，指定的 Projects 搜索没有形成完整结果。 <span class="meta">事件 33, 35, 37</span></li>
+<li data-sample="2"><span class="tag">上游模型</span> <strong>#2 · 项目资料搜索的工具选择</strong><br>模型在检索前调用无关的 MCP 资源清单，触发审批，指定的 Projects 搜索没有形成完整结果。 <span class="meta">事件 33, 35, 37</span></li>
+<li data-sample="3"><span class="tag">上游模型</span> <strong>#3 · 搜索后的收尾</strong><br>模型先调用 Projects 搜索，随后又转向 MCP 资源清单，进入审批。Driver 在该审批处退出，完整搜索答复及后续检查未完成。 <span class="meta">事件 33, 42, 44</span></li>
+</ul></article>
+<article id="goal.live-cancel"><h3><code>goal.live-cancel</code></h3><div class="meta">4 / 5 个样本失败</div>
+<p><strong>上轮</strong> 同批计划与提问被拒绝后已恢复，旧审计仍拒绝恢复路径。</p>
+<p><strong>本轮对照</strong> 本轮在生成问题前已被模型参数及上游响应错误阻断。</p>
+<ul>
+<li data-sample="0"><span class="tag">上游模型</span> <strong>#0 · 形成待取消的业务问题前</strong><br>update_goal_plan 生成非法 JSON，被工具层拒绝。后续三次上游 HTTP 200 SSE 均是 function_call 参数解析错误帧，缺少正常结束字段，页面没有出现可用于取消的业务问题。 <span class="meta">事件 39, 58, 76, 94</span></li>
+<li data-sample="1"><span class="tag">上游模型</span> <strong>#1 · 形成待取消的业务问题前</strong><br>读目标后，计划调用被 Goal 策略拒绝。后续三次上游 HTTP 200 SSE 返回函数参数解析错误，Provider 记录 PROVIDER_MISSING_FINISH，未形成业务问题。 <span class="meta">事件 70, 90, 108, 126</span></li>
+<li data-sample="3"><span class="tag">上游模型</span> <strong>#3 · 形成待取消的业务问题前</strong><br>update_goal_plan 生成非法 JSON，被工具层拒绝。后续三次上游 HTTP 200 SSE 均是 function_call 参数解析错误帧，缺少正常结束字段，页面没有出现可用于取消的业务问题。 <span class="meta">事件 39, 58, 76, 94</span></li>
+<li data-sample="4"><span class="tag">上游模型</span> <strong>#4 · 形成待取消的业务问题前</strong><br>update_goal_plan 生成非法 JSON，被工具层拒绝。后续三次上游 HTTP 200 SSE 均是 function_call 参数解析错误帧，缺少正常结束字段，页面没有出现可用于取消的业务问题。 <span class="meta">事件 39, 58, 76, 94</span></li>
+</ul></article>
+<article id="goal.live-complete"><h3><code>goal.live-complete</code></h3><div class="meta">5 / 5 个样本失败</div>
+<p><strong>上轮</strong> 取证 Read 参数被拒绝后恢复，旧审计仍判失败。</p>
+<p><strong>本轮对照</strong> 再次出现恢复后审计拒绝，另有两份在上游响应阶段终止。</p>
+<ul>
+<li data-sample="0"><span class="tag">Case 设计</span> <strong>#0 · 交付及完成后的恢复审计</strong><br>先前 get_goal 和 Bash 同批被拒绝，模型随后执行有效计划、写入、读取和验收，完成调用成功并结算。现有恢复审计仍拒绝这批早期失败。样本 1、4 还经历了嵌套 Read 参数纠正。 <span class="meta">事件 34, 37</span></li>
+<li data-sample="1"><span class="tag">Case 设计</span> <strong>#1 · 交付及完成后的恢复审计</strong><br>先前 get_goal 和 Bash 同批被拒绝，模型随后执行有效计划、写入、读取和验收，完成调用成功并结算。现有恢复审计仍拒绝这批早期失败。样本 1、4 还经历了嵌套 Read 参数纠正。 <span class="meta">事件 34, 37</span></li>
+<li data-sample="2"><span class="tag">上游模型</span> <strong>#2 · 提交目标执行计划</strong><br>update_goal_plan 参数 JSON 无法解析。后续三个上游错误帧均缺 finish_reason，轮次失败，交付与验收没有完成。 <span class="meta">事件 106, 125, 143, 161</span></li>
+<li data-sample="3"><span class="tag">上游模型</span> <strong>#3 · 交付后的证据与独立验收</strong><br>文件已经写入并读取。record_goal_evidence 被策略拒绝，后续三个上游错误帧均缺 finish_reason，轮次在完成目标前失败。 <span class="meta">事件 180, 337, 357, 375, 393</span></li>
+<li data-sample="4"><span class="tag">Case 设计</span> <strong>#4 · 交付及完成后的恢复审计</strong><br>先前 get_goal 和 Bash 同批被拒绝，模型随后执行有效计划、写入、读取和验收，完成调用成功并结算。现有恢复审计仍拒绝这批早期失败。样本 1、4 还经历了嵌套 Read 参数纠正。 <span class="meta">事件 34, 37</span></li>
+</ul></article>
+<article id="goal.live-pause-resume"><h3><code>goal.live-pause-resume</code></h3><div class="meta">4 / 5 个样本失败</div>
+<p><strong>上轮</strong> DNS 解析失败，业务未完成。</p>
+<p><strong>本轮对照</strong> 本轮失败转为计划、等待时序和恢复审计。</p>
+<ul>
+<li data-sample="0"><span class="tag">待复核</span> <strong>#0 · 等待第一次写入审批</strong><br>计划已被接受，下一模型请求已收到 HTTP 200 和首块。达到 180 秒总等待预算时该请求仍未完成，随后被清理中断。需要核对预算分配及该请求延迟。 <span class="meta">事件 141, 158, 160</span></li>
+<li data-sample="2"><span class="tag">上游模型</span> <strong>#2 · 写入审批之前的计划阶段</strong><br>四次计划提交因缺失、循环或前向依赖被拒绝，随后模型输出截断。测试超时前没有呈现写入审批，暂停动作未触发。 <span class="meta">事件 82, 108, 134, 160, 180</span></li>
+<li data-sample="3"><span class="tag">Case 设计</span> <strong>#3 · 暂停恢复后重新取证的审计</strong><br>真实暂停、重新审批及恢复写入已经发生。两次嵌套 Read 参数失败后，第三次取证成功并呈现业务问题。审计把此前的 service.call.failed 作为终止条件。 <span class="meta">事件 288, 418, 456, 493, 544</span></li>
+<li data-sample="4"><span class="tag">Case 设计</span> <strong>#4 · 暂停恢复后的失败审计</strong><br>早先的目标控制与 Bash 同批被拒绝，随后完成计划、暂停、重新审批和写入，最终业务问题已呈现。审计仍因早期 get_goal/Bash 拒绝而失败。 <span class="meta">事件 144, 173, 259, 268, 417</span></li>
+</ul></article>
+<article id="standard.live-context-compaction"><h3><code>standard.live-context-compaction</code></h3><div class="meta">1 / 5 个样本失败</div>
+<p><strong>上轮</strong> 辅助摘要污染，压缩未完成。</p>
+<p><strong>本轮对照</strong> 本轮唯一失败发生在 DNS，另外四份初始样本和第六样本通过。</p>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 建立待压缩事实的首轮</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 26, 44, 62</span></li>
+</ul></article>
+<article id="standard.live-manual-context-compaction"><h3><code>standard.live-manual-context-compaction</code></h3><div class="meta">1 / 5 个样本失败</div>
+<p><strong>上轮</strong> 辅助摘要污染，手动压缩未完成。</p>
+<p><strong>本轮对照</strong> 本轮唯一失败发生在 DNS，另外四份初始样本和第六样本通过。</p>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 建立待手动压缩事实的首轮</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 26, 44, 62</span></li>
+</ul></article>
+<article id="standard.live-notebook-cell-edit"><h3><code>standard.live-notebook-cell-edit</code></h3><div class="meta">4 / 5 个样本失败</div>
+<p><strong>上轮</strong> Read 实际返回文本，旧审计要求 notebook 类型。</p>
+<p><strong>本轮对照</strong> 上轮读取格式断言已调整，本轮三份停在额外只读发现工具的审计。</p>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 读取与编辑 Notebook 前</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 26, 44, 62</span></li>
+<li data-sample="1"><span class="tag">Case 设计</span> <strong>#1 · Notebook 编辑完成后的工具白名单</strong><br>实际执行 Glob、Read、NotebookEdit、Read。单元编辑成功，Driver 已核对目标 Notebook 和其他文件。审计仍因额外只读 Glob 判定使用禁止工具。 <span class="meta">事件 34, 66, 98, 106, 133</span></li>
+<li data-sample="3"><span class="tag">Case 设计</span> <strong>#3 · Notebook 编辑完成后的工具白名单</strong><br>实际执行 Glob、Read、NotebookEdit、Read。单元编辑成功，Driver 已核对目标 Notebook 和其他文件。审计仍因额外只读 Glob 判定使用禁止工具。 <span class="meta">事件 34, 66, 98, 106, 133</span></li>
+<li data-sample="4"><span class="tag">Case 设计</span> <strong>#4 · Notebook 编辑完成后的工具白名单</strong><br>实际执行 Glob、Read、NotebookEdit、Read。单元编辑成功，Driver 已核对目标 Notebook 和其他文件。审计仍因额外只读 Glob 判定使用禁止工具。 <span class="meta">事件 34, 66, 98, 106, 133</span></li>
+</ul></article>
+<article id="standard.live-subagent-message"><h3><code>standard.live-subagent-message</code></h3><div class="meta">3 / 5 个样本失败</div>
+<p><strong>上轮</strong> 父轮次收尾误取消子审批，后续就绪审计未接受恢复。</p>
+<p><strong>本轮对照</strong> 本轮记录了额外审批和两种审计问题，未出现上轮父收尾撤销子审批的事件链。</p>
+<ul>
+<li data-sample="0"><span class="tag">待复核</span> <strong>#0 · 传递用户选择后的子任务收尾</strong><br>父轮次已经把选择发给同一子任务。子任务随后运行带重定向和回退的 ps 检查，触发额外审批，Driver 退出。需要复核结果已到达后是否仍需这次进程检查，以及允许的只读确认范围。 <span class="meta">事件 155, 213, 221, 223</span></li>
+<li data-sample="1"><span class="tag">Case 设计</span> <strong>#1 · 放行用户选择前的工具序列审计</strong><br>模型先读取 Agent、任务列表和夹具，再启动唯一协作者并真实提问。Driver 不接受额外只读 TaskList，未提交选择。 <span class="meta">事件 55, 58, 98, 130, 187</span></li>
+<li data-sample="2"><span class="tag">Case 设计</span> <strong>#2 · 完成交接后的子任务答案解析</strong><br>同一子任务按表格报告正确的窗口和版本，父回答也给出两项正确值。子结果解析器没有识别 Markdown 表格中的版本，审计拒绝。 <span class="meta">事件 155, 276, 308</span></li>
+</ul></article>
+<article id="standard.live-task-detail-readback"><h3><code>standard.live-task-detail-readback</code></h3><div class="meta">1 / 5 个样本失败</div>
+<p><strong>上轮</strong> 合法 activeForm 被旧题面和审计禁止。</p>
+<p><strong>本轮对照</strong> 本轮首个请求遭遇 DNS，旧 activeForm 断言未触发。</p>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 创建和读取任务详情前</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 26, 44, 62</span></li>
+</ul></article>
+<p><a href="#top">返回目录</a></p></section>
+<section id="new"><h2>本轮新增失败 · 23 个用例</h2>
+<p class="meta">样本编号从 0 开始。事件编号对应各样本自己的轨迹。</p>
+<article id="assistant.live-dynamic-mcp-tool"><h3><code>assistant.live-dynamic-mcp-tool</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="2"><span class="tag">上游模型</span> <strong>#2 · 发现工具后的下一次调用</strong><br>ToolSearch 已返回并装配目标 echo 工具。模型接着发出 Bash true 占位命令，触发权限询问，目标 echo 从未调用。 <span class="meta">事件 41, 67, 69</span></li>
+</ul></article>
+<article id="assistant.live-feedback-submission"><h3><code>assistant.live-feedback-submission</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="3"><span class="tag">上游模型</span> <strong>#3 · 选择反馈提交工具</strong><br>要求实际提交产品反馈，模型反复调用 ReportFindings 并传入空 findings。返回零记录和重复路由拒绝后仍未调用 SendFeedback，轮次耗尽预算。 <span class="meta">事件 33, 38, 219</span></li>
+</ul></article>
+<article id="assistant.live-local-notification"><h3><code>assistant.live-local-notification</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="3"><span class="tag">Case 设计</span> <strong>#3 · 通知提交后的失败审计</strong><br>首个 PushNotification 遗漏 status，被参数校验拒绝。补齐后真实通知发送成功，轮次完成。审计仍按任何工具失败即失败拒绝样本。 <span class="meta">事件 36, 70, 97</span></li>
+</ul></article>
+<article id="assistant.live-mcp-resource-directory"><h3><code>assistant.live-mcp-resource-directory</code></h3><div class="meta">2 / 5 个样本失败</div>
+<ul>
+<li data-sample="0"><span class="tag">待复核</span> <strong>#0 · 列出资源后的目录工具选择</strong><br>ListMcpResourcesTool 已列出资源。模型转用 ToolSearch 寻找目录浏览能力，该工具按实现要求审批，Driver 在额外审批处退出，目录读取未发生。需复核题面中的目录能力指引与已装配工具的可发现性。 <span class="meta">事件 33, 64, 66</span></li>
+<li data-sample="2"><span class="tag">待复核</span> <strong>#2 · 列出资源后的目录工具选择</strong><br>ListMcpResourcesTool 已列出资源。模型转用 ToolSearch 寻找目录浏览能力，该工具按实现要求审批，Driver 在额外审批处退出，目录读取未发生。需复核题面中的目录能力指引与已装配工具的可发现性。 <span class="meta">事件 33, 64, 66</span></li>
+</ul></article>
+<article id="assistant.live-memory-delete"><h3><code>assistant.live-memory-delete</code></h3><div class="meta">3 / 5 个样本失败</div>
+<ul>
+<li data-sample="1"><span class="tag">上游模型</span> <strong>#1 · 删除偏好的回答阶段</strong><br>模型搜索 memory preference delete forget，进入 ToolSearch 审批，主回答未正常完成，长期记忆的删除提取阶段未到达。 <span class="meta">事件 70, 72, 74</span></li>
+<li data-sample="2"><span class="tag">上游模型</span> <strong>#2 · 保存偏好的准备阶段</strong><br>首轮保存时模型先搜索 memory remember preference store，ToolSearch 等待审批，准备阶段停止，后续删除没有执行。 <span class="meta">事件 33, 35, 37</span></li>
+<li data-sample="4"><span class="tag">上游模型</span> <strong>#4 · 删除偏好的回答阶段</strong><br>模型搜索 memory preference delete forget，进入 ToolSearch 审批，主回答未正常完成，长期记忆的删除提取阶段未到达。 <span class="meta">事件 70, 72, 74</span></li>
+</ul></article>
+<article id="assistant.live-memory-roundtrip"><h3><code>assistant.live-memory-roundtrip</code></h3><div class="meta">2 / 5 个样本失败</div>
+<ul>
+<li data-sample="2"><span class="tag">上游模型</span> <strong>#2 · 保存偏好的首轮</strong><br>模型搜索记忆工具并触发 ToolSearch 审批，Driver 在保存轮中止。主回答后的长期记忆提取以及跨会话召回未到达。 <span class="meta">事件 33, 35, 37</span></li>
+<li data-sample="3"><span class="tag">上游模型</span> <strong>#3 · 保存偏好的首轮</strong><br>模型搜索记忆工具并触发 ToolSearch 审批，Driver 在保存轮中止。主回答后的长期记忆提取以及跨会话召回未到达。 <span class="meta">事件 33, 35, 37</span></li>
+</ul></article>
+<article id="assistant.live-monitor-stream"><h3><code>assistant.live-monitor-stream</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="2"><span class="tag">环境</span> <strong>#2 · WebSocket 夹具发送后续帧</strong><br>Monitor 已成功启动。夹具在 socket.write 写事件帧时收到 EPIPE，测试随即中断。现有记录缺少能定位对端先关闭原因的证据。 <span class="meta">事件 33, 38, 56</span></li>
+</ul></article>
+<article id="assistant.live-symbol-navigation"><h3><code>assistant.live-symbol-navigation</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 查找符号定义前</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 25, 42, 59</span></li>
+</ul></article>
+<article id="standard.live-approved-cron-create"><h3><code>standard.live-approved-cron-create</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 生成定时任务及其审批前</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 26, 44, 62</span></li>
+</ul></article>
+<article id="standard.live-approved-file-create"><h3><code>standard.live-approved-file-create</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 生成文件写入审批前</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 26, 44, 62</span></li>
+</ul></article>
+<article id="standard.live-clarified-file-create"><h3><code>standard.live-clarified-file-create</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 生成业务澄清问题前</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 26, 44, 62</span></li>
+</ul></article>
+<article id="standard.live-completed-subagent-followup"><h3><code>standard.live-completed-subagent-followup</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="0"><span class="tag">Case 设计</span> <strong>#0 · 首轮子任务版本结果解析</strong><br>协作者读取到正确的 release-version，报告中的行内代码后紧跟中文括号。正则把括号带入版本值并判为冲突，根回答中的版本正确，后续交接未进入。 <span class="meta">事件 70, 94, 127</span></li>
+</ul></article>
+<article id="standard.live-cron-delete"><h3><code>standard.live-cron-delete</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 创建待删除定时任务的准备轮</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 26, 44, 62</span></li>
+</ul></article>
+<article id="standard.live-cron-list-count"><h3><code>standard.live-cron-list-count</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 查询定时任务列表前</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 26, 44, 62</span></li>
+</ul></article>
+<article id="standard.live-denied-file-create"><h3><code>standard.live-denied-file-create</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 呈现拒绝写入的审批前</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 26, 44, 62</span></li>
+</ul></article>
+<article id="standard.live-file-discovery"><h3><code>standard.live-file-discovery</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 搜索项目文件前</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 26, 44, 62</span></li>
+</ul></article>
+<article id="standard.live-local-relative-dates"><h3><code>standard.live-local-relative-dates</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 生成相对日期答案前</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 26, 44, 62</span></li>
+</ul></article>
+<article id="standard.live-multiselect-handoff"><h3><code>standard.live-multiselect-handoff</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 生成交接多选问题前</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 26, 44, 62</span></li>
+</ul></article>
+<article id="standard.live-spill-readback"><h3><code>standard.live-spill-readback</code></h3><div class="meta">3 / 5 个样本失败</div>
+<ul>
+<li data-sample="1"><span class="tag">待复核</span> <strong>#1 · 定位外置全文后的文件读取</strong><br>Skill 已外置长结果。模型用 Grep 搜索目标外置文件，读取权限进入审批，Driver 禁止出现该问题而中止。需复核 Grep 读取外置文件是否属于用例允许路线及其审批范围。 <span class="meta">事件 35, 72, 74</span></li>
+<li data-sample="2"><span class="tag">上游模型</span> <strong>#2 · 回读外置全文前的工具调用</strong><br>模型先用 Bash wc 检查外置文件，再用 Read 读取。题面明确禁止终端命令，审计在工具边界处失败。 <span class="meta">事件 35, 72, 108</span></li>
+<li data-sample="4"><span class="tag">待复核</span> <strong>#4 · 定位外置全文后的文件读取</strong><br>Skill 已外置长结果。模型用 Grep 搜索目标外置文件，读取权限进入审批，Driver 禁止出现该问题而中止。需复核 Grep 读取外置文件是否属于用例允许路线及其审批范围。 <span class="meta">事件 35, 72, 74</span></li>
+</ul></article>
+<article id="standard.live-targeted-fix"><h3><code>standard.live-targeted-fix</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="0"><span class="tag">环境</span> <strong>#0 · 读取待修文件前</strong><br>首个模型请求的三次尝试均在响应头前遇到 ENOTFOUND。代理返回本地 502，轮次失败。冻结规则保留该样本为 FAIL。 <span class="meta">事件 26, 44, 62</span></li>
+</ul></article>
+<article id="standard.live-wakeup-cancel"><h3><code>standard.live-wakeup-cancel</code></h3><div class="meta">3 / 5 个样本失败</div>
+<ul>
+<li data-sample="1"><span class="tag">上游模型</span> <strong>#1 · 选择取消操作</strong><br>已成功安排延迟继续。用户要求取消后，模型查询列表并转向 Bash 探查，触发审批，未调用 ScheduleWakeup 的 stop 操作。 <span class="meta">事件 41, 100, 134, 166, 168</span></li>
+<li data-sample="2"><span class="tag">Case 设计</span> <strong>#2 · 取消完成后的工具白名单</strong><br>在真实取消前多了一次只读 CronList。ScheduleWakeup stop 返回 stopped，随后审计因不是全程只调用 ScheduleWakeup 而失败。 <span class="meta">事件 100, 134, 141, 167</span></li>
+<li data-sample="3"><span class="tag">Case 设计</span> <strong>#3 · 取消完成后的工具白名单</strong><br>在真实取消前多了一次只读 CronList。ScheduleWakeup stop 返回 stopped，随后审计因不是全程只调用 ScheduleWakeup 而失败。 <span class="meta">事件 100, 134, 141, 167</span></li>
+</ul></article>
+<article id="standard.live-wakeup-delivery"><h3><code>standard.live-wakeup-delivery</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="3"><span class="tag">待复核</span> <strong>#3 · 延迟投递的时间下限</strong><br>续轮收到指定任务且答复正确。审计比较调度调用起点和 inputs.admitted_at，报提前投递。轨迹的续轮创建事件在服务起点后约 60.002 秒。缺少用于断言的精确入队时间和定时器起点，需核对时钟与落盘顺序。 <span class="meta">事件 38, 39, 72, 74, 77, 99</span></li>
+</ul></article>
+<article id="standard.live-worktree-roundtrip"><h3><code>standard.live-worktree-roundtrip</code></h3><div class="meta">1 / 5 个样本失败</div>
+<ul>
+<li data-sample="4"><span class="tag">Case 设计</span> <strong>#4 · 移除工作树后的参数审计</strong><br>两次操作均经页面批准，干净夹具成功移除。ExitWorktree 带 discard_changes=true，审计要求该标志为 false，题面没有明确这一条件。该条件涉及防止误删未提交数据，适合在题面和审批中明确验证。 <span class="meta">事件 34, 72, 74, 79, 109</span></li>
+</ul></article>
+<p><a href="#top">返回目录</a></p></section>
+<section id="cleared"><h2>上轮失败、本轮全过 · 7 个用例</h2><ul class="cleared">
+<li><code>assistant.live-project-read</code></li>
+<li><code>ptc.live-file-handoff-summary</code></li>
+<li><code>standard.deterministic-guard-drain-limit</code></li>
+<li><code>standard.live-input-fifo</code></li>
+<li><code>standard.live-subagent-interrupt</code></li>
+<li><code>standard.live-task-reminder</code></li>
+<li><code>standard.live-web-fetch-page</code></li>
+</ul></section>
+<section id="g2"><h2>G2 与变基</h2>
+<p>G2 本地复核结论为证据不足。3,973 次主请求中未发现消息结构违规。204 次辅助调用缺少最终发送的 <code>messages</code>、<code>tools</code> 和 <code>tool_choice</code>，因此无法验证 G2-036 和 G2-037。48 项源码复核输入经逐项核对与上轮一致，沿用上轮对应结论。</p>
+<p>自动 G2 判定环节因本机 Codex CLI 拒绝所配置的模型而中止。本地复核使用封存轨迹和源码差异补齐当前可验证的部分。</p>
+<p><code>devops/regression-test</code> 已完成对本轮 <code>master</code> 的变基检查，Git 判定分支已基于目标提交，分支头为 <code>66c9f341</code>。</p>
+</section></main></body></html>
